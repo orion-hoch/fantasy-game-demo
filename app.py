@@ -215,16 +215,32 @@ def chain_guess():
             "examples": [],
         })
     else:
-        # Wrong answer: return up to 3 examples
-        examples = list(valid_players)[:3]
+        # Wrong answer: return per-link breakdown + examples
+        link_results = cc.check_player_against_chain(conn, player_guess, chain)
+        examples = sorted(list(valid_players))[:3]
         conn.close()
         return jsonify({
             "correct": False,
             "valid_count": len(valid_players),
             "next_category": None,
             "chain_length": chain_length,
-            "examples": sorted(examples),
+            "examples": examples,
+            "link_results": link_results,
         })
+
+
+@app.route("/api/chain/teammate_start", methods=["POST"])
+def chain_teammate_start():
+    data = request.get_json(force=True)
+    player = (data.get("player") or "").strip()
+    if not player:
+        return jsonify({"error": "Missing player"}), 400
+    conn = get_db()
+    cat = cc.get_teammate_category(conn, player)
+    conn.close()
+    if not cat:
+        return jsonify({"error": f"No teammates found for {player}"}), 404
+    return jsonify({"category": cat, "valid_count": cat["valid_count"]})
 
 
 @app.route("/api/chain/search")

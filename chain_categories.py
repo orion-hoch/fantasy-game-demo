@@ -567,3 +567,38 @@ def search_players(conn, term):
         (like, like, like),
     ).fetchall()
     return [r[0] for r in rows]
+
+
+def check_player_against_chain(conn, player, chain):
+    """Return per-link pass/fail for a player against a chain.
+
+    Returns a list of dicts: [{label, passed}, ...]
+    """
+    results = []
+    for link in chain:
+        cat = _CAT_BY_ID.get(link["id"])
+        if not cat:
+            results.append({"label": link.get("label", link["id"]), "passed": False})
+            continue
+        players = cat["players"](conn, link.get("value", ""))
+        results.append({
+            "label": _format_label(cat, link.get("value", "")),
+            "passed": player in players,
+        })
+    return results
+
+
+def get_teammate_category(conn, player):
+    """Build a 'teammate of X' starting category for a given player."""
+    cat = _CAT_BY_ID.get("teammate")
+    if not cat:
+        return None
+    players = cat["players"](conn, player)
+    if not players:
+        return None
+    return {
+        "id": "teammate",
+        "value": player,
+        "label": f"Was a teammate of {player}",
+        "valid_count": len(players),
+    }

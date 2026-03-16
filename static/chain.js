@@ -13,6 +13,7 @@
     let selectedIndex = -1;
     let searchDebounce = null;
     let currentGuess = "";
+    let gameMode = "classic"; // "classic" | "infinite"
 
     // ── DOM references ────────────────────────────────────────────────────────
     const scoreEl = document.getElementById("score-display");
@@ -147,6 +148,14 @@
         }
     }
 
+    // ── Mode toggle ───────────────────────────────────────────────────────────
+
+    window.setMode = function (mode) {
+        gameMode = mode;
+        document.getElementById("mode-classic").classList.toggle("active", mode === "classic");
+        document.getElementById("mode-infinite").classList.toggle("active", mode === "infinite");
+    };
+
     // ── Game flow ─────────────────────────────────────────────────────────────
 
     window.startGame = function () {
@@ -187,7 +196,8 @@
         clearAdvanceTimer();
         clearFeedback();
         newChainBtn.classList.add("hidden");
-        // Keep score, reset chain
+        newChainBtn.textContent = "Start New Chain";
+        newChainBtn.onclick = window.startNewChain;
         chain = [];
         renderChain();
         lockInput();
@@ -213,6 +223,41 @@
                 newChainBtn.classList.remove("hidden");
             });
     };
+
+    function startTeammateChain(playerName) {
+        clearAdvanceTimer();
+        clearFeedback();
+        newChainBtn.classList.add("hidden");
+        chain = [];
+        renderChain();
+        lockInput();
+        promptText.innerHTML = "Finding teammates of <strong>" + escapeHtml(playerName) + "</strong>…";
+
+        fetch("/api/chain/teammate_start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ player: playerName }),
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.error) {
+                    // Fallback to fresh chain if no teammates found
+                    promptText.innerHTML = "No teammates found for " + escapeHtml(playerName) + ". Starting fresh…";
+                    setTimeout(window.startNewChain, 1500);
+                    return;
+                }
+                chain = [data.category];
+                setValidCount(data.valid_count);
+                renderChain();
+                updatePrompt();
+                unlockInput();
+                gameActive = true;
+            })
+            .catch(function () {
+                promptText.innerHTML = "Network error. Please try again.";
+                newChainBtn.classList.remove("hidden");
+            });
+    }
 
     window.submitCurrentGuess = function () {
         const guess = currentGuess || chainInput.value.trim();
@@ -279,21 +324,36 @@
                 }, 1200);
             }
         } else {
-            // Wrong answer
-            let html = "&#x2717; Wrong! <strong>" + escapeHtml(playerName) + "</strong> doesn't fit all links.";
+            // Wrong answer — show per-link breakdown
+            let html = "&#x2717; <strong>" + escapeHtml(playerName) + "</strong> doesn't fit the full chain:";
+            if (data.link_results && data.link_results.length > 0) {
+                html += "<ul class=\"link-breakdown\">";
+                data.link_results.forEach(function (r) {
+                    html += "<li class=\"" + (r.passed ? "link-pass" : "link-fail") + "\">" +
+                        (r.passed ? "&#x2713;" : "&#x2717;") + " " + escapeHtml(r.label) +
+                        "</li>";
+                });
+                html += "</ul>";
+            }
             if (data.examples && data.examples.length > 0) {
                 html += "<div class=\"examples\">Valid answers included: <strong>" +
-                    data.examples.map(escapeHtml).join(", ") +
-                    "</strong></div>";
+                    data.examples.map(escapeHtml).join(", ") + "</strong></div>";
             }
             showFeedback("wrong", html);
             gameActive = false;
-            newChainBtn.classList.remove("hidden");
 
-            // Auto-advance after 3 seconds
-            advanceTimer = setTimeout(function () {
-                startNewChain();
-            }, 3000);
+            if (gameMode === "infinite") {
+                newChainBtn.textContent = "Continue with " + escapeHtml(playerName) + "'s teammates →";
+                newChainBtn.classList.remove("hidden");
+                // Store wrong player for the teammate chain
+                newChainBtn.onclick = function () { startTeammateChain(playerName); };
+                advanceTimer = setTimeout(function () { startTeammateChain(playerName); }, 4000);
+            } else {
+                newChainBtn.textContent = "Start New Chain";
+                newChainBtn.onclick = window.startNewChain;
+                newChainBtn.classList.remove("hidden");
+                advanceTimer = setTimeout(function () { startNewChain(); }, 3000);
+            }
         }
     }
 

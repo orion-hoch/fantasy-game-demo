@@ -6,6 +6,33 @@
     padding: 0 0 40px;
 }
 
+/* Mode toggle */
+#mode-toggle {
+    display: flex;
+    gap: 0;
+    padding: 12px 24px 0;
+}
+.mode-btn {
+    flex: 1;
+    padding: 9px 16px;
+    background: #0f1923;
+    border: 1px solid #2a3a4a;
+    color: #8899aa;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    letter-spacing: 0.5px;
+}
+.mode-btn:first-child { border-radius: 8px 0 0 8px; }
+.mode-btn:last-child  { border-radius: 0 8px 8px 0; border-left: none; }
+.mode-btn:hover { background: #1a2a3a; color: #ccc; }
+.mode-btn.active {
+    background: #1a2a3a;
+    border-color: #e9c46a;
+    color: #e9c46a;
+}
+
 /* Header */
 #chain-app header {
     background: #1a2a3a;
@@ -275,13 +302,27 @@
     color: #ff8888;
 }
 #feedback .examples {
-    margin-top: 6px;
+    margin-top: 8px;
     font-size: 0.88rem;
     color: #cc8888;
 }
 #feedback .examples strong {
     color: #ffaaaa;
 }
+#feedback .link-breakdown {
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+#feedback .link-breakdown li {
+    font-size: 0.88rem;
+    padding: 3px 0;
+}
+#feedback .link-pass { color: #4caf87; }
+#feedback .link-fail { color: #ff6666; font-weight: 600; }
 
 /* Action buttons */
 #action-area {
