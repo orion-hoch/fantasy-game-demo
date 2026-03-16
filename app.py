@@ -194,28 +194,35 @@ def chain_guess():
     if not player_guess or not chain:
         return jsonify({"error": "Missing player or chain"}), 400
 
+    used_players = set(data.get("used_players", []))
+
     conn = get_db()
-    valid_players = cc.get_players_for_chain(conn, chain)
+    valid_players = cc.get_players_for_chain(conn, chain) - used_players
     correct = player_guess in valid_players
     chain_length = len(chain)
 
     if correct:
-        # Remove the guessed player from the remaining pool and pick next category
         remaining = valid_players - {player_guess}
         exclude_ids = [link["id"] for link in chain]
         next_cat = None
-        if len(remaining) >= 1:
+        last_player = None
+
+        if len(remaining) == 1:
+            # Last player standing — return who they are for the bonus chain
+            last_player = next(iter(remaining))
+        elif len(remaining) >= 2:
             next_cat = cc.get_chain_category(conn, remaining, exclude_ids=exclude_ids)
+
         conn.close()
         return jsonify({
             "correct": True,
             "valid_count": len(remaining),
             "next_category": next_cat,
             "chain_length": chain_length,
+            "last_player": last_player,
             "examples": [],
         })
     else:
-        # Wrong answer: return per-link breakdown + examples
         link_results = cc.check_player_against_chain(conn, player_guess, chain)
         examples = sorted(list(valid_players))[:3]
         conn.close()

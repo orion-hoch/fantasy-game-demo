@@ -465,6 +465,26 @@ CATEGORIES = [
 # Index for fast lookup
 _CAT_BY_ID = {c["id"]: c for c in CATEGORIES}
 
+# ── Conflict groups ──────────────────────────────────────────────────────────
+# Categories in the same group are redundant with each other (one implies the
+# other). If any member is already in the chain, exclude all others in the group.
+_CONFLICT_GROUPS = [
+    {"round_1", "top_10"},       # top-10 picks are all 1st round picks
+    {"team", "division"},         # knowing the team tells you the division
+    {"team", "afc_nfc"},          # knowing the team tells you AFC/NFC
+    {"division", "afc_nfc"},      # knowing the division tells you AFC/NFC
+    {"college", "conference"},    # knowing the college tells you the conference
+]
+
+
+def _expand_excluded(existing_ids):
+    """Expand a set of excluded IDs to also exclude conflicting categories."""
+    expanded = set(existing_ids)
+    for group in _CONFLICT_GROUPS:
+        if expanded & group:          # any member already excluded/used?
+            expanded |= group         # block all members of the group
+    return expanded
+
 
 def _format_label(cat, value):
     """Return the display label for a category with its value substituted."""
@@ -520,7 +540,7 @@ def get_chain_category(conn, current_players, exclude_ids=None):
     Only picks categories where the intersection with current_players >= 2.
     Returns a dict with id/value/label/valid_count, or None if none found.
     """
-    exclude_ids = set(exclude_ids or [])
+    exclude_ids = _expand_excluded(exclude_ids or [])
     candidates = [c for c in CATEGORIES if c["id"] not in exclude_ids]
     random.shuffle(candidates)
 

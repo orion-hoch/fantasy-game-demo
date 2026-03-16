@@ -14,6 +14,7 @@
     let searchDebounce = null;
     let currentGuess = "";
     let gameMode = "classic"; // "classic" | "infinite"
+    let usedPlayers = new Set(); // players already guessed correctly this game
 
     // ── DOM references ────────────────────────────────────────────────────────
     const scoreEl = document.getElementById("score-display");
@@ -136,15 +137,15 @@
 
     function updatePrompt() {
         if (chain.length === 0) {
-            promptText.innerHTML = "Press <strong>Start New Chain</strong> to begin!";
+            promptText.textContent = "Press Start to begin.";
             return;
         }
+        const active = chain[chain.length - 1];
         if (chain.length === 1) {
-            promptText.innerHTML =
-                "Name a player who: <strong>" + escapeHtml(chain[0].label) + "</strong>";
+            promptText.innerHTML = "Name a player who <strong>" + escapeHtml(active.label) + "</strong>";
         } else {
             promptText.innerHTML =
-                "Name a player who fits <strong>all " + chain.length + " chain links</strong>.";
+                "Fits all " + chain.length + " links — latest: <strong>" + escapeHtml(active.label) + "</strong>";
         }
     }
 
@@ -162,6 +163,7 @@
         clearAdvanceTimer();
         clearFeedback();
         chain = [];
+        usedPlayers = new Set();
         setScore(0);
         setValidCount(0);
         setChainLength(0);
@@ -199,6 +201,7 @@
         newChainBtn.textContent = "Start New Chain";
         newChainBtn.onclick = window.startNewChain;
         chain = [];
+        usedPlayers = new Set(); // reset used players for a fresh classic chain
         renderChain();
         lockInput();
         promptText.innerHTML = "Loading next chain…";
@@ -268,12 +271,24 @@
     function doGuess(playerName) {
         if (inputLocked || chain.length === 0) return;
 
+        // Reject already-used players immediately
+        if (usedPlayers.has(playerName)) {
+            showFeedback("wrong", "&#x2717; <strong>" + escapeHtml(playerName) +
+                "</strong> has already been used this game!");
+            chainInput.value = "";
+            currentGuess = "";
+            closeSearchResults();
+            setTimeout(clearFeedback, 2000);
+            return;
+        }
+
         closeSearchResults();
         lockInput();
 
         const payload = {
             player: playerName,
             chain: chain.map(function (c) { return { id: c.id, value: c.value }; }),
+            used_players: Array.from(usedPlayers),
         };
 
         fetch("/api/chain/guess", {
@@ -293,12 +308,31 @@
 
     function handleGuessResult(playerName, data) {
         if (data.correct) {
+            usedPlayers.add(playerName);
             const pts = data.chain_length;
             setScore(score + pts);
             showPointsFlash(pts);
 
-            if (!data.next_category) {
-                // Chain ended gracefully (no more valid categories)
+            if (data.last_player) {
+                // Exactly 1 player left in the pool — bonus + start teammate chain
+                const BONUS = 10;
+                setScore(score + BONUS);
+                showFeedback(
+                    "correct",
+                    "&#x2713; Correct! +" + pts + " pts — " +
+                    "&#x1F3C6; Last player standing bonus! +" + BONUS + " pts! " +
+                    "Next chain: teammates of <strong>" + escapeHtml(data.last_player) + "</strong>"
+                );
+                setValidCount(1);
+                gameActive = false;
+                advanceTimer = setTimeout(function () {
+                    startTeammateChain(data.last_player);
+                }, 3000);
+                newChainBtn.textContent = "Continue with " + escapeHtml(data.last_player) + "'s teammates →";
+                newChainBtn.onclick = function () { startTeammateChain(data.last_player); };
+                newChainBtn.classList.remove("hidden");
+            } else if (!data.next_category) {
+                // No more valid categories (chain exhausted)
                 showFeedback(
                     "correct",
                     "&#x2713; Correct! +" + pts + " point" + (pts !== 1 ? "s" : "") +
@@ -306,18 +340,18 @@
                 );
                 setValidCount(data.valid_count);
                 gameActive = false;
+                newChainBtn.textContent = "Start New Chain";
+                newChainBtn.onclick = window.startNewChain;
                 newChainBtn.classList.remove("hidden");
             } else {
                 showFeedback(
                     "correct",
                     "&#x2713; Correct! +" + pts + " point" + (pts !== 1 ? "s" : "") + " — chain grows!"
                 );
-                // Add the next category to the chain
                 chain.push(data.next_category);
                 setValidCount(data.next_category.valid_count);
                 renderChain();
                 updatePrompt();
-                // Brief pause then unlock
                 setTimeout(function () {
                     clearFeedback();
                     unlockInput();

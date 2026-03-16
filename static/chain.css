@@ -180,27 +180,29 @@
     padding: 0 2px;
 }
 
-/* Prompt area */
+/* Prompt area — compact hint above the input, not a separate visual block */
 #prompt-area {
-    padding: 12px 24px 8px;
+    padding: 4px 24px 0;
 }
 
 #prompt-text {
-    font-size: 0.95rem;
-    color: #8899aa;
-    line-height: 1.5;
+    font-size: 0.82rem;
+    color: #556677;
+    line-height: 1.4;
 }
 
 #prompt-text strong {
-    color: #e0e0e0;
+    color: #8899aa;
 }
 
 /* Search area */
 #search-area {
     display: flex;
     gap: 10px;
-    padding: 8px 24px 12px;
+    padding: 6px 24px 12px;
     align-items: flex-start;
+    position: relative;
+    z-index: 10;
 }
 
 #search-wrapper {
