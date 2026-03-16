@@ -5,14 +5,14 @@ from load_data import build_db
 from questions import QUESTIONS
 
 app = Flask(__name__)
-DB_PATH = "fantasy.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "fantasy.db")
 
-# --- Point this at your data folders ---
 DATA_FOLDERS = [
-    "/Users/orionhoch/fantasy_stats/QB_Fantasy",
-    "/Users/orionhoch/fantasy_stats/WR_Fantasy",
-    "/Users/orionhoch/fantasy_stats/TE_Fantasy",
-    "/Users/orionhoch/fantasy_stats/RB_Fantasy",
+    os.path.join(BASE_DIR, "fantasy_stats", "QB_Fantasy"),
+    os.path.join(BASE_DIR, "fantasy_stats", "WR_Fantasy"),
+    os.path.join(BASE_DIR, "fantasy_stats", "TE_Fantasy"),
+    os.path.join(BASE_DIR, "fantasy_stats", "RB_Fantasy"),
 ]
 
 

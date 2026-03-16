@@ -386,3 +386,28 @@ header { display: flex; align-items: center; gap: 16px; }
     cursor: pointer;
 }
 .play-again-btn:hover { background: #38b2a3; }
+
+@media (max-width: 600px) {
+    header { flex-wrap: wrap; gap: 8px; }
+    .header-sub { margin-left: 0; width: 100%; }
+
+    #setup-panel { padding: 16px 0; }
+    .setup-card { padding: 20px 16px; }
+
+    #round-banner { padding: 10px 14px; }
+    #team-name { font-size: 1.2rem; }
+
+    #pick-area { max-width: 100%; padding: 12px; }
+
+    #pick-year-row { flex-wrap: wrap; }
+    #pick-year-select { width: 100%; flex: 1 1 100%; }
+    #confirm-year-btn, #back-to-name-btn { flex: 1; }
+
+    #rosters-row { flex-direction: column; overflow-x: unset; }
+    .roster-panel { min-width: unset; }
+
+    #results-rosters { flex-direction: column; }
+    .result-roster { min-width: unset; }
+
+    .winner-name { font-size: 1.4rem; }
+}

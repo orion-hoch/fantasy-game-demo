@@ -142,3 +142,19 @@ header h1 {
 }
 .guess-chip.correct { background: #2a9d8f22; border: 1px solid #2a9d8f; color: #2a9d8f; }
 .guess-chip.wrong { background: #ff000011; border: 1px solid #ff3333; color: #ff6666; }
+
+@media (max-width: 600px) {
+    #app { padding: 12px; }
+
+    header { padding: 12px 16px; }
+    header h1 { font-size: 1.2rem; }
+
+    #game-header {
+        flex-wrap: wrap;
+    }
+    #game-header > div { flex: 1 1 100%; order: 1; }
+    #back-btn { order: 0; }
+    #score-box { order: 2; width: 100%; text-align: left; }
+
+    #search-results { max-height: 200px; }
+}
