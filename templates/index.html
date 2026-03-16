@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fantasy Trivia</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div id="app">
+    <header>
+        <h1>Fantasy Football Trivia</h1>
+    </header>
+
+    <div id="question-select">
+        <h2>Pick a Challenge</h2>
+        <a href="/starting6" class="q-btn" style="display:block;text-decoration:none;border-color:#2a9d8f44;">
+            <strong style="color:#2a9d8f">⚡ Starting 6 — 2 Player Draft</strong><br>
+            <small>Draw a random team each round and draft your best 6-man lineup vs a friend</small>
+        </a>
+        <div id="question-list">
+            {% for q in questions %}
+            <button class="q-btn" onclick="startQuestion({{ q.id }}, '{{ q.title }}', '{{ q.description }}')">
+                <strong>{{ q.title }}</strong><br>
+                <small>{{ q.description }}</small>
+            </button>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="game-panel" class="hidden">
+        <div id="game-header">
+            <button id="back-btn" onclick="goBack()">← Back</button>
+            <div>
+                <h2 id="q-title"></h2>
+                <p id="q-desc"></p>
+            </div>
+            <div id="score-box">
+                <span id="found-count">0</span> / <span id="total-count">?</span> found
+            </div>
+        </div>
+
+        <div id="search-area">
+            <input id="search-input" type="text" placeholder="Search player name..." autocomplete="off" />
+            <div id="search-results"></div>
+        </div>
+
+        <div id="guesses">
+            <h3>Your Answers</h3>
+            <div id="guess-list"></div>
+        </div>
+    </div>
+</div>
+
+<script src="/static/game.js"></script>
+</body>
+</html>
