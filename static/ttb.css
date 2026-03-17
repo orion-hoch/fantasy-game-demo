@@ -116,15 +116,6 @@
     box-shadow: 0 0 12px #2a9d8f22;
 }
 
-.pill-year {
-    font-size: 0.68rem;
-    color: #556677;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    flex-shrink: 0;
-}
-
 .pill-name {
     font-weight: 600;
     color: #d0ede8;

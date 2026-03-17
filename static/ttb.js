@@ -92,15 +92,6 @@
         var pill = document.createElement("div");
         pill.className = "chain-pill";
 
-        // Year label parsed from clue.label ("2021 Teammate" → "2021")
-        var yearMatch = clue.label.match(/\d{4}/);
-        if (yearMatch) {
-            var yr = document.createElement("span");
-            yr.className = "pill-year";
-            yr.textContent = yearMatch[0];
-            pill.appendChild(yr);
-        }
-
         var nameEl = document.createElement("span");
         nameEl.className = "pill-name";
         nameEl.textContent = clue.text;

@@ -22,68 +22,59 @@ def _pick_active_player(conn):
 
 def _build_teammate_chain(conn, player):
     """
-    Return up to 5 distinct teammate clues, spread across the player's career
-    (oldest first → newest last, closest to the bomb).
-    Prefers teammates who are recognisable (have decent PPR stats themselves).
+    Return up to 5 distinct teammate clues.
+    One teammate is drawn from each team the player has played for (oldest team
+    first). If the player has fewer than 5 teams, remaining slots are filled
+    with extra teammates from any team.
+    Prefers recognisable teammates (PPR >= 50 in any season).
     """
-    # All (season, team) pairs for this player, oldest first
-    seasons = conn.execute(
-        "SELECT DISTINCT season, team FROM stats WHERE player = ? ORDER BY season",
+    # Distinct teams in career order (first season on each team)
+    teams = conn.execute(
+        "SELECT team, MIN(season) AS first FROM stats WHERE player = ? GROUP BY team ORDER BY first",
         (player,),
     ).fetchall()
 
-    if not seasons:
+    if not teams:
         return []
-
-    # Pick up to 5 evenly-spread season slots
-    n = len(seasons)
-    if n <= 5:
-        slots = seasons
-    else:
-        indices = [int(round(i * (n - 1) / 4)) for i in range(5)]
-        slots = [seasons[i] for i in indices]
 
     clues = []
     used = set()
 
-    for season, team in slots:
-        if len(clues) >= 5:
-            break
-        # Try to pick a recognisable teammate (PPR >= 50 in any season) first
+    def pick_teammate(team):
+        # Only from seasons the mystery player was actually on this team
+        seasons = [r[0] for r in conn.execute(
+            "SELECT DISTINCT season FROM stats WHERE player = ? AND team = ?",
+            (player, team),
+        ).fetchall()]
+        if not seasons:
+            return None
+        ph = ",".join("?" * len(seasons))
+        # Prefer recognisable teammate (PPR >= 50 in any season)
         row = conn.execute(
-            """
-            SELECT DISTINCT s.player
-            FROM stats s
-            WHERE s.team = ? AND s.season = ? AND s.player != ?
-              AND s.player NOT IN (SELECT value FROM (
-                    SELECT player AS value FROM stats
-                    WHERE player = ?
-              ))
-              AND EXISTS (
-                    SELECT 1 FROM stats s2
-                    WHERE s2.player = s.player AND s2.fantasy_ppr >= 50
-              )
+            f"""
+            SELECT DISTINCT s.player FROM stats s
+            WHERE s.team = ? AND s.season IN ({ph}) AND s.player != ?
+              AND EXISTS (SELECT 1 FROM stats s2 WHERE s2.player = s.player AND s2.fantasy_ppr >= 50)
             ORDER BY RANDOM() LIMIT 1
             """,
-            (team, season, player, player),
+            [team] + seasons + [player],
         ).fetchone()
-
         if not row:
-            # Fallback: any teammate
             row = conn.execute(
-                "SELECT DISTINCT player FROM stats WHERE team = ? AND season = ? AND player != ? ORDER BY RANDOM() LIMIT 1",
-                (team, season, player),
+                f"SELECT DISTINCT player FROM stats WHERE team = ? AND season IN ({ph}) AND player != ? ORDER BY RANDOM() LIMIT 1",
+                [team] + seasons + [player],
             ).fetchone()
+        return row[0] if row else None
 
-        if row and row[0] not in used:
-            used.add(row[0])
-            clues.append({
-                "icon": "🤝",
-                "label": f"{season} Teammate",
-                "text": row[0],
-            })
+    for team, _ in teams:
+        if len(clues) >= 5:
+            break
+        tm = pick_teammate(team)
+        if tm and tm not in used:
+            used.add(tm)
+            clues.append({"icon": "🤝", "label": "Teammate", "text": tm})
 
-    # Pad to 5 if still short
+    # Fill remaining slots from any overlapping season
     if len(clues) < 5:
         extras = conn.execute(
             """
@@ -91,7 +82,8 @@ def _build_teammate_chain(conn, player):
             FROM stats s1
             JOIN stats s2 ON s1.team = s2.team AND s1.season = s2.season
             WHERE s1.player = ? AND s2.player != ?
-            ORDER BY RANDOM() LIMIT 30
+              AND EXISTS (SELECT 1 FROM stats s3 WHERE s3.player = s2.player AND s3.fantasy_ppr >= 50)
+            ORDER BY RANDOM() LIMIT 40
             """,
             (player, player),
         ).fetchall()
@@ -100,11 +92,7 @@ def _build_teammate_chain(conn, player):
                 break
             if row[0] not in used:
                 used.add(row[0])
-                clues.append({
-                    "icon": "🤝",
-                    "label": "Teammate",
-                    "text": row[0],
-                })
+                clues.append({"icon": "🤝", "label": "Teammate", "text": row[0]})
 
     return clues[:5]
 
