@@ -273,6 +273,105 @@
     100% { opacity: 0; }
 }
 
+/* Skip flash on bomb */
+#bomb-inner.flash-skip #bomb-num {
+    font-size: 2rem;
+    color: #8899aa;
+    animation: wrong-shake 0.3s ease-out;
+}
+#bomb-inner.flash-skip #bomb-label { color: #556677; }
+
+/* ── Answer reveal ────────────────────────────────────────────────────────── */
+
+#answer-reveal {
+    margin: 16px 24px 0;
+    background: #1a1020;
+    border: 1px solid #9966cc88;
+    border-radius: 10px;
+    padding: 16px 20px;
+    text-align: center;
+    animation: clue-appear 0.4s ease-out;
+}
+#answer-reveal.hidden { display: none; }
+
+.answer-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #9966cc;
+    margin-bottom: 6px;
+}
+
+#answer-name {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #cc99ff;
+    letter-spacing: 0.5px;
+}
+
+/* ── Hints section ────────────────────────────────────────────────────────── */
+
+#hints-section {
+    padding: 10px 24px 0;
+}
+
+.ttb-btn-hint {
+    background: none;
+    border: 1px solid #334;
+    color: #8899aa;
+    font-size: 0.88rem;
+    padding: 7px 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.ttb-btn-hint:hover { border-color: #f4d03f88; color: #f4d03f; }
+
+.hint-badge {
+    background: #1a2a3a;
+    border: 1px solid #2a3a4a;
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    color: #f4d03f;
+    font-weight: 700;
+}
+
+#hints-panel {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+#hints-panel.hidden { display: none; }
+
+.hint-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #111e2a;
+    border: 1px solid #1e3040;
+    border-radius: 7px;
+    padding: 9px 14px;
+    animation: clue-appear 0.3s ease-out;
+}
+
+.hint-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; }
+
+.hint-body { display: flex; flex-direction: column; gap: 1px; }
+
+.hint-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #556677;
+}
+
+.hint-text {
+    font-size: 0.9rem;
+    color: #c0ccd8;
+}
+
 /* ── Wrong guesses ────────────────────────────────────────────────────────── */
 
 #wrong-guesses {
@@ -399,6 +498,8 @@
     #bomb-num  { font-size: 2.6rem; }
     .chain-pill { font-size: 0.88rem; padding: 7px 14px; max-width: 260px; }
     #wrong-guesses { padding: 10px 14px 0; }
+    #hints-section { padding: 10px 14px 0; }
+    #answer-reveal { margin: 12px 14px 0; }
     #ttb-feedback  { margin: 10px 14px 0; }
     #ttb-search-area { flex-direction: column; padding: 12px 14px 0; }
     #ttb-search-wrapper { width: 100%; }

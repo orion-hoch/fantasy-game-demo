@@ -19,41 +19,49 @@
         </div>
     </header>
 
-    <div id="hint-bar">Identify the mystery player from their teammates — 5 guesses before it blows!</div>
+    <div id="hint-bar">Identify the mystery player from their teammates — 5 turns before it blows!</div>
 
-    <!-- Main game area: fuse chain above, bomb below -->
+    <!-- Fuse chain + bomb -->
     <div id="game-area">
-
-        <!-- Fuse chain: teammate nodes stack here (oldest at top → bomb at bottom) -->
         <div id="fuse-chain">
             <div id="chain-spark" class="hidden">&#x2736;</div>
-            <div id="chain-nodes">
-                <!-- chain nodes injected by JS -->
-            </div>
-            <!-- Short wire connecting chain to bomb cap -->
+            <div id="chain-nodes"></div>
             <div id="chain-tail" class="hidden"></div>
         </div>
-
-        <!-- Bomb cap + body -->
         <div id="bomb-wrap">
             <div id="bomb-cap" class="hidden"></div>
             <div id="bomb-body">
                 <div id="bomb-inner">
                     <span id="bomb-num">?</span>
-                    <span id="bomb-label">guesses</span>
+                    <span id="bomb-label">press start</span>
                 </div>
             </div>
         </div>
-
     </div>
 
-    <!-- Wrong guesses -->
+    <!-- Answer reveal (shown on loss / give up) -->
+    <div id="answer-reveal" class="hidden">
+        <div class="answer-label">The answer was</div>
+        <div id="answer-name"></div>
+    </div>
+
+    <!-- Wrong guess chips -->
     <div id="wrong-guesses"></div>
+
+    <!-- Hints section (toggleable) -->
+    <div id="hints-section">
+        <button id="hints-toggle-btn" class="ttb-btn ttb-btn-hint hidden" onclick="toggleHints()">
+            &#x1F4A1; Show Hints
+        </button>
+        <div id="hints-panel" class="hidden">
+            <!-- hint rows injected by JS -->
+        </div>
+    </div>
 
     <!-- Feedback -->
     <div id="ttb-feedback"></div>
 
-    <!-- Search + guess input -->
+    <!-- Search + guess -->
     <div id="ttb-search-area">
         <div id="ttb-search-wrapper">
             <input
@@ -70,9 +78,10 @@
 
     <!-- Action buttons -->
     <div id="ttb-action-area">
-        <button id="ttb-start-btn"    class="ttb-btn ttb-btn-red"   onclick="ttbStart()">&#x23F1; Start Game</button>
-        <button id="ttb-give-up-btn"  class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">Give Up</button>
-        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red hidden" onclick="ttbStart()">Play Again</button>
+        <button id="ttb-start-btn"     class="ttb-btn ttb-btn-red   hidden" onclick="ttbStart()">&#x23F1; Start Game</button>
+        <button id="ttb-skip-btn"      class="ttb-btn ttb-btn-ghost hidden" onclick="ttbSkip()">Skip &#x2192;</button>
+        <button id="ttb-give-up-btn"   class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">Give Up</button>
+        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red  hidden" onclick="ttbStart()">Play Again</button>
     </div>
 </div>
 

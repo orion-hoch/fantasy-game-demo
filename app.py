@@ -233,11 +233,11 @@ def ttb_page():
 def ttb_start():
     ttb_mod.cleanup_old_games()
     conn = get_db()
-    gid, clues = ttb_mod.start_game(conn)
+    gid, clues, hints = ttb_mod.start_game(conn)
     conn.close()
     if not gid:
         return jsonify({"error": "Could not load a player"}), 500
-    return jsonify({"game_id": gid, "clues": clues})
+    return jsonify({"game_id": gid, "clues": clues, "hints": hints})
 
 
 @app.route("/api/ttb/guess", methods=["POST"])
@@ -246,6 +246,7 @@ def ttb_guess():
     gid = (data.get("game_id") or "").strip()
     guess = (data.get("guess") or "").strip()
     reveal = bool(data.get("reveal", False))
+    skip   = bool(data.get("skip",   False))
 
     if not gid:
         return jsonify({"error": "Missing game_id"}), 400
@@ -253,10 +254,10 @@ def ttb_guess():
     if reveal:
         return jsonify(ttb_mod.reveal_answer(gid))
 
-    if not guess:
+    if not skip and not guess:
         return jsonify({"error": "Missing guess"}), 400
 
-    return jsonify(ttb_mod.check_guess(gid, guess))
+    return jsonify(ttb_mod.check_guess(gid, guess, skip=skip))
 
 
 @app.route("/api/ttb/search")
