@@ -326,6 +326,51 @@
 #feedback .link-pass { color: #4caf87; }
 #feedback .link-fail { color: #ff6666; font-weight: 600; }
 
+/* Correct guesses list */
+#guesses-area {
+    padding: 8px 24px 4px;
+}
+#guesses-area.hidden {
+    display: none;
+}
+
+#guesses-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.guess-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: #0e2420;
+    border: 1px solid #2a9d8f33;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.guess-num {
+    color: #556677;
+    font-size: 0.75rem;
+    font-weight: bold;
+    min-width: 20px;
+}
+
+.guess-name {
+    flex: 1;
+    color: #c0ccd8;
+}
+
+.guess-pts {
+    color: #2a9d8f;
+    font-weight: 600;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
 /* Action buttons */
 #action-area {
     padding: 8px 24px;
@@ -435,6 +480,10 @@
 
     #feedback {
         margin: 4px 14px 6px;
+    }
+
+    #guesses-area {
+        padding: 6px 14px 4px;
     }
 
     #action-area {

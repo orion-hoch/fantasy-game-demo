@@ -15,6 +15,7 @@
     let currentGuess = "";
     let gameMode = "classic"; // "classic" | "infinite"
     let usedPlayers = new Set(); // players already guessed correctly this game
+    let chainGuesses = []; // [{player, pts}, ...] for current chain
 
     // ── DOM references ────────────────────────────────────────────────────────
     const scoreEl = document.getElementById("score-display");
@@ -30,6 +31,8 @@
     const startBtn = document.getElementById("start-btn");
     const newChainBtn = document.getElementById("new-chain-btn");
     const pointsFlash = document.getElementById("points-flash");
+    const guessesArea = document.getElementById("guesses-area");
+    const guessesList = document.getElementById("guesses-list");
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -90,6 +93,29 @@
                 pointsFlash.classList.add("hidden");
             }, 260);
         }, 900);
+    }
+
+    function renderGuesses() {
+        guessesList.innerHTML = "";
+        if (chainGuesses.length === 0) {
+            guessesArea.classList.add("hidden");
+            return;
+        }
+        guessesArea.classList.remove("hidden");
+        chainGuesses.forEach(function (g, i) {
+            const row = document.createElement("div");
+            row.className = "guess-row";
+            row.innerHTML =
+                "<span class=\"guess-num\">" + (i + 1) + ".</span>" +
+                "<span class=\"guess-name\">" + escapeHtml(g.player) + "</span>" +
+                "<span class=\"guess-pts\">+" + g.pts + " pt" + (g.pts !== 1 ? "s" : "") + "</span>";
+            guessesList.appendChild(row);
+        });
+    }
+
+    function resetGuesses() {
+        chainGuesses = [];
+        renderGuesses();
     }
 
     // ── Chain rendering ───────────────────────────────────────────────────────
@@ -164,10 +190,12 @@
         clearFeedback();
         chain = [];
         usedPlayers = new Set();
+        chainGuesses = [];
         setScore(0);
         setValidCount(0);
         setChainLength(0);
         renderChain();
+        resetGuesses();
         startBtn.classList.add("hidden");
         newChainBtn.classList.add("hidden");
         lockInput();
@@ -202,7 +230,9 @@
         newChainBtn.onclick = window.startNewChain;
         chain = [];
         usedPlayers = new Set(); // reset used players for a fresh classic chain
+        chainGuesses = [];
         renderChain();
+        resetGuesses();
         lockInput();
         promptText.innerHTML = "Loading next chain…";
 
@@ -232,7 +262,9 @@
         clearFeedback();
         newChainBtn.classList.add("hidden");
         chain = [];
+        chainGuesses = [];
         renderChain();
+        resetGuesses();
         lockInput();
         promptText.innerHTML = "Finding teammates of <strong>" + escapeHtml(playerName) + "</strong>…";
 
@@ -312,6 +344,8 @@
             const pts = data.chain_length;
             setScore(score + pts);
             showPointsFlash(pts);
+            chainGuesses.push({ player: playerName, pts: pts });
+            renderGuesses();
 
             if (data.last_player) {
                 // Exactly 1 player left in the pool — bonus + start teammate chain

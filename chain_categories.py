@@ -45,7 +45,7 @@ DIVISIONS = {
 CONFERENCE_SCHOOLS = {
     "SEC": {
         "Alabama", "Georgia", "LSU", "Florida", "Tennessee", "Auburn",
-        "Ole Miss", "Mississippi St.", "Arkansas", "South Carolina",
+        "Mississippi", "Mississippi St.", "Arkansas", "South Carolina",
         "Missouri", "Kentucky", "Vanderbilt", "Texas A&M", "Texas", "Oklahoma",
     },
     "Big Ten": {
@@ -56,17 +56,14 @@ CONFERENCE_SCHOOLS = {
     },
     "ACC": {
         "Florida St.", "Clemson", "Miami (FL)", "Virginia Tech",
-        "North Carolina", "NC State", "Boston College", "Pittsburgh",
+        "North Carolina", "North Carolina St.", "Boston Col.", "Pittsburgh",
         "Syracuse", "Wake Forest", "Louisville", "Georgia Tech", "Duke",
-        "Virginia", "Notre Dame",
+        "Virginia", "SMU", "Stanford", "California",
     },
     "Big 12": {
         "Oklahoma St.", "Kansas St.", "Baylor", "TCU", "West Virginia",
-        "Iowa St.", "Kansas", "Texas Tech",
-    },
-    "Pac-12": {
-        "Stanford", "California", "Arizona St.", "Arizona", "Utah",
-        "Colorado", "Oregon St.", "Washington St.",
+        "Kansas", "Texas Tech", "BYU", "Cincinnati", "Houston",
+        "Central Florida", "Utah", "Colorado", "Arizona", "Arizona St.",
     },
 }
 

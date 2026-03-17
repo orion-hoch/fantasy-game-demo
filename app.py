@@ -2,7 +2,6 @@ from flask import Flask, jsonify, request, render_template
 import sqlite3
 import os
 from load_data import build_db, load_total_stats
-from questions import QUESTIONS
 import chain_categories as cc
 
 app = Flask(__name__)
@@ -32,46 +31,7 @@ def _table_exists(conn, name):
 
 @app.route("/")
 def index():
-    return render_template("index.html", questions=QUESTIONS)
-
-
-@app.route("/api/question/<int:qid>/answers")
-def get_answers(qid):
-    question = next((q for q in QUESTIONS if q["id"] == qid), None)
-    if not question:
-        return jsonify({"error": "Not found"}), 404
-    conn = get_db()
-    rows = conn.execute(question["query"]).fetchall()
-    conn.close()
-    return jsonify({"answers": [r[0] for r in rows], "count": len(rows)})
-
-
-@app.route("/api/search")
-def search():
-    term = request.args.get("q", "").strip()
-    qid = request.args.get("qid", type=int)
-    if not term or not qid:
-        return jsonify({"results": []})
-
-    question = next((q for q in QUESTIONS if q["id"] == qid), None)
-    if not question:
-        return jsonify({"results": []})
-
-    conn = get_db()
-    # Get valid answer set for this question
-    valid = {r[0] for r in conn.execute(question["query"]).fetchall()}
-    # Search all players matching the term
-    rows = conn.execute(
-        "SELECT DISTINCT player FROM stats WHERE player LIKE ? ORDER BY player LIMIT 20",
-        (f"%{term}%",)
-    ).fetchall()
-    conn.close()
-
-    results = [
-        {"name": r[0], "valid": r[0] in valid}
-        for r in rows
-    ]
-    return jsonify({"results": results})
+    return render_template("index.html")
 
 
 @app.route("/starting6")
