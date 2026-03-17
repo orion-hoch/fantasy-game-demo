@@ -1,7 +1,7 @@
 /* ── Ticking Time Bomb ───────────────────────────────────────────────────── */
 
 #ttb-app {
-    max-width: 700px;
+    max-width: 680px;
     margin: 0 auto;
     padding: 0 0 60px;
 }
@@ -11,241 +11,298 @@
     background: #1a2a3a;
     padding: 14px 24px;
     border-bottom: 2px solid #e63244;
-    margin-bottom: 0;
 }
 .header-inner { display: flex; align-items: center; gap: 20px; }
 #ttb-app header h1 { color: #e63244; font-size: 1.5rem; letter-spacing: 1px; }
 
-/* ── Bomb scene ──────────────────────────────────────────────────────────── */
+/* Hint bar */
+#hint-bar {
+    background: #111e2a;
+    border-bottom: 1px solid #1e3040;
+    padding: 8px 24px;
+    font-size: 0.78rem;
+    color: #8899aa;
+    text-align: center;
+    letter-spacing: 0.4px;
+}
 
-#bomb-scene {
+/* ── Main game area ───────────────────────────────────────────────────────── */
+
+#game-area {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 36px 24px 24px;
+    padding: 28px 24px 20px;
     background: #080d12;
     border-bottom: 1px solid #1e3040;
+    min-height: 260px;
 }
 
-#bomb-wrapper {
+/* ── Fuse chain ───────────────────────────────────────────────────────────── */
+
+#fuse-chain {
     display: flex;
     flex-direction: column;
     align-items: center;
+    width: 100%;
+    max-width: 360px;
 }
 
-/* ── Fuse ────────────────────────────────────────────────────────────────── */
-
-#fuse-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-}
-
-.fuse-seg {
-    width: 7px;
-    height: 20px;
-    border-radius: 3px;
-    background: linear-gradient(to bottom, #f4d03f, #a07810);
-    box-shadow: 0 0 6px #f4d03f88;
-    transition: background 0.35s, box-shadow 0.35s, opacity 0.35s;
-}
-
-.fuse-seg.burnt {
-    background: #252525;
-    box-shadow: none;
-    opacity: 0.35;
-}
-
-/* The topmost active segment gets the spark */
-.fuse-seg.burning {
-    position: relative;
-}
-.fuse-seg.burning::before {
-    content: "✦";
-    position: absolute;
-    top: -22px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 1rem;
+/* Spark at top of fuse */
+#chain-spark {
+    font-size: 1.2rem;
     color: #ff9900;
-    text-shadow: 0 0 8px #ffcc00, 0 0 16px #ff6600;
+    text-shadow: 0 0 10px #ffcc00, 0 0 20px #ff6600;
     animation: spark-dance 0.45s ease-in-out infinite alternate;
-    pointer-events: none;
+    margin-bottom: 0;
+    line-height: 1;
 }
+#chain-spark.hidden { display: none; }
+
 @keyframes spark-dance {
-    from { top: -22px; opacity: 1; transform: translateX(-50%) scale(1); }
-    to   { top: -28px; opacity: 0.6; transform: translateX(-50%) scale(1.3) rotate(15deg); }
+    from { transform: scale(1)   rotate(-10deg); opacity: 1; }
+    to   { transform: scale(1.3) rotate(15deg);  opacity: 0.65; }
 }
 
-/* Cap between fuse and bomb */
-#fuse-cap {
-    width: 22px;
-    height: 9px;
-    background: #383838;
+/* Container for all revealed nodes */
+#chain-nodes {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* Each revealed teammate node */
+.chain-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    animation: node-drop 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes node-drop {
+    from { opacity: 0; transform: translateY(-14px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Fuse wire segment (connects spark→node and node→node) */
+.chain-wire {
+    width: 6px;
+    height: 22px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #c8960c 0px,
+        #f4d03f 5px,
+        #c8960c 10px
+    );
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* Teammate name pill */
+.chain-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a2a3a;
+    border: 1px solid #2a9d8f66;
+    border-radius: 24px;
+    padding: 8px 18px;
+    font-size: 0.95rem;
+    color: #c0e0d8;
+    white-space: nowrap;
+    max-width: 320px;
+    box-shadow: 0 0 12px #2a9d8f22;
+}
+
+.pill-year {
+    font-size: 0.68rem;
+    color: #556677;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.pill-name {
+    font-weight: 600;
+    color: #d0ede8;
+}
+
+/* Tail wire from last node down to bomb cap */
+#chain-tail {
+    width: 6px;
+    height: 28px;
+    background: repeating-linear-gradient(
+        to bottom,
+        #c8960c 0px,
+        #f4d03f 5px,
+        #c8960c 10px
+    );
+    border-radius: 3px;
+}
+#chain-tail.hidden { display: none; }
+
+/* ── Bomb ─────────────────────────────────────────────────────────────────── */
+
+#bomb-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#bomb-cap {
+    width: 28px;
+    height: 10px;
+    background: #2a2a2a;
+    border: 1px solid #3a3a3a;
     border-radius: 5px 5px 0 0;
-    border: 1px solid #444;
-    margin-bottom: -3px;
+    margin-bottom: -2px;
     z-index: 1;
 }
-
-/* ── Bomb body ───────────────────────────────────────────────────────────── */
+#bomb-cap.hidden { display: none; }
 
 #bomb-body {
-    width: 150px;
-    height: 150px;
+    width: 148px;
+    height: 148px;
     border-radius: 50%;
     background:
-        radial-gradient(circle at 37% 30%, rgba(255,255,255,0.12) 0%, transparent 45%),
-        radial-gradient(circle at 50% 50%, #3c3c3c, #111 65%, #080808 100%);
+        radial-gradient(circle at 37% 30%, rgba(255,255,255,0.11) 0%, transparent 44%),
+        radial-gradient(circle at 50% 50%, #3c3c3c, #111 65%, #070707);
     border: 3px solid #2a2a2a;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     box-shadow:
-        inset 0 -4px 10px rgba(0,0,0,0.6),
-        inset 0 3px 6px rgba(255,255,255,0.06),
-        0 8px 32px rgba(0,0,0,0.85);
+        inset 0 -4px 10px rgba(0,0,0,0.55),
+        inset 0 3px 6px rgba(255,255,255,0.05),
+        0 8px 28px rgba(0,0,0,0.8);
     transition: box-shadow 0.5s;
-    z-index: 2;
+    overflow: hidden;
 }
 
-#turns-remaining {
-    font-size: 3.4rem;
-    font-weight: 900;
-    line-height: 1;
-    transition: color 0.5s, text-shadow 0.5s;
-    user-select: none;
-    pointer-events: none;
-}
+/* Glow states */
+#bomb-body.glow-5 { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.55), 0 0 28px #00cc6644, 0 0 56px #00cc6618; }
+#bomb-body.glow-4 { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.55), 0 0 28px #88cc0044, 0 0 56px #88cc0018; }
+#bomb-body.glow-3 { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.55), 0 0 28px #ccbb0044, 0 0 56px #ccbb0018; }
+#bomb-body.glow-2 { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.55), 0 0 34px #ff880055, 0 0 64px #ff880022; animation: pulse-bomb 0.9s ease-in-out infinite; }
+#bomb-body.glow-1 { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.55), 0 0 38px #ff220066, 0 0 72px #ff220033; animation: pulse-bomb 0.5s ease-in-out infinite; }
 
-/* ── Glow states (set by JS adding class to #bomb-wrapper) ───────────────── */
-
-#bomb-wrapper.state-idle  #turns-remaining { color: #556677; text-shadow: none; }
-
-#bomb-wrapper.state-5 #bomb-body { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.6), 0 0 28px #00cc6655, 0 0 60px #00cc6622; }
-#bomb-wrapper.state-5 #turns-remaining { color: #00cc66; text-shadow: 0 0 14px #00cc6699; }
-
-#bomb-wrapper.state-4 #bomb-body { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.6), 0 0 28px #88cc0055, 0 0 60px #88cc0022; }
-#bomb-wrapper.state-4 #turns-remaining { color: #88cc00; text-shadow: 0 0 14px #88cc0099; }
-
-#bomb-wrapper.state-3 #bomb-body { box-shadow: inset 0 -4px 10px rgba(0,0,0,0.6), 0 0 28px #ccbb0055, 0 0 60px #ccbb0022; }
-#bomb-wrapper.state-3 #turns-remaining { color: #ccbb00; text-shadow: 0 0 14px #ccbb0099; }
-
-#bomb-wrapper.state-2 #bomb-body {
-    box-shadow: inset 0 -4px 10px rgba(0,0,0,0.6), 0 0 36px #ff880066, 0 0 70px #ff880033;
-    animation: pulse-danger 0.9s ease-in-out infinite;
-}
-#bomb-wrapper.state-2 #turns-remaining { color: #ff8800; text-shadow: 0 0 16px #ff880099; }
-
-#bomb-wrapper.state-1 #bomb-body {
-    box-shadow: inset 0 -4px 10px rgba(0,0,0,0.6), 0 0 40px #ff220077, 0 0 80px #ff220044;
-    animation: pulse-danger 0.5s ease-in-out infinite;
-}
-#bomb-wrapper.state-1 #turns-remaining { color: #ff2200; text-shadow: 0 0 18px #ff2200bb; }
-
-@keyframes pulse-danger {
+@keyframes pulse-bomb {
     0%, 100% { transform: scale(1); }
     50%       { transform: scale(1.03); }
 }
 
-/* ── Explosion ───────────────────────────────────────────────────────────── */
-
-#bomb-wrapper.state-exploded #bomb-body {
-    animation: bomb-explode 0.65s ease-out forwards;
-    background: radial-gradient(circle at 50% 50%, #ff9900, #ff2200, #440000);
+/* Explode */
+#bomb-body.exploded {
+    animation: bomb-burst 0.65s ease-out forwards !important;
+    background: radial-gradient(circle, #ff9900, #ff2200, #550000) !important;
 }
-#bomb-wrapper.state-exploded #turns-remaining { color: #fff; text-shadow: none; }
-
-@keyframes bomb-explode {
+@keyframes bomb-burst {
     0%   { transform: scale(1);   opacity: 1; }
-    35%  { transform: scale(2.4); opacity: 1; }
-    100% { transform: scale(3.2); opacity: 0; }
+    40%  { transform: scale(2.3); opacity: 1; }
+    100% { transform: scale(3);   opacity: 0; }
 }
 
-/* Full-screen red flash */
+/* Win */
+#bomb-body.defused {
+    animation: none !important;
+    background:
+        radial-gradient(circle at 37% 30%, rgba(255,255,255,0.13) 0%, transparent 44%),
+        radial-gradient(circle at 50% 50%, #1d5e3a, #0a2218 65%) !important;
+    box-shadow: inset 0 -4px 10px rgba(0,0,0,0.4), 0 0 50px #00ff8877, 0 0 90px #00ff8833 !important;
+}
+
+/* Inner display */
+#bomb-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    transition: opacity 0.2s;
+    padding: 0 10px;
+    text-align: center;
+}
+
+#bomb-num {
+    font-size: 3.2rem;
+    font-weight: 900;
+    line-height: 1;
+    transition: color 0.5s, font-size 0.3s;
+    user-select: none;
+}
+#bomb-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    user-select: none;
+    transition: color 0.5s;
+}
+
+/* Colour the number by turns remaining */
+#bomb-body.glow-5 #bomb-num, #bomb-body.glow-5 #bomb-label { color: #00cc66; }
+#bomb-body.glow-4 #bomb-num, #bomb-body.glow-4 #bomb-label { color: #88cc00; }
+#bomb-body.glow-3 #bomb-num, #bomb-body.glow-3 #bomb-label { color: #ccbb00; }
+#bomb-body.glow-2 #bomb-num, #bomb-body.glow-2 #bomb-label { color: #ff8800; }
+#bomb-body.glow-1 #bomb-num, #bomb-body.glow-1 #bomb-label { color: #ff2200; }
+#bomb-body.exploded #bomb-num  { color: #fff; font-size: 2.4rem; }
+#bomb-body.defused  #bomb-num  { color: #00ff88; }
+#bomb-body.defused  #bomb-label { color: #00cc66; }
+
+/* Wrong guess flash on bomb */
+#bomb-inner.flash-wrong #bomb-num {
+    font-size: 1rem;
+    color: #ff5555;
+    animation: wrong-shake 0.35s ease-out;
+}
+#bomb-inner.flash-wrong #bomb-label {
+    color: #ff5555;
+    font-size: 0.6rem;
+}
+@keyframes wrong-shake {
+    0%,100% { transform: translateX(0); }
+    20%     { transform: translateX(-5px) rotate(-3deg); }
+    50%     { transform: translateX(5px) rotate(3deg); }
+    75%     { transform: translateX(-3px); }
+}
+
+/* Full-screen red flash overlay */
 #red-flash {
-    position: fixed;
-    inset: 0;
+    position: fixed; inset: 0;
     background: #ff1100;
     opacity: 0;
     pointer-events: none;
     z-index: 9999;
 }
-#red-flash.flash {
-    animation: red-flash-anim 0.65s ease-out forwards;
-}
+#red-flash.flash { animation: red-flash-anim 0.7s ease-out forwards; }
 @keyframes red-flash-anim {
-    0%   { opacity: 0.75; }
+    0%   { opacity: 0.72; }
     100% { opacity: 0; }
 }
 
-/* ── Win state ───────────────────────────────────────────────────────────── */
-
-#bomb-wrapper.state-defused #bomb-body {
-    animation: none;
-    background:
-        radial-gradient(circle at 37% 30%, rgba(255,255,255,0.15) 0%, transparent 45%),
-        radial-gradient(circle at 50% 50%, #1a5a38, #0a2a1a 65%);
-    box-shadow: inset 0 -4px 10px rgba(0,0,0,0.5), 0 0 50px #00ff8888, 0 0 100px #00ff8844;
-}
-#bomb-wrapper.state-defused #turns-remaining {
-    color: #00ff88;
-    text-shadow: 0 0 20px #00ff88;
-}
-
-/* ── Clues panel ─────────────────────────────────────────────────────────── */
-
-#clues-panel {
-    padding: 20px 24px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.clue-card {
-    background: #1a2a3a;
-    border: 1px solid #2a3a4a;
-    border-radius: 8px;
-    padding: 12px 16px;
-    display: flex;
-    gap: 12px;
-    align-items: flex-start;
-    animation: clue-appear 0.3s ease-out;
-}
-@keyframes clue-appear {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.clue-icon { font-size: 1.3rem; line-height: 1; flex-shrink: 0; width: 28px; text-align: center; }
-.clue-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: #8899aa; margin-bottom: 3px; }
-.clue-text  { font-size: 0.95rem; color: #dde5ee; line-height: 1.4; }
-
-/* ── Wrong guesses ───────────────────────────────────────────────────────── */
+/* ── Wrong guesses ────────────────────────────────────────────────────────── */
 
 #wrong-guesses {
     padding: 12px 24px 0;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    min-height: 0;
 }
-
 .wrong-chip {
     padding: 4px 12px;
     border-radius: 16px;
     background: #2a0a0a;
     border: 1px solid #ff333355;
     color: #ff8888;
-    font-size: 0.85rem;
+    font-size: 0.83rem;
 }
 
-/* ── Feedback ────────────────────────────────────────────────────────────── */
+/* ── Feedback ─────────────────────────────────────────────────────────────── */
 
 #ttb-feedback {
-    margin: 12px 24px 0;
+    margin: 10px 24px 0;
     padding: 13px 16px;
     border-radius: 8px;
     font-size: 0.95rem;
@@ -256,19 +313,17 @@
 #ttb-feedback.wrong   { display: block; background: #2a0a0a; border: 1px solid #ff333355; color: #ff8888; }
 #ttb-feedback.reveal  { display: block; background: #1a1a2a; border: 1px solid #8888ff55; color: #aaaaff; }
 
-/* ── Search area ─────────────────────────────────────────────────────────── */
+/* ── Search ───────────────────────────────────────────────────────────────── */
 
 #ttb-search-area {
     display: flex;
     gap: 10px;
-    padding: 16px 24px 0;
+    padding: 14px 24px 0;
     align-items: flex-start;
     position: relative;
     z-index: 10;
 }
-
 #ttb-search-wrapper { flex: 1; position: relative; }
-
 #ttb-input {
     width: 100%;
     padding: 12px 16px;
@@ -282,10 +337,8 @@
 }
 #ttb-input:focus    { border-color: #e63244; }
 #ttb-input:disabled { opacity: 0.4; cursor: not-allowed; }
-
 #ttb-search-results {
-    position: absolute;
-    top: 100%; left: 0; right: 0;
+    position: absolute; top: 100%; left: 0; right: 0;
     background: #1a2a3a;
     border: 1px solid #2a3a4a;
     border-top: none;
@@ -305,7 +358,6 @@
 .ttb-result-item:last-child { border-bottom: none; }
 .ttb-result-item:hover,
 .ttb-result-item.highlighted { background: #243040; color: #fff; }
-
 #ttb-submit-btn {
     padding: 12px 20px;
     background: #e63244;
@@ -322,15 +374,14 @@
 #ttb-submit-btn:hover:not(:disabled) { background: #c4273a; }
 #ttb-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Action buttons ──────────────────────────────────────────────────────── */
+/* ── Action buttons ───────────────────────────────────────────────────────── */
 
 #ttb-action-area {
-    padding: 16px 24px 0;
+    padding: 14px 24px 0;
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
 }
-
 .ttb-btn {
     padding: 11px 22px;
     border-radius: 8px;
@@ -341,24 +392,23 @@
     transition: background 0.2s, color 0.2s, border-color 0.2s;
 }
 .ttb-btn.hidden { display: none; }
-
 .ttb-btn-red   { background: #e63244; color: #fff; }
 .ttb-btn-red:hover { background: #c4273a; }
-
 .ttb-btn-ghost { background: none; border: 1px solid #334; color: #8899aa; }
 .ttb-btn-ghost:hover { border-color: #ff333355; color: #ff8888; }
 
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
     #ttb-app header { padding: 12px 14px; }
     #ttb-app header h1 { font-size: 1.2rem; }
-    #bomb-scene { padding: 24px 14px 20px; }
+    #hint-bar { padding: 7px 14px; }
+    #game-area { padding: 20px 14px 16px; }
     #bomb-body { width: 120px; height: 120px; }
-    #turns-remaining { font-size: 2.8rem; }
-    #clues-panel { padding: 14px 14px 0; }
+    #bomb-num  { font-size: 2.6rem; }
+    .chain-pill { font-size: 0.88rem; padding: 7px 14px; max-width: 260px; }
     #wrong-guesses { padding: 10px 14px 0; }
-    #ttb-feedback { margin: 10px 14px 0; }
+    #ttb-feedback  { margin: 10px 14px 0; }
     #ttb-search-area { flex-direction: column; padding: 12px 14px 0; }
     #ttb-search-wrapper { width: 100%; }
     #ttb-submit-btn { width: 100%; text-align: center; }

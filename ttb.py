@@ -1,12 +1,9 @@
 """
 ttb.py  —  Ticking Time Bomb game logic
 """
-import random
 import uuid
 
-# ── In-memory game state ──────────────────────────────────────────────────────
-_games: dict = {}   # { game_id: { player, clues, revealed, wrong, over } }
-
+_games: dict = {}
 MAX_WRONG = 5
 
 
@@ -16,159 +13,116 @@ def _pick_active_player(conn):
     row = conn.execute(
         """
         SELECT player, pos FROM stats
-        WHERE season >= 2022 AND games >= 5 AND fantasy_ppr >= 30
+        WHERE season >= 2022 AND games >= 5 AND fantasy_ppr >= 50
         ORDER BY RANDOM() LIMIT 1
         """
     ).fetchone()
     return {"player": row[0], "pos": row[1]} if row else None
 
 
-def _seasons_of_experience(conn, player):
-    row = conn.execute(
-        "SELECT COUNT(DISTINCT season) FROM stats WHERE player = ?", (player,)
-    ).fetchone()
-    return int(row[0]) if row else 1
-
-
-def _early_teammate(conn, player):
-    row = conn.execute(
-        "SELECT MIN(season) FROM stats WHERE player = ?", (player,)
-    ).fetchone()
-    if not row or row[0] is None:
-        return None
-    first_season = row[0]
-    team_row = conn.execute(
-        "SELECT team FROM stats WHERE player = ? AND season = ? LIMIT 1",
-        (player, first_season),
-    ).fetchone()
-    if not team_row:
-        return None
-    tmate = conn.execute(
-        """
-        SELECT player FROM stats
-        WHERE team = ? AND season = ? AND player != ?
-        ORDER BY RANDOM() LIMIT 1
-        """,
-        (team_row[0], first_season, player),
-    ).fetchone()
-    return tmate[0] if tmate else None
-
-
-def _draft_info(conn, player):
-    row = conn.execute(
-        "SELECT college, draft_round, draft_year FROM draft WHERE player = ? LIMIT 1",
+def _build_teammate_chain(conn, player):
+    """
+    Return up to 5 distinct teammate clues, spread across the player's career
+    (oldest first → newest last, closest to the bomb).
+    Prefers teammates who are recognisable (have decent PPR stats themselves).
+    """
+    # All (season, team) pairs for this player, oldest first
+    seasons = conn.execute(
+        "SELECT DISTINCT season, team FROM stats WHERE player = ? ORDER BY season",
         (player,),
-    ).fetchone()
-    if not row:
-        return None, None, None
-    return row[0], row[1], row[2]
+    ).fetchall()
 
+    if not seasons:
+        return []
 
-def _best_stat(conn, player, pos):
-    col = {"QB": "pass_yds", "RB": "rush_yds"}.get(pos, "rec_yds")
-    label = {"QB": "passing yards", "RB": "rushing yards"}.get(pos, "receiving yards")
-    try:
-        row = conn.execute(
-            f"SELECT MAX(CAST({col} AS REAL)) FROM season_stats WHERE player = ?",
-            (player,),
-        ).fetchone()
-        if row and row[0] and float(row[0]) >= 100:
-            floored = (int(float(row[0])) // 100) * 100
-            return f"{floored:,}+ {label} in a single season"
-    except Exception:
-        pass
-    # Fallback: best PPR season
-    try:
-        row = conn.execute(
-            "SELECT MAX(fantasy_ppr) FROM stats WHERE player = ?", (player,)
-        ).fetchone()
-        if row and row[0] and float(row[0]) >= 50:
-            return f"{int(float(row[0]))}+ PPR fantasy points in a single season"
-    except Exception:
-        pass
-    return "Stat data not available"
+    # Pick up to 5 evenly-spread season slots
+    n = len(seasons)
+    if n <= 5:
+        slots = seasons
+    else:
+        indices = [int(round(i * (n - 1) / 4)) for i in range(5)]
+        slots = [seasons[i] for i in indices]
 
-
-def _ordinal(n):
-    n = int(n)
-    if 11 <= (n % 100) <= 13:
-        return f"{n}th"
-    return f"{n}{['th','st','nd','rd','th'][min(n % 10, 4)]}"
-
-
-# ── Clue builder ──────────────────────────────────────────────────────────────
-
-def _build_clues(conn, player, pos):
     clues = []
+    used = set()
 
-    # 1 — Position + experience
-    seasons = _seasons_of_experience(conn, player)
-    clues.append({
-        "icon": "🏈",
-        "label": "Position & Experience",
-        "text": f"{pos} with {seasons} season{'s' if seasons != 1 else ''} of NFL experience",
-    })
+    for season, team in slots:
+        if len(clues) >= 5:
+            break
+        # Try to pick a recognisable teammate (PPR >= 50 in any season) first
+        row = conn.execute(
+            """
+            SELECT DISTINCT s.player
+            FROM stats s
+            WHERE s.team = ? AND s.season = ? AND s.player != ?
+              AND s.player NOT IN (SELECT value FROM (
+                    SELECT player AS value FROM stats
+                    WHERE player = ?
+              ))
+              AND EXISTS (
+                    SELECT 1 FROM stats s2
+                    WHERE s2.player = s.player AND s2.fantasy_ppr >= 50
+              )
+            ORDER BY RANDOM() LIMIT 1
+            """,
+            (team, season, player, player),
+        ).fetchone()
 
-    # 2 — Early-career teammate
-    tmate = _early_teammate(conn, player)
-    if tmate:
-        clues.append({
-            "icon": "🤝",
-            "label": "Early-Career Teammate",
-            "text": f"Early in their career, played alongside {tmate}",
-        })
-    else:
-        clues.append({
-            "icon": "🤝",
-            "label": "Early-Career Teammate",
-            "text": "Teammate data not available",
-        })
+        if not row:
+            # Fallback: any teammate
+            row = conn.execute(
+                "SELECT DISTINCT player FROM stats WHERE team = ? AND season = ? AND player != ? ORDER BY RANDOM() LIMIT 1",
+                (team, season, player),
+            ).fetchone()
 
-    # 3 — College
-    college, draft_round, draft_year = _draft_info(conn, player)
-    if college:
-        clues.append({"icon": "🎓", "label": "College", "text": f"Attended {college}"})
-    else:
-        clues.append({"icon": "🎓", "label": "College", "text": "College not on record"})
+        if row and row[0] not in used:
+            used.add(row[0])
+            clues.append({
+                "icon": "🤝",
+                "label": f"{season} Teammate",
+                "text": row[0],
+            })
 
-    # 4 — Draft info
-    if draft_round is not None and draft_year is not None:
-        clues.append({
-            "icon": "📋",
-            "label": "Draft",
-            "text": f"Selected in the {_ordinal(draft_round)} round of the {int(float(draft_year))} NFL Draft",
-        })
-    else:
-        clues.append({
-            "icon": "📋",
-            "label": "Draft",
-            "text": "Undrafted or draft data not on record",
-        })
+    # Pad to 5 if still short
+    if len(clues) < 5:
+        extras = conn.execute(
+            """
+            SELECT DISTINCT s2.player
+            FROM stats s1
+            JOIN stats s2 ON s1.team = s2.team AND s1.season = s2.season
+            WHERE s1.player = ? AND s2.player != ?
+            ORDER BY RANDOM() LIMIT 30
+            """,
+            (player, player),
+        ).fetchall()
+        for row in extras:
+            if len(clues) >= 5:
+                break
+            if row[0] not in used:
+                used.add(row[0])
+                clues.append({
+                    "icon": "🤝",
+                    "label": "Teammate",
+                    "text": row[0],
+                })
 
-    # 5 — Best season stat
-    clues.append({
-        "icon": "📊",
-        "label": "Career Stat",
-        "text": _best_stat(conn, player, pos),
-    })
-
-    return clues
+    return clues[:5]
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
 def start_game(conn):
-    """
-    Returns (game_id, [first_clue]) or (None, []) on error.
-    """
     p = _pick_active_player(conn)
     if not p:
         return None, []
     player, pos = p["player"], p["pos"]
-    clues = _build_clues(conn, player, pos)
+    clues = _build_teammate_chain(conn, player)
+    if not clues:
+        return None, []
     gid = str(uuid.uuid4())
     _games[gid] = {
         "player": player,
+        "pos": pos,
         "clues": clues,
         "revealed": 1,
         "wrong": 0,
@@ -178,13 +132,6 @@ def start_game(conn):
 
 
 def check_guess(game_id, guess):
-    """
-    Returns one of:
-      { correct: True,  player: str }
-      { correct: False, new_clue: dict, wrong: int }
-      { correct: False, exploded: True, player: str, wrong: int }
-      { error: str }
-    """
     game = _games.get(game_id)
     if not game or game["over"]:
         return {"error": "Game not found or already over"}
@@ -200,7 +147,6 @@ def check_guess(game_id, guess):
         game["over"] = True
         return {"correct": False, "exploded": True, "player": game["player"], "wrong": wrong}
 
-    # Reveal next clue
     idx = game["revealed"]
     new_clue = game["clues"][idx] if idx < len(game["clues"]) else None
     game["revealed"] = min(idx + 1, len(game["clues"]))

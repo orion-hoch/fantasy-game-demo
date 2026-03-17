@@ -19,29 +19,41 @@
         </div>
     </header>
 
-    <!-- Bomb scene -->
-    <div id="bomb-scene">
-        <div id="bomb-wrapper">
-            <div id="fuse-container">
-                <!-- fuse segments injected by JS -->
+    <div id="hint-bar">Identify the mystery player from their teammates — 5 guesses before it blows!</div>
+
+    <!-- Main game area: fuse chain above, bomb below -->
+    <div id="game-area">
+
+        <!-- Fuse chain: teammate nodes stack here (oldest at top → bomb at bottom) -->
+        <div id="fuse-chain">
+            <div id="chain-spark" class="hidden">&#x2736;</div>
+            <div id="chain-nodes">
+                <!-- chain nodes injected by JS -->
             </div>
-            <div id="fuse-cap"></div>
+            <!-- Short wire connecting chain to bomb cap -->
+            <div id="chain-tail" class="hidden"></div>
+        </div>
+
+        <!-- Bomb cap + body -->
+        <div id="bomb-wrap">
+            <div id="bomb-cap" class="hidden"></div>
             <div id="bomb-body">
-                <span id="turns-remaining">?</span>
+                <div id="bomb-inner">
+                    <span id="bomb-num">?</span>
+                    <span id="bomb-label">guesses</span>
+                </div>
             </div>
         </div>
+
     </div>
 
-    <!-- Clues revealed so far -->
-    <div id="clues-panel"></div>
-
-    <!-- Wrong guess chips -->
+    <!-- Wrong guesses -->
     <div id="wrong-guesses"></div>
 
     <!-- Feedback -->
     <div id="ttb-feedback"></div>
 
-    <!-- Search + guess -->
+    <!-- Search + guess input -->
     <div id="ttb-search-area">
         <div id="ttb-search-wrapper">
             <input
@@ -58,15 +70,9 @@
 
     <!-- Action buttons -->
     <div id="ttb-action-area">
-        <button id="ttb-start-btn" class="ttb-btn ttb-btn-red" onclick="ttbStart()">
-            &#x23F1; Start Game
-        </button>
-        <button id="ttb-give-up-btn" class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">
-            Give Up
-        </button>
-        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red hidden" onclick="ttbStart()">
-            Play Again
-        </button>
+        <button id="ttb-start-btn"    class="ttb-btn ttb-btn-red"   onclick="ttbStart()">&#x23F1; Start Game</button>
+        <button id="ttb-give-up-btn"  class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">Give Up</button>
+        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red hidden" onclick="ttbStart()">Play Again</button>
     </div>
 </div>
 

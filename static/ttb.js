@@ -11,14 +11,19 @@
     let currentGuess = "";
     let selectedIdx  = -1;
     let searchDebounce = null;
+    let flashTimer   = null;
 
     const MAX_WRONG = 5;
 
     // ── DOM refs ──────────────────────────────────────────────────────────────
-    const bombWrapper   = document.getElementById("bomb-wrapper");
-    const fuseContainer = document.getElementById("fuse-container");
-    const turnsDisplay  = document.getElementById("turns-remaining");
-    const cluesPanel    = document.getElementById("clues-panel");
+    const chainSpark    = document.getElementById("chain-spark");
+    const chainNodes    = document.getElementById("chain-nodes");
+    const chainTail     = document.getElementById("chain-tail");
+    const bombCap       = document.getElementById("bomb-cap");
+    const bombBody      = document.getElementById("bomb-body");
+    const bombInner     = document.getElementById("bomb-inner");
+    const bombNum       = document.getElementById("bomb-num");
+    const bombLabel     = document.getElementById("bomb-label");
     const wrongGuesses  = document.getElementById("wrong-guesses");
     const feedbackEl    = document.getElementById("ttb-feedback");
     const ttbInput      = document.getElementById("ttb-input");
@@ -31,77 +36,82 @@
 
     // ── Bomb helpers ──────────────────────────────────────────────────────────
 
-    function setBombState(state) {
-        // state: "idle" | "5".."1" | "exploded" | "defused"
-        bombWrapper.className = "state-" + state;
+    function setGlow(n) {
+        bombBody.className = n > 0 ? "glow-" + n : "";
     }
 
-    function buildFuse() {
-        fuseContainer.innerHTML = "";
-        for (var i = 0; i < MAX_WRONG; i++) {
-            var seg = document.createElement("div");
-            seg.className = "fuse-seg";
-            seg.id = "fseg-" + i;
-            fuseContainer.appendChild(seg);
-        }
+    function setBombDisplay(num, label) {
+        bombNum.textContent = num;
+        bombLabel.textContent = label;
     }
 
-    function updateFuse() {
-        for (var i = 0; i < MAX_WRONG; i++) {
-            var seg = document.getElementById("fseg-" + i);
-            if (!seg) continue;
-            seg.className = "fuse-seg";
-            if (i < wrongCount) {
-                seg.classList.add("burnt");
-            } else if (i === wrongCount && gameActive) {
-                seg.classList.add("burning");
-            }
-        }
-    }
-
-    function syncBomb() {
-        var remaining = MAX_WRONG - wrongCount;
-        turnsDisplay.textContent = remaining;
-        setBombState(String(remaining));
-        updateFuse();
+    /** Flash wrong player name on the bomb, then revert to turn count. */
+    function flashWrong(name) {
+        clearTimeout(flashTimer);
+        bombInner.classList.add("flash-wrong");
+        setBombDisplay(name, "❌ wrong");
+        flashTimer = setTimeout(function () {
+            bombInner.classList.remove("flash-wrong");
+            var remaining = MAX_WRONG - wrongCount;
+            setBombDisplay(remaining, remaining === 1 ? "guess left" : "guesses left");
+        }, 1600);
     }
 
     function triggerExplosion() {
-        turnsDisplay.textContent = "💥";
-        setBombState("exploded");
-        // Burn all fuse segments
-        for (var i = 0; i < MAX_WRONG; i++) {
-            var seg = document.getElementById("fseg-" + i);
-            if (seg) { seg.className = "fuse-seg burnt"; }
-        }
-        // Full-screen red flash
+        clearTimeout(flashTimer);
+        bombBody.className = "exploded";
+        setBombDisplay("💥", "");
         redFlash.classList.remove("flash");
         void redFlash.offsetWidth;
         redFlash.classList.add("flash");
+        chainSpark.classList.add("hidden");
     }
 
     function triggerDefuse() {
-        turnsDisplay.textContent = "✓";
-        setBombState("defused");
-        for (var i = 0; i < MAX_WRONG; i++) {
-            var seg = document.getElementById("fseg-" + i);
-            if (seg) { seg.className = "fuse-seg burnt"; }
+        clearTimeout(flashTimer);
+        bombBody.className = "defused";
+        setBombDisplay("✓", "defused!");
+        chainSpark.classList.add("hidden");
+    }
+
+    // ── Chain node rendering ──────────────────────────────────────────────────
+
+    /**
+     * Append a teammate node to the fuse chain.
+     * clue = { icon, label, text }  where text = player name, label = "YYYY Teammate"
+     */
+    function appendNode(clue) {
+        var node = document.createElement("div");
+        node.className = "chain-node";
+
+        // Wire above pill
+        var wire = document.createElement("div");
+        wire.className = "chain-wire";
+
+        // Pill
+        var pill = document.createElement("div");
+        pill.className = "chain-pill";
+
+        // Year label parsed from clue.label ("2021 Teammate" → "2021")
+        var yearMatch = clue.label.match(/\d{4}/);
+        if (yearMatch) {
+            var yr = document.createElement("span");
+            yr.className = "pill-year";
+            yr.textContent = yearMatch[0];
+            pill.appendChild(yr);
         }
+
+        var nameEl = document.createElement("span");
+        nameEl.className = "pill-name";
+        nameEl.textContent = clue.text;
+        pill.appendChild(nameEl);
+
+        node.appendChild(wire);
+        node.appendChild(pill);
+        chainNodes.appendChild(node);
     }
 
-    // ── Clue / chip rendering ─────────────────────────────────────────────────
-
-    function appendClue(clue) {
-        var card = document.createElement("div");
-        card.className = "clue-card";
-        card.innerHTML =
-            '<div class="clue-icon">' + clue.icon + '</div>' +
-            '<div class="clue-body">' +
-            '<div class="clue-label">' + escapeHtml(clue.label) + '</div>' +
-            '<div class="clue-text">' + escapeHtml(clue.text) + '</div>' +
-            '</div>';
-        cluesPanel.appendChild(card);
-    }
+    // ── Wrong chip ────────────────────────────────────────────────────────────
 
     function addWrongChip(name) {
         var chip = document.createElement("span");
@@ -143,22 +153,26 @@
     // ── Game flow ─────────────────────────────────────────────────────────────
 
     window.ttbStart = function () {
-        // Reset
-        cluesPanel.innerHTML = "";
+        clearTimeout(flashTimer);
+        chainNodes.innerHTML = "";
         wrongGuesses.innerHTML = "";
         hideFeedback();
-        gameId = null;
-        wrongCount = 0;
-        gameActive = false;
+        gameId      = null;
+        wrongCount  = 0;
+        gameActive  = false;
+
+        // Hide fuse elements until game loads
+        chainSpark.classList.add("hidden");
+        chainTail.classList.add("hidden");
+        bombCap.classList.add("hidden");
+        bombBody.className = "";
+        bombInner.classList.remove("flash-wrong");
+        setBombDisplay("…", "");
 
         startBtn.classList.add("hidden");
         giveUpBtn.classList.add("hidden");
         playAgainBtn.classList.add("hidden");
         lockInput();
-
-        buildFuse();
-        turnsDisplay.textContent = "?";
-        setBombState("idle");
 
         fetch("/api/ttb/start", { method: "POST" })
             .then(function (r) { return r.json(); })
@@ -168,10 +182,20 @@
                     startBtn.classList.remove("hidden");
                     return;
                 }
-                gameId = data.game_id;
-                data.clues.forEach(appendClue);
+                gameId     = data.game_id;
                 gameActive = true;
-                syncBomb();
+                wrongCount = 0;
+
+                // Show fuse elements
+                chainSpark.classList.remove("hidden");
+                chainTail.classList.remove("hidden");
+                bombCap.classList.remove("hidden");
+
+                // Reveal first node
+                data.clues.forEach(appendNode);
+
+                setGlow(MAX_WRONG);
+                setBombDisplay(MAX_WRONG, "guesses left");
                 unlockInput();
                 giveUpBtn.classList.remove("hidden");
             })
@@ -217,45 +241,49 @@
             triggerDefuse();
             giveUpBtn.classList.add("hidden");
             showFeedback("correct",
-                "&#x2713; <strong>" + escapeHtml(data.player) +
-                "</strong> — Bomb defused! Well done!");
+                "&#x2713; <strong>" + escapeHtml(data.player) + "</strong> — Bomb defused!");
             playAgainBtn.classList.remove("hidden");
             return;
         }
 
-        // Wrong
+        // Wrong guess
         wrongCount++;
         addWrongChip(playerName);
+        flashWrong(playerName);
 
         if (data.exploded) {
             gameActive = false;
-            triggerExplosion();
-            giveUpBtn.classList.add("hidden");
             setTimeout(function () {
-                showFeedback("reveal",
-                    "&#x1F4A5; BOOM! The answer was <strong>" +
-                    escapeHtml(data.player) + "</strong>.");
-                playAgainBtn.classList.remove("hidden");
-            }, 800);
+                triggerExplosion();
+                giveUpBtn.classList.add("hidden");
+                setTimeout(function () {
+                    showFeedback("reveal",
+                        "&#x1F4A5; BOOM! The answer was <strong>" +
+                        escapeHtml(data.player) + "</strong>.");
+                    playAgainBtn.classList.remove("hidden");
+                }, 900);
+            }, 1700);   // let the wrong-name flash finish first
             return;
         }
 
-        // Still alive — reveal next clue
-        syncBomb();
-        if (data.new_clue) { appendClue(data.new_clue); }
+        // Still alive — update glow and reveal next node
+        var remaining = MAX_WRONG - wrongCount;
+        setGlow(remaining);
 
-        showFeedback("wrong",
-            "&#x2717; Not <strong>" + escapeHtml(playerName) +
-            "</strong> — a new clue has been revealed!");
+        if (data.new_clue) {
+            setTimeout(function () { appendNode(data.new_clue); }, 1700);
+        }
+
         setTimeout(function () {
             hideFeedback();
             unlockInput();
-        }, 1400);
+        }, 1700);
     }
 
     window.ttbGiveUp = function () {
         if (!gameId || !gameActive) return;
         gameActive = false;
+        clearTimeout(flashTimer);
         lockInput();
         giveUpBtn.classList.add("hidden");
 
@@ -267,13 +295,12 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 triggerExplosion();
-                var answer = data.player || "???";
                 setTimeout(function () {
                     showFeedback("reveal",
                         "&#x1F3F3;&#xFE0F; You gave up. The answer was <strong>" +
-                        escapeHtml(answer) + "</strong>.");
+                        escapeHtml(data.player || "???") + "</strong>.");
                     playAgainBtn.classList.remove("hidden");
-                }, 800);
+                }, 900);
             })
             .catch(function () {
                 showFeedback("wrong", "Network error.");
@@ -374,7 +401,6 @@
     }
 
     // ── Init ──────────────────────────────────────────────────────────────────
-    buildFuse();
-    setBombState("idle");
+    setBombDisplay("?", "press start");
     startBtn.classList.remove("hidden");
 })();
