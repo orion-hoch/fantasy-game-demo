@@ -3,6 +3,7 @@ import sqlite3
 import os
 from load_data import build_db, load_total_stats
 import chain_categories as cc
+import ttb as ttb_mod
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -212,6 +213,54 @@ def chain_teammate_start():
 
 @app.route("/api/chain/search")
 def chain_search():
+    term = request.args.get("q", "").strip()
+    if not term:
+        return jsonify({"results": []})
+    conn = get_db()
+    names = cc.search_players(conn, term)
+    conn.close()
+    return jsonify({"results": [{"name": n} for n in names]})
+
+
+# ── Ticking Time Bomb routes ─────────────────────────────────────────────────
+
+@app.route("/ttb")
+def ttb_page():
+    return render_template("ttb.html")
+
+
+@app.route("/api/ttb/start", methods=["POST"])
+def ttb_start():
+    ttb_mod.cleanup_old_games()
+    conn = get_db()
+    gid, clues = ttb_mod.start_game(conn)
+    conn.close()
+    if not gid:
+        return jsonify({"error": "Could not load a player"}), 500
+    return jsonify({"game_id": gid, "clues": clues})
+
+
+@app.route("/api/ttb/guess", methods=["POST"])
+def ttb_guess():
+    data = request.get_json(force=True)
+    gid = (data.get("game_id") or "").strip()
+    guess = (data.get("guess") or "").strip()
+    reveal = bool(data.get("reveal", False))
+
+    if not gid:
+        return jsonify({"error": "Missing game_id"}), 400
+
+    if reveal:
+        return jsonify(ttb_mod.reveal_answer(gid))
+
+    if not guess:
+        return jsonify({"error": "Missing guess"}), 400
+
+    return jsonify(ttb_mod.check_guess(gid, guess))
+
+
+@app.route("/api/ttb/search")
+def ttb_search():
     term = request.args.get("q", "").strip()
     if not term:
         return jsonify({"results": []})

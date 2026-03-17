@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ticking Time Bomb — Fantasy Football Trivia</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/ttb.css">
+</head>
+<body>
+
+<div id="red-flash"></div>
+
+<div id="ttb-app">
+    <header>
+        <div class="header-inner">
+            <a href="/" class="back-link">&#8592; Home</a>
+            <h1>&#x1F4A3; Ticking Time Bomb</h1>
+        </div>
+    </header>
+
+    <!-- Bomb scene -->
+    <div id="bomb-scene">
+        <div id="bomb-wrapper">
+            <div id="fuse-container">
+                <!-- fuse segments injected by JS -->
+            </div>
+            <div id="fuse-cap"></div>
+            <div id="bomb-body">
+                <span id="turns-remaining">?</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clues revealed so far -->
+    <div id="clues-panel"></div>
+
+    <!-- Wrong guess chips -->
+    <div id="wrong-guesses"></div>
+
+    <!-- Feedback -->
+    <div id="ttb-feedback"></div>
+
+    <!-- Search + guess -->
+    <div id="ttb-search-area">
+        <div id="ttb-search-wrapper">
+            <input
+                id="ttb-input"
+                type="text"
+                placeholder="Search player name..."
+                autocomplete="off"
+                disabled
+            />
+            <div id="ttb-search-results"></div>
+        </div>
+        <button id="ttb-submit-btn" onclick="ttbSubmit()" disabled>Guess</button>
+    </div>
+
+    <!-- Action buttons -->
+    <div id="ttb-action-area">
+        <button id="ttb-start-btn" class="ttb-btn ttb-btn-red" onclick="ttbStart()">
+            &#x23F1; Start Game
+        </button>
+        <button id="ttb-give-up-btn" class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">
+            Give Up
+        </button>
+        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red hidden" onclick="ttbStart()">
+            Play Again
+        </button>
+    </div>
+</div>
+
+<script src="/static/ttb.js"></script>
+</body>
+</html>
