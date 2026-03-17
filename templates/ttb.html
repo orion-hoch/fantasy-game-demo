@@ -6,6 +6,13 @@
     <title>Ticking Time Bomb — Fantasy Football Trivia</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/ttb.css">
+    <style>
+        .header-icon { width: 36px; height: 36px; flex-shrink: 0; }
+        .mode-icon   { width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; }
+        .hint-icon-img { width: 16px; height: 20px; vertical-align: middle; margin-right: 4px; }
+        #chain-spark { font-size: 0; line-height: 0; }
+        #chain-spark img { width: 22px; height: 22px; display: block; }
+    </style>
 </head>
 <body>
 
@@ -15,16 +22,38 @@
     <header>
         <div class="header-inner">
             <a href="/" class="back-link">&#8592; Home</a>
-            <h1>&#x1F4A3; Ticking Time Bomb</h1>
+            <img src="/static/img/bomb.svg" class="header-icon" alt="">
+            <h1>Ticking Time Bomb</h1>
         </div>
     </header>
 
     <div id="hint-bar">Identify the mystery player from their teammates — 5 turns before it blows!</div>
 
+    <!-- Mode toggle -->
+    <div id="ttb-mode-bar">
+        <button id="mode-classic-btn" class="mode-btn active" onclick="setTTBMode('classic')">Classic</button>
+        <button id="mode-vintage-btn" class="mode-btn"        onclick="setTTBMode('vintage')">
+            <img src="/static/img/trophy.svg" class="mode-icon" alt=""> Vintage
+        </button>
+        <div class="mode-bar-sep"></div>
+        <button id="mode-defense-btn" class="mode-btn mode-defense-toggle" onclick="toggleDefense()">
+            <img src="/static/img/shield.svg" class="mode-icon" alt=""> Defense
+        </button>
+        <button id="mode-hard-btn" class="mode-btn mode-hard-toggle" onclick="toggleHardMode()">Hard</button>
+    </div>
+
+    <!-- Draft class filter -->
+    <div id="ttb-filter-bar">
+        <label for="ttb-year-slider" id="ttb-filter-label">Draft class: <span id="ttb-year-display">All eras</span></label>
+        <input id="ttb-year-slider" type="range" min="1960" max="2010" step="5" value="1960" oninput="ttbYearSlider(this.value)" />
+    </div>
+
     <!-- Fuse chain + bomb -->
     <div id="game-area">
         <div id="fuse-chain">
-            <div id="chain-spark" class="hidden">&#x2736;</div>
+            <div id="chain-spark" class="hidden">
+                <img src="/static/img/spark.svg" alt="*">
+            </div>
             <div id="chain-nodes"></div>
             <div id="chain-tail" class="hidden"></div>
         </div>
@@ -51,7 +80,7 @@
     <!-- Hints section (toggleable) -->
     <div id="hints-section">
         <button id="hints-toggle-btn" class="ttb-btn ttb-btn-hint hidden" onclick="toggleHints()">
-            &#x1F4A1; Show Hints
+            <img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Show Hints
         </button>
         <div id="hints-panel" class="hidden">
             <!-- hint rows injected by JS -->
@@ -78,10 +107,10 @@
 
     <!-- Action buttons -->
     <div id="ttb-action-area">
-        <button id="ttb-start-btn"     class="ttb-btn ttb-btn-red   hidden" onclick="ttbStart()">&#x23F1; Start Game</button>
-        <button id="ttb-skip-btn"      class="ttb-btn ttb-btn-ghost hidden" onclick="ttbSkip()">Skip &#x2192;</button>
-        <button id="ttb-give-up-btn"   class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">Give Up</button>
-        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red  hidden" onclick="ttbStart()">Play Again</button>
+        <button id="ttb-start-btn"      class="ttb-btn ttb-btn-red   hidden" onclick="ttbStart()">Start Game</button>
+        <button id="ttb-skip-btn"       class="ttb-btn ttb-btn-ghost hidden" onclick="ttbSkip()">Skip</button>
+        <button id="ttb-give-up-btn"    class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">Give Up</button>
+        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red   hidden" onclick="ttbStart()">Play Again</button>
     </div>
 </div>
 

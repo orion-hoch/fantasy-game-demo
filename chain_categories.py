@@ -88,11 +88,21 @@ def _query_set(conn, sql, params=()):
 
 # ── Category definitions ───────────────────────────────────────────────────────
 
+_OFF_POSITIONS = ["QB", "RB", "WR", "TE"]
+_DEF_POSITIONS = ["CB", "S", "LB", "DE", "DT"]
+
+
 def _pick_position(conn, current_players=None):
-    return random.choice(["QB", "RB", "WR", "TE"])
+    return random.choice(_OFF_POSITIONS + _DEF_POSITIONS)
 
 
 def _players_position(conn, value):
+    if value in _DEF_POSITIONS:
+        return _query_set(
+            conn,
+            "SELECT DISTINCT player FROM def_stats WHERE pos = ?",
+            (value,),
+        )
     return _query_set(
         conn,
         "SELECT DISTINCT player FROM stats WHERE pos = ?",
@@ -112,8 +122,10 @@ def _players_team(conn, value):
         return frozenset()
     return _query_set(
         conn,
-        "SELECT DISTINCT player FROM stats WHERE team = ?",
-        (code,),
+        """SELECT DISTINCT player FROM stats WHERE team = ?
+           UNION
+           SELECT DISTINCT player FROM def_stats WHERE team = ?""",
+        (code, code),
     )
 
 
@@ -178,7 +190,7 @@ def _players_top10(conn, value):
 
 
 def _pick_pass_yds(conn, current_players=None):
-    return str(random.choice([4000, 4500, 5000]))
+    return str(random.choice([3500, 4000]))
 
 
 def _players_pass_yds(conn, value):
@@ -191,7 +203,7 @@ def _players_pass_yds(conn, value):
 
 
 def _pick_pass_td(conn, current_players=None):
-    return str(random.choice([30, 40]))
+    return str(random.choice([25, 30]))
 
 
 def _players_pass_td(conn, value):
@@ -204,7 +216,7 @@ def _players_pass_td(conn, value):
 
 
 def _pick_rush_yds(conn, current_players=None):
-    return str(random.choice([1000, 1500]))
+    return str(random.choice([750, 1000]))
 
 
 def _players_rush_yds(conn, value):
@@ -217,7 +229,7 @@ def _players_rush_yds(conn, value):
 
 
 def _pick_rec_yds(conn, current_players=None):
-    return str(random.choice([1000, 1500]))
+    return str(random.choice([750, 1000]))
 
 
 def _players_rec_yds(conn, value):
@@ -246,8 +258,10 @@ def _players_era(conn, value):
         return frozenset()
     return _query_set(
         conn,
-        "SELECT DISTINCT player FROM stats WHERE season BETWEEN ? AND ?",
-        rng,
+        """SELECT DISTINCT player FROM stats WHERE season BETWEEN ? AND ?
+           UNION
+           SELECT DISTINCT player FROM def_stats WHERE season BETWEEN ? AND ?""",
+        (rng[0], rng[1], rng[0], rng[1]),
     )
 
 
@@ -263,8 +277,10 @@ def _players_afc_nfc(conn, value):
     placeholders = ",".join("?" * len(teams))
     return _query_set(
         conn,
-        f"SELECT DISTINCT player FROM stats WHERE team IN ({placeholders})",
-        teams,
+        f"""SELECT DISTINCT player FROM stats WHERE team IN ({placeholders})
+            UNION
+            SELECT DISTINCT player FROM def_stats WHERE team IN ({placeholders})""",
+        teams + teams,
     )
 
 
@@ -279,8 +295,10 @@ def _players_division(conn, value):
     placeholders = ",".join("?" * len(teams))
     return _query_set(
         conn,
-        f"SELECT DISTINCT player FROM stats WHERE team IN ({placeholders})",
-        teams,
+        f"""SELECT DISTINCT player FROM stats WHERE team IN ({placeholders})
+            UNION
+            SELECT DISTINCT player FROM def_stats WHERE team IN ({placeholders})""",
+        teams + teams,
     )
 
 
@@ -312,6 +330,32 @@ def _players_teammate(conn, value):
            JOIN season_stats s2 ON s1.team=s2.team AND s1.season=s2.season
            WHERE s1.player=? AND s2.player!=?""",
         (value, value),
+    )
+
+
+def _pick_sacks(conn, current_players=None):
+    return str(random.choice([10, 12, 15]))
+
+
+def _players_sacks(conn, value):
+    threshold = float(value)
+    return _query_set(
+        conn,
+        "SELECT DISTINCT player FROM def_stats WHERE sacks >= ?",
+        (threshold,),
+    )
+
+
+def _pick_ints(conn, current_players=None):
+    return str(random.choice([5, 8]))
+
+
+def _players_ints(conn, value):
+    threshold = float(value)
+    return _query_set(
+        conn,
+        "SELECT DISTINCT player FROM def_stats WHERE interceptions >= ?",
+        (threshold,),
     )
 
 
@@ -457,6 +501,20 @@ CATEGORIES = [
         "players": _players_high_ppr,
         "is_teammate": False,
     },
+    {
+        "id": "sacks",
+        "label": "Had {value}+ sacks in a season",
+        "pick": _pick_sacks,
+        "players": _players_sacks,
+        "is_teammate": False,
+    },
+    {
+        "id": "interceptions",
+        "label": "Had {value}+ interceptions in a season",
+        "pick": _pick_ints,
+        "players": _players_ints,
+        "is_teammate": False,
+    },
 ]
 
 # Index for fast lookup
@@ -572,7 +630,7 @@ def get_chain_category(conn, current_players, exclude_ids=None):
 
 
 def search_players(conn, term):
-    """Search player names across all three tables."""
+    """Search player names across all tables."""
     like = f"%{term}%"
     rows = conn.execute(
         """SELECT DISTINCT player FROM stats WHERE player LIKE ?
@@ -580,8 +638,10 @@ def search_players(conn, term):
            SELECT DISTINCT player FROM season_stats WHERE player LIKE ?
            UNION
            SELECT DISTINCT player FROM draft WHERE player LIKE ?
+           UNION
+           SELECT DISTINCT player FROM def_stats WHERE player LIKE ?
            ORDER BY player LIMIT 20""",
-        (like, like, like),
+        (like, like, like, like),
     ).fetchall()
     return [r[0] for r in rows]
 

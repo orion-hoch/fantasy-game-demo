@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- hard shadow -->
+  <path d="M12,12 L52,12 L52,36 Q52,54 32,60 Q12,54 12,36 Z"
+        fill="#000" opacity="0.65" transform="translate(3,3)"/>
+  <!-- shield body -->
+  <path d="M12,12 L52,12 L52,36 Q52,54 32,60 Q12,54 12,36 Z"
+        fill="#101828" stroke="#147a6e" stroke-width="4" stroke-linejoin="miter"/>
+  <!-- centre vertical bar -->
+  <line x1="32" y1="13" x2="32" y2="57" stroke="#1aad9d" stroke-width="3" stroke-linecap="square"/>
+  <!-- horizontal bar -->
+  <line x1="13" y1="32" x2="51" y2="32" stroke="#1aad9d" stroke-width="3" stroke-linecap="square"/>
+</svg>

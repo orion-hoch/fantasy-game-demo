@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <!-- clips bottom-left half: link A shows IN FRONT here -->
+    <clipPath id="front"><polygon points="0,64 64,64 64,32 0,32"/></clipPath>
+    <!-- clips top-right half: link B shows IN FRONT here -->
+    <clipPath id="back"><polygon points="0,0 64,0 64,32 0,32"/></clipPath>
+  </defs>
+
+  <!-- ── Link A (lower-left, tilted) ── -->
+  <!-- back layer — hidden behind link B in top half -->
+  <g clip-path="url(#back)">
+    <rect x="2" y="30" width="30" height="17" fill="#161220" stroke="#b8920e" stroke-width="4.5" transform="rotate(-42 17 38)"/>
+    <rect x="9"  y="36" width="16" height="5"  fill="#0d1017" transform="rotate(-42 17 38)"/>
+  </g>
+  <!-- front layer — drawn over link B in bottom half -->
+  <g clip-path="url(#front)">
+    <rect x="2" y="30" width="30" height="17" fill="#161220" stroke="#e8b820" stroke-width="4.5" transform="rotate(-42 17 38)"/>
+    <rect x="9"  y="36" width="16" height="5"  fill="#0d1017" transform="rotate(-42 17 38)"/>
+  </g>
+
+  <!-- ── Link B (upper-right, tilted) — always drawn above A in its half ── -->
+  <rect x="32" y="17" width="30" height="17" fill="#161220" stroke="#e8b820" stroke-width="4.5" transform="rotate(-42 47 25)"/>
+  <rect x="39"  y="23" width="16" height="5"  fill="#0d1017" transform="rotate(-42 47 25)"/>
+</svg>

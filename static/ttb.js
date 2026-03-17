@@ -15,6 +15,10 @@
     let allHints       = [];      // all 5 bio hints (received at start)
     let hintsRevealed  = 1;       // how many hints are currently unlocked
     let hintsOpen      = false;   // toggle state
+    let gameMode       = "classic";
+    let includeDefense = false;
+    let hardMode       = false;
+    let minDraftYear   = null;   // null = all eras
 
     const MAX_WRONG = 5;
 
@@ -57,7 +61,7 @@
     function flashWrong(name) {
         clearTimeout(flashTimer);
         bombInner.classList.add("flash-wrong");
-        setBombDisplay(name, "✗ wrong");
+        setBombDisplay(name, "WRONG");
         flashTimer = setTimeout(function () {
             bombInner.classList.remove("flash-wrong");
             var rem = MAX_WRONG - wrongCount;
@@ -68,7 +72,7 @@
     function flashSkip() {
         clearTimeout(flashTimer);
         bombInner.classList.add("flash-skip");
-        setBombDisplay("⏭", "skipped");
+        setBombDisplay("SKIP", "");
         flashTimer = setTimeout(function () {
             bombInner.classList.remove("flash-skip");
             var rem = MAX_WRONG - wrongCount;
@@ -79,7 +83,7 @@
     function triggerExplosion() {
         clearTimeout(flashTimer);
         bombBody.className = "exploded";
-        setBombDisplay("💥", "");
+        setBombDisplay("BOOM", "");
         redFlash.classList.remove("flash");
         void redFlash.offsetWidth;
         redFlash.classList.add("flash");
@@ -89,7 +93,7 @@
     function triggerDefuse() {
         clearTimeout(flashTimer);
         bombBody.className = "defused";
-        setBombDisplay("✓", "defused!");
+        setBombDisplay("WIN", "defused!");
         chainSpark.classList.add("hidden");
     }
 
@@ -141,11 +145,11 @@
         if (hintsOpen) {
             hintsPanel.classList.remove("hidden");
             hintToggleBtn.innerHTML =
-                '&#x1F4A1; Hide Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
+                '<img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Hide Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
         } else {
             hintsPanel.classList.add("hidden");
             hintToggleBtn.innerHTML =
-                '&#x1F4A1; Show Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
+                '<img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Show Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
         }
     };
 
@@ -156,10 +160,10 @@
             // Update button text to reflect new count without closing
             if (hintsOpen) {
                 hintToggleBtn.innerHTML =
-                    '&#x1F4A1; Hide Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
+                    '<img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Hide Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
             } else {
                 hintToggleBtn.innerHTML =
-                    '&#x1F4A1; Show Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
+                    '<img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Show Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
             }
         }
     }
@@ -177,7 +181,7 @@
                 hintsPanel.classList.remove("hidden");
                 hintsOpen = true;
                 hintToggleBtn.innerHTML =
-                    '&#x1F4A1; Hide Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
+                    '<img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Hide Hints <span class="hint-badge">' + hintsRevealed + "/" + allHints.length + '</span>';
             }
         }
     }
@@ -205,11 +209,15 @@
 
     // ── Input helpers ─────────────────────────────────────────────────────────
 
+    var modeBtns = document.querySelectorAll(".mode-btn");
+
     function lockInput() {
         inputLocked = true;
         ttbInput.disabled = true;
         submitBtn.disabled = true;
         skipBtn.disabled = true;
+        modeBtns.forEach(function (b) { b.disabled = true; });
+        lockFilter();
         closeSearch();
     }
 
@@ -221,6 +229,10 @@
         ttbInput.value = "";
         currentGuess = "";
         ttbInput.focus();
+    }
+
+    function unlockMode() {
+        modeBtns.forEach(function (b) { b.disabled = false; });
     }
 
     // ── Game flow ─────────────────────────────────────────────────────────────
@@ -256,7 +268,11 @@
         playAgainBtn.classList.add("hidden");
         lockInput();
 
-        fetch("/api/ttb/start", { method: "POST" })
+        fetch("/api/ttb/start", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: gameMode, include_defense: includeDefense, hard_mode: hardMode, min_draft_year: minDraftYear }),
+        })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.error) {
@@ -281,10 +297,10 @@
                 // Set up hints toggle button
                 if (allHints.length > 0) {
                     hintsRevealed = 1;
-                    renderHintsPanel();
                     hintToggleBtn.innerHTML =
-                        '&#x1F4A1; Show Hints <span class="hint-badge">1/' + allHints.length + '</span>';
+                        '<img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Show Hints <span class="hint-badge">1/' + allHints.length + '</span>';
                     hintToggleBtn.classList.remove("hidden");
+                    renderHintsPanel();
                 }
 
                 unlockInput();
@@ -336,6 +352,8 @@
         if (data.correct) {
             gameActive = false;
             triggerDefuse();
+            unlockMode();
+            unlockFilter();
             skipBtn.classList.add("hidden");
             giveUpBtn.classList.add("hidden");
             showFeedback("correct",
@@ -361,6 +379,8 @@
             gameActive = false;
             setTimeout(function () {
                 triggerExplosion();
+                unlockMode();
+                unlockFilter();
                 skipBtn.classList.add("hidden");
                 giveUpBtn.classList.add("hidden");
                 setTimeout(function () {
@@ -400,6 +420,8 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 triggerExplosion();
+                unlockMode();
+                unlockFilter();
                 setTimeout(function () {
                     showAnswerReveal(data.player || "???");
                     playAgainBtn.classList.remove("hidden");
@@ -502,6 +524,51 @@
             .replace(/>/g, "&gt;").replace(/"/g, "&quot;")
             .replace(/'/g, "&#39;");
     }
+
+    // ── Mode toggle ───────────────────────────────────────────────────────────
+
+    window.setTTBMode = function (mode) {
+        if (gameActive) return;
+        gameMode = mode;
+        var app = document.getElementById("ttb-app");
+        var classicBtn = document.getElementById("mode-classic-btn");
+        var vintageBtn = document.getElementById("mode-vintage-btn");
+        app.classList.remove("vintage");
+        classicBtn.classList.remove("active");
+        vintageBtn.classList.remove("active");
+        if (mode === "vintage") {
+            app.classList.add("vintage");
+            vintageBtn.classList.add("active");
+        } else {
+            classicBtn.classList.add("active");
+        }
+    };
+
+    window.toggleDefense = function () {
+        if (gameActive) return;
+        includeDefense = !includeDefense;
+        document.getElementById("mode-defense-btn").classList.toggle("defense-active", includeDefense);
+    };
+
+    window.toggleHardMode = function () {
+        if (gameActive) return;
+        hardMode = !hardMode;
+        document.getElementById("mode-hard-btn").classList.toggle("hard-active", hardMode);
+    };
+
+    // ── Year filter ───────────────────────────────────────────────────────────
+
+    var yearSlider  = document.getElementById("ttb-year-slider");
+    var yearDisplay = document.getElementById("ttb-year-display");
+
+    window.ttbYearSlider = function (val) {
+        var yr = parseInt(val, 10);
+        minDraftYear = yr <= 1960 ? null : yr;
+        yearDisplay.textContent = minDraftYear ? minDraftYear + "+" : "All eras";
+    };
+
+    function lockFilter()   { yearSlider.disabled = true; }
+    function unlockFilter() { yearSlider.disabled = false; }
 
     // ── Init ──────────────────────────────────────────────────────────────────
     setBombDisplay("?", "press start");

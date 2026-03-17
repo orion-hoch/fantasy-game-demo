@@ -6,6 +6,7 @@
     <title>Chain Game — Fantasy Football Trivia</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/chain.css">
+    <style>.header-icon { width: 36px; height: 36px; flex-shrink: 0; }</style>
 </head>
 <body>
 
@@ -13,14 +14,15 @@
     <header>
         <div class="header-inner">
             <a href="/" class="back-link">&#8592; Home</a>
-            <h1>&#x26D3; Chain Game</h1>
+            <img src="/static/img/chain.svg" class="header-icon" alt="">
+            <h1>Chain Game</h1>
         </div>
     </header>
 
     <!-- Mode toggle -->
     <div id="mode-toggle">
         <button class="mode-btn active" id="mode-classic" onclick="setMode('classic')">Classic</button>
-        <button class="mode-btn" id="mode-infinite" onclick="setMode('infinite')">&#x221E; Infinite</button>
+        <button class="mode-btn" id="mode-infinite" onclick="setMode('infinite')">Infinite</button>
     </div>
 
     <!-- Stats bar -->

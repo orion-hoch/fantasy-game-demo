@@ -1,48 +1,162 @@
+/* ── Global Comic Book Theme ──────────────────────────────────────────────── */
+
+:root {
+    --bg:            #0d1017;
+    --surface:       #151a25;
+    --surface-2:     #1b2030;
+    --border:        #252b3a;
+    --border-accent: #3a1520;
+    --shadow:        rgba(0, 0, 0, 0.85);
+    --red:           #b31c2c;
+    --red-dark:      #5c0e16;
+    --red-bright:    #e02035;
+    --teal:          #147a6e;
+    --teal-bright:   #1aad9d;
+    --gold:          #b8920e;
+    --gold-bright:   #e8b820;
+    --text:          #ddd5c4;
+    --text-muted:    #5a6070;
+    --text-dim:      #8898a8;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #0f1923;
-    color: #e0e0e0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: var(--bg);
+    /* Halftone dot texture */
+    background-image: radial-gradient(circle, #1c2235 1.5px, transparent 1.5px);
+    background-size: 14px 14px;
+    background-attachment: fixed;
+    color: var(--text);
     min-height: 100vh;
+    position: relative;
 }
 
+/* Radial starburst — subtle, like the reference images */
+body::before {
+    content: '';
+    position: fixed;
+    bottom: -30vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 240vw;
+    height: 240vw;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgba(255,255,255,0.013) 0deg 4.5deg,
+        transparent 4.5deg 9deg
+    );
+    pointer-events: none;
+    z-index: 0;
+}
+
+#app {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Global header ────────────────────────────────────────────────────────── */
+
 header {
-    background: #1a2a3a;
+    background: var(--surface-2);
     padding: 16px 24px;
-    border-bottom: 2px solid #2a9d8f;
+    border-bottom: 3px solid var(--red);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.6);
+    position: relative;
+    z-index: 1;
 }
 
 header h1 {
-    color: #2a9d8f;
+    color: var(--red-bright);
     font-size: 1.6rem;
-    letter-spacing: 1px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
 }
 
-#app { max-width: 800px; margin: 0 auto; padding: 24px; }
+/* ── Home page cards ──────────────────────────────────────────────────────── */
 
-/* Question select */
-#question-select h2 { margin-bottom: 16px; color: #aaa; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; }
+#question-select {
+    padding-top: 32px;
+}
 
-#question-list { display: flex; flex-direction: column; gap: 10px; }
+#question-select h2 {
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 700;
+}
+
+#question-list { display: block; }
 
 .q-btn {
-    background: #1a2a3a;
-    border: 1px solid #2a3a4a;
-    color: #e0e0e0;
-    padding: 14px 18px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    color: var(--text);
+    padding: 28px 28px;
     text-align: left;
-    border-radius: 8px;
+    border-radius: 0;
     cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-    line-height: 1.5;
+    transition: border-color 0.15s, transform 0.1s;
+    line-height: 1.6;
+    display: block;
+    text-decoration: none;
+    margin-bottom: 72px;
 }
 
-.q-btn:hover { border-color: #2a9d8f; background: #1e3040; }
-.q-btn strong { font-size: 1rem; color: #fff; }
-.q-btn small { color: #8899aa; }
+.q-btn:last-child { margin-bottom: 0; }
 
-/* Game panel */
+.q-btn:hover {
+    border-color: var(--red);
+    transform: translateX(-2px);
+}
+
+.q-btn strong { font-size: 1.05rem; color: #fff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+.q-btn small  { color: var(--text-dim); font-size: 0.86rem; line-height: 1.4; }
+
+/* ── Back button / nav ────────────────────────────────────────────────────── */
+
+#back-btn {
+    background: none;
+    border: 2px solid var(--border);
+    color: var(--text-dim);
+    padding: 8px 12px;
+    border-radius: 0;
+    cursor: pointer;
+    white-space: nowrap;
+    margin-top: 4px;
+    box-shadow: 2px 2px 0 var(--shadow);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+}
+#back-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+.back-link {
+    color: var(--text-dim);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    border: 2px solid var(--border);
+    border-radius: 0;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s;
+    box-shadow: 2px 2px 0 var(--shadow);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.back-link:hover { color: var(--teal-bright); border-color: var(--teal); }
+
+/* ── Game panel / score ───────────────────────────────────────────────────── */
+
 #game-panel.hidden { display: none; }
 #question-select.hidden { display: none; }
 
@@ -53,59 +167,52 @@ header h1 {
     margin-bottom: 24px;
 }
 
-#back-btn {
-    background: none;
-    border: 1px solid #334;
-    color: #8899aa;
-    padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-    margin-top: 4px;
-}
-#back-btn:hover { border-color: #2a9d8f; color: #2a9d8f; }
-
 #game-header > div { flex: 1; }
-#q-title { font-size: 1.3rem; color: #fff; }
-#q-desc { color: #8899aa; margin-top: 4px; font-size: 0.9rem; }
+#q-title { font-size: 1.2rem; color: #fff; font-weight: 800; text-transform: uppercase; }
+#q-desc  { color: var(--text-dim); margin-top: 4px; font-size: 0.88rem; }
 
 #score-box {
-    background: #1a2a3a;
-    border: 1px solid #2a3a4a;
-    border-radius: 8px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 0;
     padding: 10px 18px;
     text-align: center;
     white-space: nowrap;
     font-size: 1.1rem;
+    box-shadow: 3px 3px 0 var(--shadow);
 }
-#found-count { color: #2a9d8f; font-size: 1.4rem; font-weight: bold; }
+#found-count { color: var(--teal-bright); font-size: 1.4rem; font-weight: 900; }
 
-/* Search */
+/* ── Search ───────────────────────────────────────────────────────────────── */
+
 #search-area { position: relative; margin-bottom: 24px; }
 
 #search-input {
     width: 100%;
     padding: 12px 16px;
-    background: #1a2a3a;
-    border: 1px solid #2a3a4a;
-    border-radius: 8px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 0;
     color: #fff;
     font-size: 1rem;
     outline: none;
+    transition: border-color 0.15s;
+    box-shadow: 3px 3px 0 var(--shadow);
 }
-#search-input:focus { border-color: #2a9d8f; }
+#search-input:focus { border-color: var(--teal); }
 
 #search-results {
     position: absolute;
     top: 100%;
     left: 0; right: 0;
-    background: #1a2a3a;
-    border: 1px solid #2a3a4a;
+    background: var(--surface-2);
+    border: 2px solid var(--border);
     border-top: none;
-    border-radius: 0 0 8px 8px;
+    border-radius: 0;
     z-index: 100;
     max-height: 300px;
     overflow-y: auto;
+    box-shadow: 4px 4px 0 var(--shadow);
 }
 
 .result-item {
@@ -114,47 +221,74 @@ header h1 {
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px solid #243040;
+    border-bottom: 1px solid var(--border);
 }
 .result-item:last-child { border-bottom: none; }
-.result-item:hover { background: #243040; }
+.result-item:hover { background: var(--surface); }
 .result-item.valid { color: #fff; }
-.result-item.invalid { color: #556; }
+.result-item.invalid { color: var(--text-muted); }
+
 .result-badge {
     font-size: 0.7rem;
     padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: bold;
+    border-radius: 0;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-.badge-valid { background: #2a9d8f22; color: #2a9d8f; border: 1px solid #2a9d8f55; }
-.badge-invalid { background: #ff000011; color: #ff6666; border: 1px solid #ff333333; }
+.badge-valid   { background: #0e2520; color: var(--teal-bright); border: 1px solid #1a4a40; }
+.badge-invalid { background: #1e0a0a; color: #ff6666; border: 1px solid #3a1515; }
 
-/* Guesses */
-#guesses h3 { color: #8899aa; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+/* ── Guesses ──────────────────────────────────────────────────────────────── */
+
+#guesses h3 {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    font-weight: 700;
+}
 
 #guess-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .guess-chip {
     padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
+    border-radius: 0;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 2px 2px 0 var(--shadow);
 }
-.guess-chip.correct { background: #2a9d8f22; border: 1px solid #2a9d8f; color: #2a9d8f; }
-.guess-chip.wrong { background: #ff000011; border: 1px solid #ff3333; color: #ff6666; }
+.guess-chip.correct { background: #0d2a22; border: 2px solid var(--teal); color: var(--teal-bright); }
+.guess-chip.wrong   { background: #200a0a; border: 2px solid var(--red); color: #ff7070; }
+
+/* ── Section label (shared) ───────────────────────────────────────────────── */
+
+.section-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+/* ── Header inner ─────────────────────────────────────────────────────────── */
+
+.header-inner { display: flex; align-items: center; gap: 20px; }
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
     #app { padding: 12px; }
-
     header { padding: 12px 16px; }
     header h1 { font-size: 1.2rem; }
 
-    #game-header {
-        flex-wrap: wrap;
-    }
+    #game-header { flex-wrap: wrap; }
     #game-header > div { flex: 1 1 100%; order: 1; }
     #back-btn { order: 0; }
     #score-box { order: 2; width: 100%; text-align: left; }
-
     #search-results { max-height: 200px; }
 }

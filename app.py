@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, request, render_template
 import sqlite3
 import os
-from load_data import build_db, load_total_stats
+from load_data import build_db, load_total_stats, load_defensive_stats
 import chain_categories as cc
 import ttb as ttb_mod
 
@@ -232,8 +232,15 @@ def ttb_page():
 @app.route("/api/ttb/start", methods=["POST"])
 def ttb_start():
     ttb_mod.cleanup_old_games()
+    data = request.get_json(force=True) or {}
+    mode = data.get("mode", "classic")
+    include_defense = bool(data.get("include_defense", False))
+    hard_mode = bool(data.get("hard_mode", False))
+    min_draft_year = data.get("min_draft_year") or None
+    if min_draft_year:
+        min_draft_year = int(min_draft_year)
     conn = get_db()
-    gid, clues, hints = ttb_mod.start_game(conn)
+    gid, clues, hints = ttb_mod.start_game(conn, mode=mode, include_defense=include_defense, hard_mode=hard_mode, min_draft_year=min_draft_year)
     conn.close()
     if not gid:
         return jsonify({"error": "Could not load a player"}), 500
@@ -283,11 +290,17 @@ if __name__ == "__main__":
     # Load total_stats tables if they don't exist yet
     _conn = get_db()
     _needs_load = not _table_exists(_conn, "season_stats") or not _table_exists(_conn, "draft")
+    _needs_def = not _table_exists(_conn, "def_stats")
     _conn.close()
     if _needs_load:
         print("Loading total_stats tables...")
         load_total_stats(BASE_DIR, DB_PATH)
     else:
         print("season_stats and draft tables already exist.")
+    if _needs_def:
+        print("Loading defensive stats...")
+        load_defensive_stats(BASE_DIR, DB_PATH)
+    else:
+        print("def_stats table already exists.")
 
     app.run(debug=True)

@@ -5,6 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Fantasy Football Trivia</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .q-card-icon {
+            width: 60px;
+            height: 60px;
+            flex-shrink: 0;
+            display: block;
+            image-rendering: crisp-edges;
+        }
+        .q-card-body {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .q-btn {
+            display: flex !important;
+            align-items: center;
+            gap: 24px;
+        }
+        .q-btn strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+    </style>
 </head>
 <body>
 
@@ -15,17 +38,26 @@
 
     <div id="question-select">
         <h2>Pick a Game</h2>
-        <a href="/chain" class="q-btn" style="display:block;text-decoration:none;border-color:#e9c46a44;">
-            <strong style="color:#e9c46a">&#x26D3; Chain Game</strong><br>
-            <small>Build a chain of clues — name players that fit every link</small>
+        <a href="/chain" class="q-btn" style="text-decoration:none;border-color:#b8920e;">
+            <img src="/static/img/chain.svg" class="q-card-icon" alt="Chain">
+            <div class="q-card-body">
+                <strong style="color:#e8b820">Chain Game</strong>
+                <small>Build a chain of clues — name players that fit every link</small>
+            </div>
         </a>
-        <a href="/ttb" class="q-btn" style="display:block;text-decoration:none;border-color:#e6324455;">
-            <strong style="color:#e63244">&#x1F4A3; Ticking Time Bomb</strong><br>
-            <small>5 clues, 5 guesses — identify the mystery player before the bomb explodes</small>
+        <a href="/ttb" class="q-btn" style="text-decoration:none;border-color:#b31c2c;">
+            <img src="/static/img/bomb.svg" class="q-card-icon" alt="Bomb">
+            <div class="q-card-body">
+                <strong style="color:#e02035">Ticking Time Bomb</strong>
+                <small>5 clues, 5 guesses — identify the mystery player before the bomb explodes</small>
+            </div>
         </a>
-        <a href="/starting6" class="q-btn" style="display:block;text-decoration:none;border-color:#2a9d8f44;">
-            <strong style="color:#2a9d8f">&#x26A1; Starting 6 — 2 Player Draft</strong><br>
-            <small>Draw a random team each round and draft your best 6-man lineup vs a friend</small>
+        <a href="/starting6" class="q-btn" style="text-decoration:none;border-color:#147a6e;">
+            <img src="/static/img/football.svg" class="q-card-icon" alt="Football">
+            <div class="q-card-body">
+                <strong style="color:#1aad9d">Starting 6 — 2 Player Draft</strong>
+                <small>Draw a random team each round and draft your best 6-man lineup vs a friend</small>
+            </div>
         </a>
     </div>
 </div>

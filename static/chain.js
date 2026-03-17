@@ -354,7 +354,7 @@
                 showFeedback(
                     "correct",
                     "&#x2713; Correct! +" + pts + " pts — " +
-                    "&#x1F3C6; Last player standing bonus! +" + BONUS + " pts! " +
+                    "BONUS — Last player standing! +" + BONUS + " pts! " +
                     "Next chain: teammates of <strong>" + escapeHtml(data.last_player) + "</strong>"
                 );
                 setValidCount(1);

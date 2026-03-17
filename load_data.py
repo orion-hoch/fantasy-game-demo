@@ -48,6 +48,17 @@ TEAM_MAP = {
 # Teams with no current NFL franchise — excluded entirely
 DEFUNCT_TEAMS = {"BCL", "BDA", "BKN", "BOS", "NYB", "NYT", "NYY", "DTX"}
 
+# Players whose names collide with another player of the same name+pos.
+# Maps (name, primary_team) → disambiguated display name.
+PLAYER_RENAMES_BY_TEAM = {
+    ("Adrian Peterson", "CHI"): "Adrian Peterson (CHI)",
+}
+
+# Same for draft table — keyed by (name, draft_year).
+PLAYER_RENAMES_BY_DRAFT_YEAR = {
+    ("Adrian Peterson", 2002): "Adrian Peterson (CHI)",
+}
+
 
 def normalize_team(team, season):
     if not isinstance(team, str):
@@ -120,6 +131,11 @@ def load_total_stats(base_dir, db_path="fantasy.db"):
         for col in num_cols:
             ss[col] = pd.to_numeric(ss[col], errors="coerce")
         ss.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+
+        for (name, team), new_name in PLAYER_RENAMES_BY_TEAM.items():
+            mask = (ss["player"] == name) & (ss["team"] == team)
+            ss.loc[mask, "player"] = new_name
+
         ss.to_sql("season_stats", conn, if_exists="replace", index=False)
         print(f"season_stats: {len(ss)} rows loaded.")
     else:
@@ -182,11 +198,162 @@ def load_total_stats(base_dir, db_path="fantasy.db"):
         keep_cols = [c for c in keep_cols if c in raw.columns]
         draft = raw[keep_cols].copy()
         draft.drop_duplicates(subset=["player", "draft_year"], inplace=True)
+
+        for (name, yr), new_name in PLAYER_RENAMES_BY_DRAFT_YEAR.items():
+            mask = (draft["player"] == name) & (draft["draft_year"] == yr)
+            draft.loc[mask, "player"] = new_name
+
         draft.to_sql("draft", conn, if_exists="replace", index=False)
         print(f"draft: {len(draft)} rows loaded.")
     else:
         print(f"WARNING: {draft_path} not found, skipping draft.")
 
+    conn.close()
+
+
+DEF_POS_NORM = {
+    "CB": "CB", "LCB": "CB", "RCB": "CB", "RDH": "CB", "LDH": "CB",
+    "S": "S", "SS": "S", "FS": "S", "SAF": "S", "DB": "S", "SF": "S", "RS": "S",
+    "LB": "LB", "OLB": "LB", "ILB": "LB", "MLB": "LB",
+    "RILB": "LB", "LILB": "LB", "ROLB": "LB", "LOLB": "LB",
+    "SLB": "LB", "WLB": "LB", "MIKE": "LB", "WILL": "LB", "SAM": "LB",
+    "LLB": "LB", "RLB": "LB",
+    "DE": "DE", "LDE": "DE", "RDE": "DE", "EDGE": "DE", "LE": "DE", "RE": "DE", "DL": "DE",
+    "DT": "DT", "NT": "DT", "MG": "DT", "DG": "DT", "NG": "DT", "LDT": "DT", "RDT": "DT",
+}
+
+_DEF_POSITIONS_VALID = {"CB", "S", "LB", "DE", "DT"}
+
+_INT_COL_MAP = {
+    "Unnamed: 1_level_0 Player": "player",
+    "Unnamed: 3_level_0 Season": "season",
+    "Unnamed: 4_level_0 Age": "age",
+    "Unnamed: 5_level_0 Team": "team",
+    "Unnamed: 6_level_0 G": "games",
+    "Unnamed: 7_level_0 GS": "games_started",
+    "Def Interceptions Int": "interceptions",
+    "Def Interceptions Yds": "int_yards",
+    "Def Interceptions IntTD": "int_td",
+    "Def Interceptions PD": "passes_defended",
+    "Unnamed: 12_level_0 Pos": "pos",
+}
+
+_SACK_TACKLE_COL_MAP = {
+    "Unnamed: 1_level_0 Player": "player",
+    "Unnamed: 3_level_0 Season": "season",
+    "Unnamed: 4_level_0 Age": "age",
+    "Unnamed: 5_level_0 Team": "team",
+    "Unnamed: 6_level_0 G": "games",
+    "Unnamed: 7_level_0 GS": "games_started",
+    "Unnamed: 8_level_0 Sk": "sacks",
+    "Tackles Solo": "solo_tackles",
+    "Tackles Ast": "ast_tackles",
+    "Tackles Comb": "comb_tackles",
+    "Tackles TFL": "tfl",
+    "Tackles QBHits": "qb_hits",
+    "Unnamed: 14_level_0 Pos": "pos",
+}
+
+
+def _load_def_folder(folder, col_map):
+    """Load all XLS files from a defensive stats folder, return cleaned DataFrame."""
+    files = glob.glob(os.path.join(folder, "*.xls"))
+    if not files:
+        return pd.DataFrame()
+    dfs = []
+    for f in files:
+        try:
+            df = pd.read_html(f, header=[0, 1])[0]
+        except Exception:
+            continue
+        df.columns = [" ".join(str(c) for c in col).strip() for col in df.columns]
+        df.rename(columns=col_map, inplace=True)
+        if "player" in df.columns:
+            df = df[df["player"] != "Player"]
+            df = df[df["player"].notna()]
+        dfs.append(df)
+    if not dfs:
+        return pd.DataFrame()
+    combined = pd.concat(dfs, ignore_index=True)
+    keep = [c for c in col_map.values() if c in combined.columns]
+    return combined[keep].copy()
+
+
+def load_defensive_stats(base_dir, db_path="fantasy.db"):
+    """Load INTs, Sacks, and Tackles into the def_stats table."""
+    conn = sqlite3.connect(db_path)
+    def_base = os.path.join(base_dir, "Total_stats", "Defensive_stats")
+
+    # ── Load each stat type ───────────────────────────────────────────────────
+    ints_df = _load_def_folder(os.path.join(def_base, "Ints_stats"), _INT_COL_MAP)
+    sacks_df = _load_def_folder(os.path.join(def_base, "Sacks_stats"), _SACK_TACKLE_COL_MAP)
+    tackles_df = _load_def_folder(os.path.join(def_base, "Tackles_stats"), _SACK_TACKLE_COL_MAP)
+
+    # ── Combine sacks + tackles (same columns; dedupe) ────────────────────────
+    sack_tackle = pd.concat([sacks_df, tackles_df], ignore_index=True)
+    num_st = ["season", "age", "games", "games_started", "sacks",
+              "solo_tackles", "ast_tackles", "comb_tackles", "tfl", "qb_hits"]
+    for col in num_st:
+        if col in sack_tackle.columns:
+            sack_tackle[col] = pd.to_numeric(sack_tackle[col], errors="coerce")
+    sack_tackle.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+
+    # ── Clean INTs ────────────────────────────────────────────────────────────
+    num_i = ["season", "age", "games", "games_started",
+             "interceptions", "int_yards", "int_td", "passes_defended"]
+    for col in num_i:
+        if col in ints_df.columns:
+            ints_df[col] = pd.to_numeric(ints_df[col], errors="coerce")
+    ints_df.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+
+    # ── Outer merge on player/season/team ─────────────────────────────────────
+    if not sack_tackle.empty and not ints_df.empty:
+        merged = pd.merge(
+            sack_tackle, ints_df,
+            on=["player", "season", "team"],
+            how="outer",
+            suffixes=("", "_i"),
+        )
+        # Coalesce shared columns (pos, games, games_started, age)
+        for col in ["pos", "games", "games_started", "age"]:
+            if f"{col}_i" in merged.columns:
+                merged[col] = merged[col].combine_first(merged[f"{col}_i"])
+                merged.drop(columns=[f"{col}_i"], inplace=True)
+    elif not sack_tackle.empty:
+        merged = sack_tackle
+    elif not ints_df.empty:
+        merged = ints_df
+    else:
+        print("WARNING: No defensive stat files found.")
+        conn.close()
+        return
+
+    # ── Apply team normalization ──────────────────────────────────────────────
+    merged = merged[~merged["team"].astype(str).str.contains(",", na=False)]
+    merged["team"] = merged.apply(
+        lambda r: normalize_team(r["team"], r.get("season")), axis=1
+    )
+    merged = merged[~merged["team"].isin(DEFUNCT_TEAMS)]
+
+    # ── Normalize defensive positions ─────────────────────────────────────────
+    def norm_def_pos(pos):
+        if not isinstance(pos, str):
+            return pos
+        primary = pos.split("/")[0].strip()
+        return DEF_POS_NORM.get(primary, primary)
+
+    if "pos" in merged.columns:
+        merged["pos"] = merged["pos"].apply(norm_def_pos)
+
+    merged.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+    merged = merged[merged["player"].notna()]
+
+    # Keep only actual defensive positions
+    if "pos" in merged.columns:
+        merged = merged[merged["pos"].isin(_DEF_POSITIONS_VALID)]
+
+    merged.to_sql("def_stats", conn, if_exists="replace", index=False)
+    print(f"def_stats: {len(merged)} rows loaded.")
     conn.close()
 
 
@@ -226,6 +393,12 @@ def build_db(folders, db_path="fantasy.db"):
     combined = combined[combined["pos"].isin(["QB", "RB", "WR", "TE"])]
 
     combined.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+
+    # Disambiguate players with colliding names
+    for (name, team), new_name in PLAYER_RENAMES_BY_TEAM.items():
+        mask = (combined["player"] == name) & (combined["team"] == team)
+        combined.loc[mask, "player"] = new_name
+
     combined.to_sql("stats", conn, if_exists="replace", index=False)
     print(f"Total: {len(combined)} rows loaded into SQLite.")
     return conn
