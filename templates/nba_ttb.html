@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NBA Time Bomb — Basketball Trivia</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/ttb.css">
+    <style>
+        .header-icon { width: 36px; height: 36px; flex-shrink: 0; }
+        .mode-icon   { width: 16px; height: 16px; vertical-align: middle; margin-right: 4px; }
+        .hint-icon-img { width: 16px; height: 20px; vertical-align: middle; margin-right: 4px; }
+        #chain-spark { font-size: 0; line-height: 0; }
+        #chain-spark img { width: 22px; height: 22px; display: block; }
+    </style>
+</head>
+<body>
+
+<div id="red-flash"></div>
+
+<div id="ttb-app">
+    <header>
+        <div class="header-inner">
+            <a href="/" class="back-link">&#8592; Home</a>
+            <img src="/static/img/bomb.svg" class="header-icon" alt="">
+            <h1>NBA Time Bomb</h1>
+        </div>
+    </header>
+
+    <div id="hint-bar">Identify the mystery NBA player from their teammates — 5 turns before it blows!</div>
+
+    <!-- Mode toggle (Classic and Vintage only) -->
+    <div id="ttb-mode-bar">
+        <button id="mode-classic-btn" class="mode-btn active" onclick="setTTBMode('classic')">Classic</button>
+        <button id="mode-vintage-btn" class="mode-btn"        onclick="setTTBMode('vintage')">
+            <img src="/static/img/trophy.svg" class="mode-icon" alt=""> Vintage
+        </button>
+    </div>
+
+    <!-- Fuse chain + bomb -->
+    <div id="game-area">
+        <div id="fuse-chain">
+            <div id="chain-spark" class="hidden">
+                <img src="/static/img/spark.svg" alt="*">
+            </div>
+            <div id="chain-nodes"></div>
+            <div id="chain-tail" class="hidden"></div>
+        </div>
+        <div id="bomb-wrap">
+            <div id="bomb-cap" class="hidden"></div>
+            <div id="bomb-body">
+                <div id="bomb-inner">
+                    <span id="bomb-num">?</span>
+                    <span id="bomb-label">press start</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Answer reveal (shown on loss / give up) -->
+    <div id="answer-reveal" class="hidden">
+        <div class="answer-label">The answer was</div>
+        <div id="answer-name"></div>
+    </div>
+
+    <!-- Wrong guess chips -->
+    <div id="wrong-guesses"></div>
+
+    <!-- Hints section (toggleable) -->
+    <div id="hints-section">
+        <button id="hints-toggle-btn" class="ttb-btn ttb-btn-hint hidden" onclick="toggleHints()">
+            <img src="/static/img/lightbulb.svg" class="hint-icon-img" alt=""> Show Hints
+        </button>
+        <div id="hints-panel" class="hidden">
+            <!-- hint rows injected by JS -->
+        </div>
+    </div>
+
+    <!-- Feedback -->
+    <div id="ttb-feedback"></div>
+
+    <!-- Search + guess -->
+    <div id="ttb-search-area">
+        <div id="ttb-search-wrapper">
+            <input
+                id="ttb-input"
+                type="text"
+                placeholder="Search player name..."
+                autocomplete="off"
+                disabled
+            />
+            <div id="ttb-search-results"></div>
+        </div>
+        <button id="ttb-submit-btn" onclick="ttbSubmit()" disabled>Guess</button>
+    </div>
+
+    <!-- Action buttons -->
+    <div id="ttb-action-area">
+        <button id="ttb-start-btn"      class="ttb-btn ttb-btn-red   hidden" onclick="ttbStart()">Start Game</button>
+        <button id="ttb-skip-btn"       class="ttb-btn ttb-btn-ghost hidden" onclick="ttbSkip()">Skip</button>
+        <button id="ttb-give-up-btn"    class="ttb-btn ttb-btn-ghost hidden" onclick="ttbGiveUp()">Give Up</button>
+        <button id="ttb-play-again-btn" class="ttb-btn ttb-btn-red   hidden" onclick="ttbStart()">Play Again</button>
+    </div>
+</div>
+
+<script src="/static/nba_ttb.js"></script>
+</body>
+</html>

@@ -1,15 +1,14 @@
 const SLOTS = [
-    { key: "QB",   label: "QB",   pos: "QB" },
-    { key: "WR1",  label: "WR 1", pos: "WR" },
-    { key: "WR2",  label: "WR 2", pos: "WR" },
-    { key: "RB1",  label: "RB 1", pos: "RB" },
-    { key: "RB2",  label: "RB 2", pos: "RB" },
-    { key: "TE",   label: "TE",   pos: "TE" },
+    { key: "G1",   label: "G 1",  pos: "G" },
+    { key: "G2",   label: "G 2",  pos: "G" },
+    { key: "F1",   label: "F 1",  pos: "F" },
+    { key: "F2",   label: "F 2",  pos: "F" },
+    { key: "C",    label: "C",    pos: "C" },
     { key: "UTIL", label: "UTIL", pos: "UTIL" },
 ];
 
-const BONUS_POSITIONS = ["QB", "WR", "RB", "TE"];
-const BONUS_DECADES   = [1960, 1970, 1980];
+const BONUS_POSITIONS = ["G", "F", "C"];
+const BONUS_DECADES   = [1970, 1980, 1990];
 
 let state = {};
 let playerCount = 2;
@@ -129,7 +128,7 @@ async function drawTeam() {
     setStep("loading");
     document.getElementById("team-name").textContent = "Drawing...";
 
-    const res = await fetch("/api/starting6/random-team");
+    const res = await fetch("/api/nba_starting5/random-team");
     const data = await res.json();
     state.currentTeam = data.team;
 
@@ -191,7 +190,7 @@ document.getElementById("pick-input").addEventListener("input", (e) => {
 });
 
 async function searchPlayers(term) {
-    const res = await fetch(`/api/starting6/search?q=${encodeURIComponent(term)}`);
+    const res = await fetch(`/api/nba_starting5/search?q=${encodeURIComponent(term)}`);
     const data = await res.json();
     const container = document.getElementById("pick-results");
     if (!data.results.length) {
@@ -222,7 +221,7 @@ async function selectName(name) {
     state.pendingName = name;
 
     const res = await fetch(
-        `/api/starting6/years?player=${encodeURIComponent(name)}&team=${encodeURIComponent(state.currentTeam)}`
+        `/api/nba_starting5/years?player=${encodeURIComponent(name)}&team=${encodeURIComponent(state.currentTeam)}`
     );
     const data = await res.json();
 
@@ -251,7 +250,7 @@ async function confirmYear() {
     if (!season) return;
 
     const res = await fetch(
-        `/api/starting6/validate?player=${encodeURIComponent(state.pendingName)}` +
+        `/api/nba_starting5/validate?player=${encodeURIComponent(state.pendingName)}` +
         `&team=${encodeURIComponent(state.currentTeam)}&season=${season}`
     );
     const data = await res.json();
@@ -340,7 +339,7 @@ function renderRosters() {
                         <div class="slot-content">
                             <div class="slot-top">
                                 <span class="slot-player">${pick.player}</span>
-                                <span class="slot-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(1)}${gotBonus ? " ★" : ""}</span>
+                                <span class="slot-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(0)}${gotBonus ? " ★" : ""}</span>
                             </div>
                             <span class="slot-meta">${pick.season} · ${pick.team}</span>
                         </div>
@@ -355,7 +354,7 @@ function renderRosters() {
 
         const total = rosterTotal(p.roster);
         container.innerHTML = slots
-            + `<div class="roster-total">Total: <strong>${total.toFixed(1)} PPR</strong></div>`
+            + `<div class="roster-total">Total: <strong>${total.toFixed(0)} Pts</strong></div>`
             + `<div class="roster-bonus-active">${bonusLabel(state.bonus)}</div>`;
     });
 }
@@ -372,12 +371,12 @@ function showResults() {
 
     const winnerText = document.getElementById("winner-text");
     if (winners.length > 1) {
-        winnerText.innerHTML = `<span class="tie">It's a Tie! ${maxTotal.toFixed(1)} pts each</span>`;
+        winnerText.innerHTML = `<span class="tie">It's a Tie! ${maxTotal.toFixed(0)} pts each</span>`;
     } else {
         const wi = totals.indexOf(maxTotal);
         winnerText.innerHTML = `
             <span class="winner-name">${state.players[wi].name}</span> wins!
-            <span class="winner-score">${maxTotal.toFixed(1)} PPR pts</span>`;
+            <span class="winner-score">${maxTotal.toFixed(0)} Pts</span>`;
     }
 
     const container = document.getElementById("results-rosters");
@@ -392,7 +391,7 @@ function showResults() {
             <div class="result-roster">
                 <div class="result-header ${isWinner ? "result-winner" : ""}">
                     <span>${p.name}</span>
-                    <span>${total.toFixed(1)} pts</span>
+                    <span>${total.toFixed(0)} pts</span>
                 </div>
                 ${SLOTS.map(s => {
                     const pick = p.roster[s.key];
@@ -402,7 +401,7 @@ function showResults() {
                             <span class="slot-label">${s.label}</span>
                             ${pick
                                 ? `<span class="result-player">${pick.player} <small>${pick.season} · ${pick.team}</small></span>
-                                   <span class="result-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(1)}${gotBonus ? " ★" : ""}</span>`
+                                   <span class="result-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(0)}${gotBonus ? " ★" : ""}</span>`
                                 : `<span class="result-empty">—</span><span></span>`
                             }
                         </div>`;

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NBA Chain Game — Basketball Trivia</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/chain.css">
+    <style>.header-icon { width: 36px; height: 36px; flex-shrink: 0; }</style>
+</head>
+<body>
+
+<div id="chain-app">
+    <header>
+        <div class="header-inner">
+            <a href="/" class="back-link">&#8592; Home</a>
+            <img src="/static/img/chain.svg" class="header-icon" alt="">
+            <h1>NBA Chain Game</h1>
+        </div>
+    </header>
+
+    <!-- Mode toggle -->
+    <div id="mode-toggle">
+        <button class="mode-btn active" id="mode-classic" onclick="setMode('classic')">Classic</button>
+        <button class="mode-btn" id="mode-infinite" onclick="setMode('infinite')">Infinite</button>
+    </div>
+
+    <!-- Stats bar -->
+    <div id="stats-bar">
+        <div class="stat-box">
+            <div class="stat-label">Score</div>
+            <div class="stat-value" id="score-display">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Chain Length</div>
+            <div class="stat-value" id="chain-length-display">0</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-label">Players Left</div>
+            <div class="stat-value" id="valid-count-display">—</div>
+        </div>
+    </div>
+
+    <!-- Chain display -->
+    <div id="chain-section">
+        <div class="section-label">Current Chain</div>
+        <div id="chain-bar">
+            <!-- Chain links rendered here by JS -->
+            <div id="chain-empty-msg">Start a new chain below!</div>
+        </div>
+    </div>
+
+    <!-- Instruction / prompt -->
+    <div id="prompt-area">
+        <div id="prompt-text">Name a player who fits <strong>all</strong> chain links above.</div>
+    </div>
+
+    <!-- Search / input area -->
+    <div id="search-area">
+        <div id="search-wrapper">
+            <input
+                id="chain-input"
+                type="text"
+                placeholder="Search player name..."
+                autocomplete="off"
+                disabled
+            />
+            <div id="chain-search-results"></div>
+        </div>
+        <button id="submit-btn" onclick="submitCurrentGuess()" disabled>Submit</button>
+    </div>
+
+    <!-- Feedback area -->
+    <div id="feedback" class="hidden"></div>
+
+    <!-- Successful guesses -->
+    <div id="guesses-area" class="hidden">
+        <div class="section-label">Correct Guesses This Chain</div>
+        <div id="guesses-list"></div>
+    </div>
+
+    <!-- Action buttons -->
+    <div id="action-area">
+        <button id="start-btn" class="action-btn primary-btn" onclick="startGame()">
+            Start New Chain
+        </button>
+        <button id="new-chain-btn" class="action-btn gold-btn hidden" onclick="startNewChain()">
+            Start New Chain
+        </button>
+    </div>
+
+    <!-- Points flash overlay -->
+    <div id="points-flash" class="hidden"></div>
+</div>
+
+<script src="/static/nba_chain.js"></script>
+</body>
+</html>

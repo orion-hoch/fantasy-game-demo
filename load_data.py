@@ -3,6 +3,8 @@ import sqlite3
 import glob
 import os
 
+SUSPECT_TEXT_MARKERS = ("Ã", "Â", "â", "Ä", "Å")
+
 COLUMN_MAP = {
     "Unnamed: 0_level_0 Rk": "rk",
     "Unnamed: 1_level_0 Player": "player",
@@ -33,6 +35,50 @@ def normalize_pos(pos):
         return pos
     primary = pos.split("/")[0].strip()
     return POS_NORM.get(primary, pos)
+
+
+def _repair_mojibake_text(value):
+    if not isinstance(value, str):
+        return value
+    text = value.strip()
+    if not text or not any(marker in text for marker in SUSPECT_TEXT_MARKERS):
+        return text
+    try:
+        repaired = text.encode("latin-1").decode("utf-8")
+    except Exception:
+        return text
+    return repaired.strip() if repaired else text
+
+
+def _clean_text_columns(df, columns):
+    for column in columns:
+        if column in df.columns:
+            df[column] = df[column].apply(_repair_mojibake_text)
+    return df
+
+
+def repair_db_text(db_path="fantasy.db"):
+    conn = sqlite3.connect(db_path)
+    targets = {
+        "stats": ["player", "team", "pos"],
+        "season_stats": ["player", "team", "pos"],
+        "draft": ["player", "draft_team", "pos", "college"],
+        "def_stats": ["player", "team", "pos"],
+        "nba_stats": ["player", "team", "pos"],
+        "nba_draft": ["player", "draft_team", "college"],
+    }
+    for table, columns in targets.items():
+        try:
+            frame = pd.read_sql_query(f"SELECT rowid, * FROM {table}", conn)
+        except Exception:
+            continue
+        original = frame.copy()
+        _clean_text_columns(frame, columns)
+        if frame.equals(original):
+            continue
+        cleaned = frame.drop(columns=["rowid"])
+        cleaned.to_sql(table, conn, if_exists="replace", index=False)
+    conn.close()
 
 
 # Franchise relocations — old code → current code
@@ -97,6 +143,7 @@ def load_folder(folder):
     df.rename(columns=COLUMN_MAP, inplace=True)
     if "player" in df.columns:
         df = df[df["player"] != "Player"]
+    df = _clean_text_columns(df, ["player", "team", "pos"])
     print(f"  {folder}: {len(df)} rows")
     return df
 
@@ -136,6 +183,7 @@ def load_total_stats(base_dir, db_path="fantasy.db"):
             mask = (ss["player"] == name) & (ss["team"] == team)
             ss.loc[mask, "player"] = new_name
 
+        ss = _clean_text_columns(ss, ["player", "team", "pos"])
         ss.to_sql("season_stats", conn, if_exists="replace", index=False)
         print(f"season_stats: {len(ss)} rows loaded.")
     else:
@@ -203,6 +251,7 @@ def load_total_stats(base_dir, db_path="fantasy.db"):
             mask = (draft["player"] == name) & (draft["draft_year"] == yr)
             draft.loc[mask, "player"] = new_name
 
+        draft = _clean_text_columns(draft, ["player", "draft_team", "pos", "college"])
         draft.to_sql("draft", conn, if_exists="replace", index=False)
         print(f"draft: {len(draft)} rows loaded.")
     else:
@@ -347,6 +396,7 @@ def load_defensive_stats(base_dir, db_path="fantasy.db"):
 
     merged.drop_duplicates(subset=["player", "season", "team"], inplace=True)
     merged = merged[merged["player"].notna()]
+    merged = _clean_text_columns(merged, ["player", "team", "pos"])
 
     # Keep only actual defensive positions
     if "pos" in merged.columns:
@@ -354,6 +404,193 @@ def load_defensive_stats(base_dir, db_path="fantasy.db"):
 
     merged.to_sql("def_stats", conn, if_exists="replace", index=False)
     print(f"def_stats: {len(merged)} rows loaded.")
+    conn.close()
+
+
+NBA_TEAM_MAP = {
+    "NJN": "BRK", "SEA": "OKC", "NOH": "NOP", "NOK": "NOP",
+    "CHH": "CHA", "CHO": "CHA", "VAN": "MEM", "WSB": "WAS",
+    "NOJ": "UTA", "KCK": "SAC", "KCO": "SAC", "FTW": "DET",
+    "SDC": "LAC", "SDR": "HOU", "PHW": "GSW", "SFW": "GSW",
+    "MLH": "ATL", "STL": "ATL", "CAP": "WAS", "INO": "IND",
+    "WSC": "WAS",
+}
+
+NBA_DEFUNCT_TEAMS = {
+    "BAL", "BLB", "BUF", "CHP", "CHS", "CHZ", "CIN",
+    "DNN", "MNL", "ROC", "SYR", "TRI",
+    "AND", "NYN", "PIT", "PRO", "SHE", "STB", "WAT",
+}
+
+NBA_POS_NORM = {
+    "C": "C", "G": "G", "F": "F",
+    "G-F": "G", "F-G": "F", "F-C": "F", "C-F": "C",
+}
+
+
+def load_nba_stats(base_dir, db_path="fantasy.db"):
+    """Load NBA single-season stats and draft stats into the database."""
+    import glob as _glob
+    conn = sqlite3.connect(db_path)
+
+    # ── NBA season stats ──────────────────────────────────────────────────────
+    season_dir = os.path.join(base_dir, "NBA_stats", "NBA_single_season_stats")
+    season_files = _glob.glob(os.path.join(season_dir, "*.xls")) + \
+                   _glob.glob(os.path.join(season_dir, "*.xlsx"))
+
+    nba_dfs = []
+    for f in season_files:
+        try:
+            df = pd.read_html(f, header=0)[0]
+            nba_dfs.append(df)
+        except Exception as e:
+            print(f"  WARNING: could not read {f}: {e}")
+
+    if nba_dfs:
+        nba = pd.concat(nba_dfs, ignore_index=True)
+
+        # Filter garbage rows
+        nba = nba[nba["Player"].notna()]
+        nba = nba[nba["Player"] != "Player"]
+
+        # Drop rows where team contains ',' (traded mid-season)
+        nba = nba[~nba["Team"].astype(str).str.contains(",", na=False)]
+
+        # Convert numerics
+        stat_cols = ["Age", "G", "PTS", "3P", "FG", "FGA", "FT", "FTA", "TRB", "AST", "STL", "BLK", "TOV"]
+        for col in stat_cols:
+            if col in nba.columns:
+                nba[col] = pd.to_numeric(nba[col], errors="coerce").fillna(0)
+
+        # Drop rows where games == 0
+        nba = nba[nba["G"].notna() & (nba["G"] > 0)]
+
+        # Parse season year (first 4 chars of "2008-09")
+        nba["season_int"] = nba["Season"].astype(str).str[:4]
+        nba["season_int"] = pd.to_numeric(nba["season_int"], errors="coerce")
+
+        # Normalize position
+        nba["pos_norm"] = nba["Pos"].apply(
+            lambda p: NBA_POS_NORM.get(str(p).strip(), None) if isinstance(p, str) else None
+        )
+        nba = nba[nba["pos_norm"].isin(["C", "G", "F"])]
+
+        # Map team codes
+        nba["team_mapped"] = nba["Team"].apply(
+            lambda t: NBA_TEAM_MAP.get(str(t).strip(), str(t).strip()) if isinstance(t, str) else t
+        )
+
+        # Drop defunct teams
+        nba = nba[~nba["team_mapped"].isin(NBA_DEFUNCT_TEAMS)]
+
+        # Compute per-game stats (kept for chain categories / hints)
+        nba["pts_pg"] = (nba["PTS"] / nba["G"]).round(2)
+        nba["trb_pg"] = (nba["TRB"] / nba["G"]).round(2)
+        nba["ast_pg"] = (nba["AST"] / nba["G"]).round(2)
+
+        # Fantasy score = season totals formula:
+        # PTS×1 + 3PM×1 + FGM×2 + FGA×(-1) + FTM×1 + FTA×(-1) +
+        # REB×1 + AST×2 + STL×4 + BLK×4 + TOV×(-2)
+        nba["fantasy_score"] = (
+            nba["PTS"] * 1
+            + nba["3P"] * 1
+            + nba["FG"] * 2
+            + nba["FGA"] * -1
+            + nba["FT"] * 1
+            + nba["FTA"] * -1
+            + nba["TRB"] * 1
+            + nba["AST"] * 2
+            + nba["STL"] * 4
+            + nba["BLK"] * 4
+            + nba["TOV"] * -2
+        ).round(0).astype(int)
+
+        # Build output dataframe
+        out = pd.DataFrame({
+            "player": nba["Player"],
+            "season": nba["season_int"].astype("Int64"),
+            "age": pd.to_numeric(nba["Age"], errors="coerce").astype("Int64"),
+            "team": nba["team_mapped"],
+            "games": nba["G"].astype("Int64"),
+            "pts": nba["PTS"],
+            "trb": nba["TRB"],
+            "ast": nba["AST"],
+            "threepm": nba["3P"],
+            "fgm": nba["FG"],
+            "fga": nba["FGA"],
+            "ftm": nba["FT"],
+            "fta": nba["FTA"],
+            "stl": nba["STL"],
+            "blk": nba["BLK"],
+            "tov": nba["TOV"],
+            "pos": nba["pos_norm"],
+            "pts_pg": nba["pts_pg"],
+            "trb_pg": nba["trb_pg"],
+            "ast_pg": nba["ast_pg"],
+            "fantasy_score": nba["fantasy_score"],
+        })
+
+        out.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+        out = out[out["player"].notna()]
+        out = _clean_text_columns(out, ["player", "team", "pos"])
+
+        out.to_sql("nba_stats", conn, if_exists="replace", index=False)
+        print(f"nba_stats: {len(out)} rows loaded.")
+    else:
+        print("WARNING: No NBA season stat files found.")
+
+    # ── NBA draft stats ───────────────────────────────────────────────────────
+    draft_dir = os.path.join(base_dir, "NBA_stats", "Draft_NBA_stats")
+    draft_files = _glob.glob(os.path.join(draft_dir, "*.xls")) + \
+                  _glob.glob(os.path.join(draft_dir, "*.xlsx"))
+
+    draft_dfs = []
+    for f in draft_files:
+        try:
+            df = pd.read_html(f, header=[0, 1])[0]
+            df.columns = [" ".join(str(c) for c in col).strip() for col in df.columns]
+            draft_dfs.append(df)
+        except Exception as e:
+            print(f"  WARNING: could not read draft file {f}: {e}")
+
+    if draft_dfs:
+        draft = pd.concat(draft_dfs, ignore_index=True)
+
+        # Filter garbage rows
+        player_col = "Round 1 Player"
+        pick_col = "Unnamed: 1_level_0 Pk"
+        team_col = "Unnamed: 2_level_0 Tm"
+        college_col = "Round 1 College"
+
+        draft = draft[draft[player_col].notna()]
+        draft = draft[draft[player_col] != "Player"]
+        draft = draft[draft[pick_col].notna()]
+
+        # Convert numerics
+        for col in [pick_col, "Per Game PTS", "Per Game TRB", "Per Game AST", "Advanced WS"]:
+            if col in draft.columns:
+                draft[col] = pd.to_numeric(draft[col], errors="coerce")
+
+        out_draft = pd.DataFrame({
+            "player": draft[player_col],
+            "draft_pick": pd.to_numeric(draft[pick_col], errors="coerce").astype("Int64"),
+            "draft_team": draft[team_col] if team_col in draft.columns else None,
+            "college": draft[college_col] if college_col in draft.columns else None,
+            "pts_pg": draft["Per Game PTS"] if "Per Game PTS" in draft.columns else None,
+            "trb_pg": draft["Per Game TRB"] if "Per Game TRB" in draft.columns else None,
+            "ast_pg": draft["Per Game AST"] if "Per Game AST" in draft.columns else None,
+            "win_shares": draft["Advanced WS"] if "Advanced WS" in draft.columns else None,
+        })
+
+        out_draft.drop_duplicates(subset=["player"], inplace=True)
+        out_draft = out_draft[out_draft["player"].notna()]
+        out_draft = _clean_text_columns(out_draft, ["player", "draft_team", "college"])
+
+        out_draft.to_sql("nba_draft", conn, if_exists="replace", index=False)
+        print(f"nba_draft: {len(out_draft)} rows loaded.")
+    else:
+        print("WARNING: No NBA draft files found.")
+
     conn.close()
 
 
@@ -399,6 +636,7 @@ def build_db(folders, db_path="fantasy.db"):
         mask = (combined["player"] == name) & (combined["team"] == team)
         combined.loc[mask, "player"] = new_name
 
+    combined = _clean_text_columns(combined, ["player", "team", "pos"])
     combined.to_sql("stats", conn, if_exists="replace", index=False)
     print(f"Total: {len(combined)} rows loaded into SQLite.")
     return conn

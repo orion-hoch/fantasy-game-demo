@@ -1,6 +1,6 @@
-# Fantasy Football Trivia
+# Fantasy Sports Trivia
 
-A web-based fantasy football trivia app with two games: **Chain Game** and **Starting 6**.
+A web-based sports trivia app with NFL, NBA, and roguelike-style challenge modes.
 
 Built with Python/Flask and SQLite, using NFL player data sourced from [Sports Reference / Pro Football Reference](https://www.pro-football-reference.com/).
 
@@ -57,23 +57,17 @@ pip install flask pandas openpyxl
 python app.py
 ```
 
-The app will build the SQLite database on first run, then start at `http://127.0.0.1:5000`.
+The app uses the consolidated SQLite data source at `fantasy.db` and starts at `http://127.0.0.1:5000`.
 
-### Data Files
+### Data Source
 
-The following Excel files are required and tracked via Git LFS:
+The canonical data source is a single SQLite database:
 
 ```
-fantasy_stats/
-  QB_Fantasy/   — quarterly QB PPR stats
-  WR_Fantasy/   — quarterly WR PPR stats
-  TE_Fantasy/   — quarterly TE PPR stats
-  RB_Fantasy/   — quarterly RB PPR stats
-
-Total_stats/
-  season_stats.xlsx          — combined passing/rushing/receiving seasons
-  Draft_stats/combined.xlsx  — combined NFL Draft history
+fantasy.db
 ```
+
+That file contains the cleaned NFL, NBA, draft, defensive, and fantasy tables used by the app. The old raw spreadsheet folders are no longer required for runtime.
 
 ---
 
@@ -81,14 +75,17 @@ Total_stats/
 
 ```
 app.py                  — Flask routes
-load_data.py            — DB builder (fantasy stats + total stats)
+load_data.py            — data cleanup and import utilities
 chain_categories.py     — Chain Game category logic
+dungeon_adventure.py    — roguelike dungeon mode logic
 templates/
   index.html            — Home page
   chain.html            — Chain Game
   starting6.html        — Starting 6
+  dungeon_adventure.html
 static/
   chain.js / chain.css  — Chain Game frontend
   starting6.js / starting6.css
+  dungeon_adventure.js / dungeon_adventure.css
   style.css             — Shared styles
 ```

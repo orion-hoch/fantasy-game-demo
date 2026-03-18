@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Starting 6 — Fantasy Trivia</title>
+    <title>Starting 5 — NBA Trivia</title>
     <link rel="stylesheet" href="/static/style.css">
     <link rel="stylesheet" href="/static/starting6.css">
     <style>.header-icon { width: 36px; height: 36px; flex-shrink: 0; }</style>
@@ -13,8 +13,8 @@
     <header>
         <a href="/" class="nav-back">&#8592; Home</a>
         <img src="/static/img/football.svg" class="header-icon" alt="">
-        <h1>Starting 6</h1>
-        <span class="header-sub">Draft your best team, one random franchise at a time</span>
+        <h1>Starting 5</h1>
+        <span class="header-sub">Draft your best NBA team, one random franchise at a time</span>
     </header>
 
     <!-- SETUP -->
@@ -31,12 +31,13 @@
             <div class="rules">
                 <strong>How to Play</strong>
                 <ul>
-                    <li>Each turn a random NFL franchise is drawn — name a player from that team</li>
+                    <li>Each turn a random NBA franchise is drawn — name a player from that team</li>
                     <li>Select the season year to lock in your pick</li>
-                    <li>Fill your roster: 1 QB · 2 WR · 2 RB · 1 TE · 1 UTIL (any position)</li>
+                    <li>Fill your roster: 2G · 2F · 1C · 1 UTIL (any position)</li>
                     <li>Each player can only be drafted once across all rosters</li>
-                    <li>Old heads bonus: 1.5× PPR for a random position from the 60s–80s</li>
-                    <li>Highest total PPR wins</li>
+                    <li>Old heads bonus: 1.5× score for a random position from the 70s–90s</li>
+                    <li>Highest total fantasy score wins</li>
+                    <li>Scoring: PTS +1 · 3PM +1 · FGM +2 · FGA −1 · FTM +1 · FTA −1 · REB +1 · AST +2 · STL +4 · BLK +4 · TOV −2</li>
                 </ul>
             </div>
             <button id="start-btn" onclick="startGame()">Start Game</button>
@@ -93,6 +94,6 @@
     </div>
 </div>
 
-<script src="/static/starting6.js"></script>
+<script src="/static/nba_starting5.js"></script>
 </body>
 </html>
