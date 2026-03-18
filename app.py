@@ -649,7 +649,13 @@ if __name__ == "__main__":
             f"Missing consolidated database at {DB_PATH}. Restore or recreate fantasy.db before starting the app."
         )
 
-    print("Repairing text encoding issues...")
-    repair_db_text(DB_PATH)
+    should_repair = not os.environ.get("RENDER") and not os.environ.get("PORT")
+    if should_repair:
+        print("Repairing text encoding issues...")
+        repair_db_text(DB_PATH)
 
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=False,
+    )
