@@ -98,11 +98,29 @@ DEFUNCT_TEAMS = {"BCL", "BDA", "BKN", "BOS", "NYB", "NYT", "NYY", "DTX"}
 # Maps (name, primary_team) → disambiguated display name.
 PLAYER_RENAMES_BY_TEAM = {
     ("Adrian Peterson", "CHI"): "Adrian Peterson (CHI)",
+    ("Kellen Winslow", "LAC"): "Kellen Winslow (LAC)",    # Sr. — entire career with SD/LAC
+    ("Clay Matthews", "CLE"):  "Clay Matthews (CLE)",     # Sr. — Browns LB 1978-1993
+    ("Anthony Miller", "LAC"): "Anthony Miller (LAC)",    # older WR — drafted by SD 1988
+    ("Mark Clayton", "BAL"):   "Mark Clayton (BAL)",      # newer WR — drafted by BAL 2005
+    ("Robert Woods", "KAN"):   "Robert Woods (KAN)",      # older WR — drafted by KC 1978
+    ("Charles Johnson", "GNB"): "Charles Johnson (GNB)",  # newer WR — drafted by GB 2013
+    ("Scott Miller", "MIA"):   "Scott Miller (MIA)",      # older WR — drafted by MIA 1991
+    ("Mickey Shuler", "MIN"):  "Mickey Shuler (MIN)",     # Jr. — drafted by MIN 2010
+    ("Golden Tate", "IND"):    "Golden Tate (IND)",       # older player — drafted by IND 1984
 }
 
 # Same for draft table — keyed by (name, draft_year).
 PLAYER_RENAMES_BY_DRAFT_YEAR = {
-    ("Adrian Peterson", 2002): "Adrian Peterson (CHI)",
+    ("Adrian Peterson", 2002):   "Adrian Peterson (CHI)",
+    ("Kellen Winslow", 1979):    "Kellen Winslow (LAC)",
+    ("Clay Matthews", 1978):     "Clay Matthews (CLE)",
+    ("Anthony Miller", 1988):    "Anthony Miller (LAC)",
+    ("Mark Clayton", 2005):      "Mark Clayton (BAL)",
+    ("Robert Woods", 1978):      "Robert Woods (KAN)",
+    ("Charles Johnson", 2013):   "Charles Johnson (GNB)",
+    ("Scott Miller", 1991):      "Scott Miller (MIA)",
+    ("Mickey Shuler", 2010):     "Mickey Shuler (MIN)",
+    ("Golden Tate", 1984):       "Golden Tate (IND)",
 }
 
 
@@ -414,11 +432,21 @@ NBA_TEAM_MAP = {
     "SDC": "LAC", "SDR": "HOU", "PHW": "GSW", "SFW": "GSW",
     "MLH": "ATL", "STL": "ATL", "CAP": "WAS", "INO": "IND",
     "WSC": "WAS",
+    # Historical franchises with direct modern successors
+    "MNL": "LAL",  # Minneapolis Lakers → Los Angeles Lakers
+    "ROC": "SAC",  # Rochester Royals → Sacramento Kings
+    "CIN": "SAC",  # Cincinnati Royals → Sacramento Kings
+    "TRI": "ATL",  # Tri-Cities Blackhawks → Atlanta Hawks
+    "SYR": "PHI",  # Syracuse Nationals → Philadelphia 76ers
+    "BUF": "LAC",  # Buffalo Braves → Los Angeles Clippers
+    "BAL": "WAS",  # Baltimore Bullets → Washington Wizards
+    "CHP": "WAS",  # Chicago Packers → Washington Wizards
+    "CHZ": "WAS",  # Chicago Zephyrs → Washington Wizards
 }
 
 NBA_DEFUNCT_TEAMS = {
-    "BAL", "BLB", "BUF", "CHP", "CHS", "CHZ", "CIN",
-    "DNN", "MNL", "ROC", "SYR", "TRI",
+    # Truly defunct — no modern franchise successor
+    "BLB", "CHS", "DNN",
     "AND", "NYN", "PIT", "PRO", "SHE", "STB", "WAT",
 }
 

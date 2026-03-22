@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NFL Balatro: Skill Position Edition</title>
+  <link rel="stylesheet" href="/static/nfl_balatro.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Start Screen -->
+  <div id="start-screen" class="screen active">
+    <div class="start-inner">
+      <div class="start-logo">
+        <div class="start-ball">🏈</div>
+        <h1 class="start-title">NFL BALATRO</h1>
+        <h2 class="start-sub">Skill Position Edition</h2>
+      </div>
+      <p class="start-tagline">Draft hands of NFL player-season cards. Build combos to beat the blitz!</p>
+      <button id="start-btn" class="btn-primary">KICKOFF!</button>
+      <div class="rules-preview">
+        <h3 class="rules-title">HAND TYPES</h3>
+        <div class="hand-types-grid">
+          <div class="ht-row"><span class="ht-name">Balanced Offense</span><span class="ht-mult">6x</span><span class="ht-desc">QB + 2 WRs + 2 RBs + TE</span></div>
+          <div class="ht-row"><span class="ht-name">Six of a Kind</span><span class="ht-mult">5.5x</span><span class="ht-desc">6 of the same position</span></div>
+          <div class="ht-row"><span class="ht-name">Position Flush</span><span class="ht-mult">5x</span><span class="ht-desc">5 of same position</span></div>
+          <div class="ht-row"><span class="ht-name">Position Split</span><span class="ht-mult">4x</span><span class="ht-desc">3 of one position + 3 of another</span></div>
+          <div class="ht-row"><span class="ht-name">Quad Set</span><span class="ht-mult">3x</span><span class="ht-desc">4 of same position</span></div>
+          <div class="ht-row"><span class="ht-name">Triple Threat</span><span class="ht-mult">2x</span><span class="ht-desc">3 of same position</span></div>
+          <div class="ht-row"><span class="ht-name">Dynamic Duo</span><span class="ht-mult">1.5x</span><span class="ht-desc">2 of same position</span></div>
+          <div class="ht-row"><span class="ht-name">Highlight Reel</span><span class="ht-mult">1x</span><span class="ht-desc">Best single card</span></div>
+        </div>
+      </div>
+      <a href="/" class="back-link">← Back to Games</a>
+    </div>
+  </div>
+
+  <!-- Main Game Screen -->
+  <div id="game-screen" class="screen">
+
+    <!-- Top bar -->
+    <div id="top-bar">
+      <div id="level-info">
+        <div id="level-name-display">Preseason</div>
+        <div id="floor-display">Level 1 of 8</div>
+      </div>
+      <div id="score-section">
+        <div id="score-bar-wrapper">
+          <div id="score-bar"></div>
+        </div>
+        <span id="score-text">0 / 2,000</span>
+      </div>
+      <div id="actions-info">
+        <div id="coins-display" class="action-badge">
+          <span class="action-icon">💰</span>
+          <span id="coins-count">4</span>
+          <span class="action-label">Coins</span>
+        </div>
+        <div class="action-badge" id="hands-badge">
+          <span class="action-icon">🃏</span>
+          <span id="hands-count">4</span>
+          <span class="action-label">Hands</span>
+        </div>
+        <div class="action-badge" id="discards-badge">
+          <span class="action-icon">♻️</span>
+          <span id="discards-count">3</span>
+          <span class="action-label">Discards</span>
+        </div>
+        <button id="deck-viewer-btn" class="btn-stats" onclick="toggleDeckViewer()">🗂</button>
+        <button id="stats-btn" class="btn-stats" onclick="toggleStatsOverlay()">📊</button>
+      </div>
+    </div>
+
+    <!-- Fight Timeline -->
+    <div id="fight-timeline">
+      <div class="timeline-node" id="timeline-fight-1">
+        <div class="timeline-dot"></div>
+        <div class="timeline-label">Fight 1</div>
+      </div>
+      <div class="timeline-connector" id="timeline-conn-1"></div>
+      <div class="timeline-node" id="timeline-fight-2">
+        <div class="timeline-dot"></div>
+        <div class="timeline-label">Fight 2</div>
+      </div>
+      <div class="timeline-connector" id="timeline-conn-2"></div>
+      <div class="timeline-node" id="timeline-fight-3">
+        <div class="timeline-dot"></div>
+        <div class="timeline-label">BOSS</div>
+        <div class="timeline-boss-effect" id="timeline-boss-name"></div>
+      </div>
+    </div>
+
+    <!-- Joker Display -->
+    <div id="jokers-section">
+      <div id="jokers-left">
+        <div id="jokers-label">JOKERS</div>
+        <div id="jokers-container">
+          <div class="joker-slot empty" id="joker-slot-0"></div>
+          <div class="joker-slot empty" id="joker-slot-1"></div>
+          <div class="joker-slot empty" id="joker-slot-2"></div>
+          <div class="joker-slot empty" id="joker-slot-3"></div>
+          <div class="joker-slot empty" id="joker-slot-4"></div>
+        </div>
+      </div>
+      <div id="held-cards-section">
+        <div id="held-cards-label">HELD</div>
+        <div id="held-cards-container">
+          <div class="held-slot empty" id="held-slot-0"></div>
+          <div class="held-slot empty" id="held-slot-1"></div>
+          <div class="held-slot empty" id="held-slot-2"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Boss Effect Banner -->
+    <div id="boss-effect-banner" class="hidden"></div>
+
+    <!-- Hand Preview / Score Indicator -->
+    <div id="hand-preview">
+      <div id="preview-hand-type">Select up to 5 cards to see hand type</div>
+      <div id="preview-score-details"></div>
+    </div>
+
+    <!-- Play Log -->
+    <div id="play-log-wrapper">
+      <div id="play-log"></div>
+    </div>
+
+    <!-- Score Animation Panel -->
+    <div id="score-anim-panel" class="hidden">
+      <div id="anim-hand-type-label"></div>
+      <div id="anim-counters-row">
+        <div class="anim-counter-box" id="anim-chips-box">
+          <div class="anim-counter-label">CHIPS</div>
+          <div class="anim-counter-val" id="anim-chips-val">0</div>
+        </div>
+        <div class="anim-op" id="anim-times-op">×</div>
+        <div class="anim-counter-box" id="anim-mult-box">
+          <div class="anim-counter-label">MULT</div>
+          <div class="anim-counter-val" id="anim-mult-val">—</div>
+        </div>
+        <div class="anim-op anim-equals-op hidden" id="anim-equals-op">=</div>
+        <div class="anim-counter-box hidden" id="anim-score-box">
+          <div class="anim-counter-label">SCORE</div>
+          <div class="anim-counter-val anim-score-val" id="anim-score-val">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hand Area -->
+    <div id="hand-area">
+      <div id="hand-area-header">
+        <div id="hand-label">YOUR HAND</div>
+        <div id="sort-buttons">
+          <button id="sort-btn-pos" class="btn-sort" onclick="sortHand('pos')">Sort Position</button>
+          <button id="sort-btn-pts" class="btn-sort" onclick="sortHand('pts')">Sort Points</button>
+        </div>
+      </div>
+      <div id="hand-cards"></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div id="action-buttons">
+      <button id="play-btn" class="btn-play" disabled>PLAY HAND</button>
+      <button id="discard-btn" class="btn-discard" disabled>DISCARD</button>
+    </div>
+  </div>
+
+  <!-- Reward Screen (between levels) -->
+  <div id="reward-screen" class="screen">
+    <div class="reward-inner">
+      <div class="reward-header">
+        <div class="reward-trophy">🏆</div>
+        <h2 class="reward-title" id="reward-title">ROUND COMPLETE!</h2>
+        <p class="reward-sub" id="reward-earnings-msg">Collecting your earnings...</p>
+      </div>
+      <div id="joker-options"></div>
+      <button id="skip-joker-btn" class="btn-primary">Claim Earnings &amp; Shop →</button>
+    </div>
+  </div>
+
+  <!-- Shop Screen -->
+  <div id="shop-screen" class="screen">
+    <div class="shop-inner">
+
+      <!-- Store Banner -->
+      <div class="store-banner">
+        <div class="store-marquee">🏟 OFFICIAL TEAM MERCHANDISE &nbsp;·&nbsp; ALL SALES FINAL &nbsp;·&nbsp; GAME DAY SPECIALS &nbsp;·&nbsp; 🏟</div>
+        <div class="store-main-header">
+          <div class="store-vendor-area">
+            <div class="vendor-emoji">🧢</div>
+            <div class="vendor-bubble" id="vendor-bubble">Gear up before the next game!</div>
+          </div>
+          <div class="store-title-area">
+            <div class="store-title-main">TEAM STORE</div>
+            <div class="store-title-sub">Official Game Day Merchandise</div>
+          </div>
+          <div class="store-controls">
+            <div id="shop-coins-display" class="shop-coins">💰 <span id="shop-coins-count">0</span></div>
+            <button class="btn-stats" onclick="toggleDeckViewer()">🗂 Deck</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Your Locker (owned jokers with sell buttons) -->
+      <div id="shop-jokers-section" class="your-locker-section"></div>
+
+      <!-- Shop Item Sections -->
+      <div id="shop-items-container"></div>
+
+      <!-- Bottom Actions -->
+      <div class="shop-actions">
+        <button id="restock-btn" class="btn-secondary">🔄 Restock (<span id="restock-cost">$2</span>)</button>
+        <button id="leave-shop-btn" class="btn-primary">CONTINUE →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pack Opening Modal -->
+  <div id="pack-opening-modal" class="full-overlay hidden">
+    <div id="pack-opening-content">
+      <div id="pack-opening-title"></div>
+      <div id="pack-cards-reveal"></div>
+      <div id="pack-result-msg" class="hidden"></div>
+      <button id="pack-close-btn" class="btn-primary hidden" onclick="closePackModal()">Back to Shop</button>
+    </div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" class="screen">
+    <div id="gameover-content"></div>
+    <button id="restart-btn" class="btn-primary">PLAY AGAIN</button>
+    <a href="/" class="back-link" style="margin-top:16px;display:block;">← Back to Games</a>
+  </div>
+
+  <!-- Score Popup (animated) -->
+  <div id="score-popup" class="hidden"></div>
+
+  <!-- Stats Overlay -->
+  <div id="stats-overlay" class="overlay hidden">
+    <div class="overlay-backdrop" onclick="toggleStatsOverlay()"></div>
+    <div class="overlay-panel">
+      <div class="overlay-header">
+        <h3 class="overlay-title">POSITION LEVELS</h3>
+        <button class="overlay-close" onclick="toggleStatsOverlay()">✕</button>
+      </div>
+      <div id="stats-bars-container"></div>
+    </div>
+  </div>
+
+  <!-- Target Selection Modal -->
+  <div id="target-modal" class="overlay hidden">
+    <div class="overlay-backdrop" onclick="closeTargetModal()"></div>
+    <div class="overlay-panel target-panel">
+      <div class="overlay-header">
+        <h3 class="overlay-title">SELECT TARGET CARD</h3>
+        <button class="overlay-close" onclick="closeTargetModal()">✕</button>
+      </div>
+      <p id="target-modal-desc" class="target-desc"></p>
+      <div id="target-cards-container"></div>
+    </div>
+  </div>
+
+  <!-- Year Selection Modal -->
+  <div id="year-select-modal" class="overlay hidden">
+    <div class="overlay-backdrop" onclick="closeYearModal()"></div>
+    <div class="overlay-panel year-panel">
+      <div class="overlay-header">
+        <h3 class="overlay-title">CHOOSE SEASON</h3>
+        <button class="overlay-close" onclick="closeYearModal()">✕</button>
+      </div>
+      <p id="year-modal-player" class="target-desc"></p>
+      <div id="year-list-container"></div>
+    </div>
+  </div>
+
+  <!-- Deck Viewer Overlay -->
+  <div id="deck-viewer-overlay" class="full-overlay hidden">
+    <div class="deck-viewer-header">
+      <h2 class="deck-viewer-title">🗂 YOUR DECK</h2>
+      <button class="overlay-close" onclick="toggleDeckViewer()">✕</button>
+    </div>
+    <div id="deck-viewer-content"></div>
+  </div>
+
+  <script src="/static/nfl_balatro.js"></script>
+</body>
+</html>

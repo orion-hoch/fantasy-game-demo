@@ -8,6 +8,8 @@ import nba_chain_categories as nba_cc
 import nba_ttb as nba_ttb_mod
 import dungeon_adventure as da
 import nba_dungeon_adventure as nba_da
+import nfl_balatro as nb
+import nba_balatro as nba_b
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -641,6 +643,446 @@ def nba_get_team_players():
         {"player": r[0], "season": r[1], "pos": r[2], "ppr": r[3], "team": r[4]}
         for r in rows
     ]})
+
+
+# ── NFL Balatro routes ────────────────────────────────────────────────────────
+
+@app.route("/nfl_balatro")
+def nfl_balatro_page():
+    return render_template("nfl_balatro.html")
+
+
+@app.route("/api/nfl_balatro/start", methods=["POST"])
+def nfl_balatro_start():
+    nb.cleanup_old_games()
+    conn = get_db()
+    gid, state = nb.start_game(conn)
+    conn.close()
+    return jsonify({
+        "game_id": gid,
+        "floor": state["floor"],
+        "round": state.get("round", 1),
+        "fight": state.get("fight", 1),
+        "boss_effect": state.get("boss_effect"),
+        "level_name": state["level_name"],
+        "target_score": state["target_score"],
+        "hands_remaining": state["hands_remaining"],
+        "discards_remaining": state["discards_remaining"],
+        "hand": state["hand"],
+        "jokers": [],
+        "coins": state["coins"],
+        "skill_levels": state["skill_levels"],
+        "combo_boosts": state["combo_boosts"],
+        "card_effects": state["card_effects"],
+        "status": state["status"],
+        "max_hand_size": state.get("max_hand_size", 9),
+        "base_discards": state.get("base_discards", 3),
+        "max_jokers": state.get("max_jokers", 5),
+        "joker_state": state.get("joker_state", {}),
+        "held_cards": state.get("held_cards", []),
+    })
+
+
+@app.route("/api/nfl_balatro/play_hand", methods=["POST"])
+def nfl_balatro_play():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    card_ids = data.get("card_ids", [])
+    result, err = nb.play_hand(gid, card_ids)
+    if err:
+        return jsonify({"error": err}), 400
+    # Include updated hand in response
+    g = nb.get_state(gid)
+    if g:
+        result["hand"] = g["hand"]
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/discard", methods=["POST"])
+def nfl_balatro_discard():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    card_ids = data.get("card_ids", [])
+    result, err = nb.discard_cards(gid, card_ids)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/select_joker", methods=["POST"])
+def nfl_balatro_select_joker():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    joker_id = data.get("joker_id", "skip")
+    result, err = nb.select_joker(gid, joker_id)
+    if err:
+        return jsonify({"error": err}), 400
+    # Generate shop items now that we have a db connection
+    conn = get_db()
+    shop_items = nb.generate_shop_for_game(gid, conn)
+    conn.close()
+    result["shop_items"] = shop_items or []
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/preview", methods=["POST"])
+def nfl_balatro_preview():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    card_ids = data.get("card_ids", [])
+    g = nb.get_state(gid)
+    if not g:
+        return jsonify({"error": "Game not found"}), 404
+    played = [c for c in g["hand"] if c["id"] in set(card_ids)]
+    result = nb.get_score_preview(
+        played, g["jokers"],
+        skill_levels=g.get("skill_levels", {}),
+        combo_boosts=g.get("combo_boosts", {}),
+        card_effects=g.get("card_effects", {}),
+        joker_state=g.get("joker_state", {}),
+        floor=g.get("floor", 1),
+        joker_enhancements=g.get("joker_enhancements", {}),
+    )
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/leave_shop", methods=["POST"])
+def nfl_balatro_leave_shop():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    result, err = nb.leave_shop(gid)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/buy_item", methods=["POST"])
+def nfl_balatro_buy_item():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    shop_id = data.get("shop_id", "")
+    item_type = data.get("item_type", "")
+    target_card_id = data.get("target_card_id", None)
+    target_year = data.get("target_year", None)
+    conn = get_db()
+    result, err = nb.buy_shop_item(gid, item_type, shop_id, target_card_id=target_card_id, target_year=target_year, conn=conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+
+@app.route("/api/nfl_balatro/get_pool", methods=["POST"])
+def nfl_balatro_get_pool():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    result, err = nb.get_pool(gid)
+    if err:
+        return jsonify({"error": err}), 404
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/player_seasons")
+def nfl_balatro_player_seasons():
+    game_id = request.args.get("game_id", "")
+    card_id = request.args.get("card_id", "")
+    g = nb.get_state(game_id)
+    if not g:
+        return jsonify({"error": "Game not found"}), 404
+    card = next((c for c in g["deck_pool"] if c["id"] == card_id), None)
+    if not card:
+        return jsonify({"error": "Card not found"}), 404
+    conn = get_db()
+    seasons = nb.get_player_seasons(conn, card["player"])
+    conn.close()
+    return jsonify({"seasons": seasons, "current_season": card["season"]})
+
+
+@app.route("/api/nfl_balatro/card_stats")
+def nfl_balatro_card_stats():
+    player = request.args.get("player", "")
+    season = request.args.get("season", "")
+    if not player or not season:
+        return jsonify({"error": "Missing params"}), 400
+    conn = get_db()
+    stats = nb.get_card_stats(conn, player, season)
+    conn.close()
+    return jsonify(stats or {})
+
+
+@app.route("/api/nfl_balatro/sell_joker", methods=["POST"])
+def nfl_balatro_sell_joker():
+    data = request.get_json(force=True) or {}
+    result, err = nb.sell_joker(data.get("game_id", ""), data.get("joker_id", ""))
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/restock_shop", methods=["POST"])
+def nfl_balatro_restock_shop():
+    data = request.get_json(force=True) or {}
+    conn = get_db()
+    result, err = nb.restock_shop(data.get("game_id", ""), conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/open_pack", methods=["POST"])
+def nfl_balatro_open_pack():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    pack_id = data.get("pack_id", "")
+    conn = get_db()
+    result, err = nb.open_pack(gid, pack_id, conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/confirm_pack_picks", methods=["POST"])
+def nfl_balatro_confirm_pack_picks():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    selected_ids = data.get("selected_ids", [])
+    result, err = nb.confirm_pack_picks(gid, selected_ids)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/advance_fight", methods=["POST"])
+def nfl_balatro_advance_fight():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    conn = get_db()
+    result, err = nb.advance_fight(gid, conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+# ── NBA Balatro routes ────────────────────────────────────────────────────────
+
+@app.route("/nba_balatro")
+def nba_balatro_page():
+    return render_template("nba_balatro.html")
+
+
+@app.route("/api/nba_balatro/start", methods=["POST"])
+def nba_balatro_start():
+    nba_b.cleanup_old_games()
+    conn = get_db()
+    gid, state = nba_b.start_game(conn)
+    conn.close()
+    return jsonify({
+        "game_id": gid,
+        "floor": state["floor"],
+        "round": state.get("round", 1),
+        "fight": state.get("fight", 1),
+        "boss_effect": state.get("boss_effect"),
+        "level_name": state["level_name"],
+        "target_score": state["target_score"],
+        "hands_remaining": state["hands_remaining"],
+        "discards_remaining": state["discards_remaining"],
+        "hand": state["hand"],
+        "jokers": [],
+        "coins": state["coins"],
+        "skill_levels": state["skill_levels"],
+        "combo_boosts": state["combo_boosts"],
+        "card_effects": state["card_effects"],
+        "status": state["status"],
+        "max_hand_size": state.get("max_hand_size", 7),
+        "base_discards": state.get("base_discards", 3),
+        "max_jokers": state.get("max_jokers", 5),
+        "joker_state": state.get("joker_state", {}),
+        "held_cards": state.get("held_cards", []),
+        "deck_pool": state.get("deck_pool", []),
+    })
+
+
+@app.route("/api/nba_balatro/play_hand", methods=["POST"])
+def nba_balatro_play():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    card_ids = data.get("card_ids", [])
+    result, err = nba_b.play_hand(gid, card_ids)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/discard", methods=["POST"])
+def nba_balatro_discard():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    card_ids = data.get("card_ids", [])
+    result, err = nba_b.discard_cards(gid, card_ids)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/select_joker", methods=["POST"])
+def nba_balatro_select_joker():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    joker_id = data.get("joker_id", "")
+    result, err = nba_b.select_joker(gid, joker_id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/preview", methods=["POST"])
+def nba_balatro_preview():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    card_ids = data.get("card_ids", [])
+    g = nba_b.get_state(gid)
+    if not g:
+        return jsonify({"error": "Game not found"}), 404
+    played = [c for c in g["hand"] if c["id"] in set(card_ids)]
+    result = nba_b.get_score_preview(
+        played, g["jokers"],
+        skill_levels=g.get("skill_levels", {}),
+        combo_boosts=g.get("combo_boosts", {}),
+        card_effects=g.get("card_effects", {}),
+        joker_state=g.get("joker_state", {}),
+        floor=g.get("floor", 1),
+        joker_enhancements=g.get("joker_enhancements", {}),
+    )
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/leave_shop", methods=["POST"])
+def nba_balatro_leave_shop():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    result, err = nba_b.leave_shop(gid)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/buy_item", methods=["POST"])
+def nba_balatro_buy_item():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    shop_id = data.get("shop_id", "")
+    item_type = data.get("item_type", "")
+    target_card_id = data.get("target_card_id", None)
+    target_year = data.get("target_year", None)
+    conn = get_db()
+    result, err = nba_b.buy_shop_item(gid, item_type, shop_id, target_card_id=target_card_id, target_year=target_year, conn=conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/get_pool", methods=["POST"])
+def nba_balatro_get_pool():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    result, err = nba_b.get_pool(gid)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/player_seasons", methods=["GET"])
+def nba_balatro_player_seasons():
+    gid = request.args.get("game_id", "")
+    card_id = request.args.get("card_id", "")
+    g = nba_b.get_state(gid)
+    if not g:
+        return jsonify({"error": "Game not found"}), 404
+    card = next((c for c in g["deck_pool"] if c["id"] == card_id), None)
+    if not card:
+        return jsonify({"error": "Card not found"}), 404
+    conn = get_db()
+    seasons = nba_b.get_player_seasons(conn, card["player"])
+    conn.close()
+    return jsonify({"seasons": seasons, "current_season": card["season"]})
+
+
+@app.route("/api/nba_balatro/card_stats", methods=["GET"])
+def nba_balatro_card_stats():
+    player = request.args.get("player", "")
+    season = request.args.get("season", "")
+    if not player or not season:
+        return jsonify({"error": "Missing params"}), 400
+    conn = get_db()
+    stats = nba_b.get_card_stats(conn, player, season)
+    conn.close()
+    return jsonify(stats or {})
+
+
+@app.route("/api/nba_balatro/sell_joker", methods=["POST"])
+def nba_balatro_sell_joker():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    joker_id = data.get("joker_id", "")
+    result, err = nba_b.sell_joker(gid, joker_id)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/restock_shop", methods=["POST"])
+def nba_balatro_restock_shop():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    conn = get_db()
+    result, err = nba_b.restock_shop(gid, conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/open_pack", methods=["POST"])
+def nba_balatro_open_pack():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    pack_id = data.get("pack_id", "")
+    conn = get_db()
+    result, err = nba_b.open_pack(gid, pack_id, conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/confirm_pack_picks", methods=["POST"])
+def nba_balatro_confirm_pack_picks():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    selected_ids = data.get("selected_ids", [])
+    conn = get_db()
+    result, err = nba_b.confirm_pack_picks(gid, selected_ids, conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/advance_fight", methods=["POST"])
+def nba_balatro_advance_fight():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    conn = get_db()
+    result, err = nba_b.advance_fight(gid, conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
 
 
 if __name__ == "__main__":
