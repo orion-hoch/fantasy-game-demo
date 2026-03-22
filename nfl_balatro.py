@@ -11,7 +11,35 @@ POS_MULT = {"QB": 1.0, "RB": 1.4, "WR": 1.5, "TE": 2.5}
 POS_COLOR = {"QB": "qb", "RB": "rb", "WR": "wr", "TE": "te"}
 POS_ORDER = ["QB", "RB", "WR", "TE"]
 
+NFL_DIVISIONS = {
+    # AFC East
+    "BUF": "AFC East", "MIA": "AFC East", "NE": "AFC East", "NWE": "AFC East", "NYJ": "AFC East",
+    # AFC North
+    "BAL": "AFC North", "CIN": "AFC North", "CLE": "AFC North", "PIT": "AFC North",
+    # AFC South
+    "HOU": "AFC South", "IND": "AFC South", "JAX": "AFC South", "JAC": "AFC South", "TEN": "AFC South",
+    # AFC West
+    "DEN": "AFC West", "KC": "AFC West", "KAN": "AFC West", "LV": "AFC West",
+    "OAK": "AFC West", "LAC": "AFC West", "SD": "AFC West", "SDG": "AFC West",
+    # NFC East
+    "DAL": "NFC East", "NYG": "NFC East", "PHI": "NFC East", "WAS": "NFC East", "WSH": "NFC East",
+    # NFC North
+    "CHI": "NFC North", "DET": "NFC North", "GB": "NFC North", "GNB": "NFC North", "MIN": "NFC North",
+    # NFC South
+    "ATL": "NFC South", "CAR": "NFC South", "NO": "NFC South", "NOR": "NFC South",
+    "TB": "NFC South", "TAM": "NFC South",
+    # NFC West
+    "ARI": "NFC West", "PHO": "NFC West", "LAR": "NFC West", "STL": "NFC West",
+    "SEA": "NFC West", "SF": "NFC West", "SFO": "NFC West",
+}
+
+def get_nfl_division(team):
+    if not team:
+        return None
+    return NFL_DIVISIONS.get(team.upper().strip())
+
 HAND_TYPES = {
+    "royal_flush":      {"name": "Royal Flush",      "mult": 12.0, "desc": "5-6 cards all from same NFL division"},
     "balanced_offense": {"name": "Balanced Offense", "mult": 3.5,  "desc": "QB + 2 WRs + 2 RBs + TE"},
     "six_of_a_kind":    {"name": "Six of a Kind",    "mult": 5.5,  "desc": "6 of the same position"},
     "flush":            {"name": "Position Flush",   "mult": 5.0,  "desc": "5 of same position"},
@@ -318,6 +346,7 @@ def _build_deck_pool(conn):
             "draft_pick": r[9],
             "undrafted": not college or college == "Unknown",
             "conference": get_conference(college),
+            "division": get_nfl_division(r[3]),
         })
     return cards
 
@@ -356,6 +385,7 @@ def _build_deck(conn):
             "draft_round": r[8],
             "draft_pick": r[9],
             "conference": get_conference(college),
+            "division": get_nfl_division(r[3]),
         })
     return cards
 
@@ -376,6 +406,12 @@ def evaluate_hand(cards):
         return None, []
 
     pos_counts = Counter(c["pos"] for c in cards)
+
+    # Royal Flush: 5-6 cards all from same division
+    if n >= 5:
+        divs = [get_nfl_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "royal_flush", cards
 
     # Balanced Offense: exactly QB=1, WR=2, RB=2, TE=1 (needs 6 cards)
     if n == 6 and pos_counts.get("QB") == 1 and pos_counts.get("WR") == 2 and pos_counts.get("RB") == 2 and pos_counts.get("TE") == 1:

@@ -7,13 +7,13 @@
   --accent-red: #d62828;
   --accent-yellow: #f5c700;
   --accent-blue: #1e6fcc;
-  /* NBA positions: G=Guard blue, F=Forward green, C=Center brown/rust */
-  --pos-g: #1a5276;
-  --pos-f: #145a32;
-  --pos-c: #6e2f0a;
+  /* NBA positions: G=Guard blue, F=Forward green, C=Center rust */
+  --pos-g: #1e6fcc;
+  --pos-f: #1e7a3c;
+  --pos-c: #cc5500;
   --text-dark: #1a1a1a;
   --text-light: #f7f0df;
-  --neon-accent: #FF7F00;
+  --neon-accent: var(--accent-red);
   --shadow-comic: 3px 3px 0 #1a1a1a;
 
   /* Legacy variables for backward compat */
@@ -26,12 +26,12 @@
   --nb-dim: #8888bb;
   --nb-gold: var(--accent-yellow);
   --nb-gold-dim: #8a6a10;
-  --nb-neon: #FF7F00;
-  --nb-neon-dim: #a84400;
+  --nb-neon: var(--accent-red);
+  --nb-neon-dim: #8a1515;
 
-  --pos-g-dim: #0e2f45;
-  --pos-f-dim: #0b3520;
-  --pos-c-dim: #4a1f06;
+  --pos-g-dim: #0e2a5a;
+  --pos-f-dim: #0b3a20;
+  --pos-c-dim: #7a3300;
 
   /* NFL compat aliases so shared CSS classes still work */
   --pos-qb: var(--pos-g);
@@ -112,7 +112,7 @@ html, body {
   letter-spacing: 4px;
   text-transform: uppercase;
   color: var(--accent-yellow);
-  text-shadow: 4px 4px 0 #FF7F00, 8px 8px 0 var(--card-border);
+  text-shadow: 4px 4px 0 var(--accent-red), 8px 8px 0 var(--card-border);
   line-height: 1;
   margin-top: 8px;
 }
@@ -204,8 +204,8 @@ html, body {
 
 /* ── Buttons ────────────────────────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #FF7F00, #e06a00);
-  color: white;
+  background: var(--accent-yellow);
+  color: var(--text-dark);
   border: 3px solid var(--card-border);
   box-shadow: var(--shadow-comic);
   padding: 14px 40px;
@@ -262,7 +262,7 @@ html, body {
   align-items: center;
   gap: 16px;
   padding: 10px 16px;
-  background: #FF7F00;
+  background: var(--accent-red);
   border-bottom: 4px solid var(--card-border);
   box-shadow: 0 4px 0 var(--card-border);
   color: white;
@@ -899,6 +899,19 @@ html, body {
 .card-pos-f .card-front::before { background: var(--pos-f); }
 .card-pos-c .card-front { border-color: var(--pos-c); }
 .card-pos-c .card-front::before { background: var(--pos-c); }
+
+/* ── Division borders ────────────────────────────────────────────────────── */
+.div-atlantic  { box-shadow: 0 0 0 3px #1e90ff, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+.div-central   { box-shadow: 0 0 0 3px #c0392b, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+.div-southeast { box-shadow: 0 0 0 3px #e67e22, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+.div-northwest { box-shadow: 0 0 0 3px #9b59b6, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+.div-pacific   { box-shadow: 0 0 0 3px #1abc9c, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+.div-southwest { box-shadow: 0 0 0 3px #d4a017, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+
+/* Royal Flush highlight in hand types list */
+.ht-royal { border-left: 4px solid #ffd700 !important; background: rgba(255,215,0,0.08) !important; }
+.ht-royal .ht-name { color: #ffd700 !important; }
+.ht-royal .ht-mult { color: #ffd700 !important; }
 
 .card.selected .card-front {
   border-color: var(--accent-yellow);

@@ -1,6 +1,26 @@
 (function () {
   'use strict';
 
+  // ── NFL Division lookup ─────────────────────────────────────────────
+  const NFL_DIV = {
+    BUF:'AFC East',MIA:'AFC East',NE:'AFC East',NWE:'AFC East',NYJ:'AFC East',
+    BAL:'AFC North',CIN:'AFC North',CLE:'AFC North',PIT:'AFC North',
+    HOU:'AFC South',IND:'AFC South',JAX:'AFC South',JAC:'AFC South',TEN:'AFC South',
+    DEN:'AFC West',KC:'AFC West',KAN:'AFC West',LV:'AFC West',OAK:'AFC West',LAC:'AFC West',SD:'AFC West',SDG:'AFC West',
+    DAL:'NFC East',NYG:'NFC East',PHI:'NFC East',WAS:'NFC East',WSH:'NFC East',
+    CHI:'NFC North',DET:'NFC North',GB:'NFC North',GNB:'NFC North',MIN:'NFC North',
+    ATL:'NFC South',CAR:'NFC South',NO:'NFC South',NOR:'NFC South',TB:'NFC South',TAM:'NFC South',
+    ARI:'NFC West',PHO:'NFC West',LAR:'NFC West',STL:'NFC West',SEA:'NFC West',SF:'NFC West',SFO:'NFC West',
+  };
+  const NFL_DIV_CLASS = {
+    'AFC East':'div-afc-east','AFC North':'div-afc-north','AFC South':'div-afc-south','AFC West':'div-afc-west',
+    'NFC East':'div-nfc-east','NFC North':'div-nfc-north','NFC South':'div-nfc-south','NFC West':'div-nfc-west',
+  };
+  function getNflDivClass(team) {
+    var div = team && NFL_DIV[team.toUpperCase()];
+    return div ? (NFL_DIV_CLASS[div] || '') : '';
+  }
+
   // ── State ──────────────────────────────────────────────────────────
   var gameId = null;
   var currentSort = null; // 'pos', 'pts', or null
@@ -1008,6 +1028,8 @@
     var posClass = 'card-pos-' + card.pos.toLowerCase();
     var el = document.createElement('div');
     el.className = 'card ' + posClass;
+    var divClass = getNflDivClass(card.team || '');
+    if (divClass) el.classList.add(divClass);
     el.dataset.id = card.id;
     el.dataset.cardId = card.id;
 

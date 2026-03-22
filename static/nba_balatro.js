@@ -1,6 +1,24 @@
 (function () {
   'use strict';
 
+  // ── NBA Division lookup ─────────────────────────────────────────────
+  const NBA_DIV = {
+    BOS:'Atlantic',BRK:'Atlantic',BKN:'Atlantic',NYK:'Atlantic',PHI:'Atlantic',TOR:'Atlantic',NJN:'Atlantic',
+    CHI:'Central',CLE:'Central',DET:'Central',IND:'Central',MIL:'Central',
+    ATL:'Southeast',CHA:'Southeast',CHH:'Southeast',MIA:'Southeast',ORL:'Southeast',WAS:'Southeast',
+    DEN:'Northwest',MIN:'Northwest',OKC:'Northwest',POR:'Northwest',UTA:'Northwest',SEA:'Northwest',
+    GSW:'Pacific',LAC:'Pacific',LAL:'Pacific',PHX:'Pacific',PHO:'Pacific',SAC:'Pacific',
+    DAL:'Southwest',HOU:'Southwest',MEM:'Southwest',NOP:'Southwest',SAS:'Southwest',NOH:'Southwest',VAN:'Southwest',NOK:'Southwest',
+  };
+  const NBA_DIV_CLASS = {
+    'Atlantic':'div-atlantic','Central':'div-central','Southeast':'div-southeast',
+    'Northwest':'div-northwest','Pacific':'div-pacific','Southwest':'div-southwest',
+  };
+  function getNbaDivClass(team) {
+    var div = team && NBA_DIV[team.toUpperCase()];
+    return div ? (NBA_DIV_CLASS[div] || '') : '';
+  }
+
   // ── State ──────────────────────────────────────────────────────────
   var gameId = null;
   var currentSort = null; // 'pos', 'pts', or null
@@ -1003,6 +1021,8 @@
     var posClass = 'card-pos-' + card.pos.toLowerCase();
     var el = document.createElement('div');
     el.className = 'card ' + posClass;
+    var divClass = getNbaDivClass(card.team || '');
+    if (divClass) el.classList.add(divClass);
     el.dataset.id = card.id;
     el.dataset.cardId = card.id;
 

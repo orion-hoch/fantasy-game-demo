@@ -30,7 +30,42 @@ def get_nba_conference(team):
         return None
     return _TEAM_TO_CONF.get(team.upper().strip())
 
+NBA_DIVISIONS = {
+    # Atlantic
+    "BOS": "Atlantic", "BRK": "Atlantic", "BKN": "Atlantic", "NYK": "Atlantic",
+    "PHI": "Atlantic", "TOR": "Atlantic", "NJN": "Atlantic",
+    # Central
+    "CHI": "Central", "CLE": "Central", "DET": "Central", "IND": "Central", "MIL": "Central",
+    # Southeast
+    "ATL": "Southeast", "CHA": "Southeast", "CHH": "Southeast", "MIA": "Southeast",
+    "ORL": "Southeast", "WAS": "Southeast",
+    # Northwest
+    "DEN": "Northwest", "MIN": "Northwest", "OKC": "Northwest", "POR": "Northwest",
+    "UTA": "Northwest", "SEA": "Northwest",
+    # Pacific
+    "GSW": "Pacific", "LAC": "Pacific", "LAL": "Pacific", "PHX": "Pacific",
+    "PHO": "Pacific", "SAC": "Pacific",
+    # Southwest
+    "DAL": "Southwest", "HOU": "Southwest", "MEM": "Southwest", "NOP": "Southwest",
+    "SAS": "Southwest", "NOH": "Southwest", "VAN": "Southwest", "NOK": "Southwest",
+}
+
+_TEAM_TO_DIV = {t: d for d, teams in [
+    ("Atlantic",  ["BOS","BRK","BKN","NYK","PHI","TOR","NJN"]),
+    ("Central",   ["CHI","CLE","DET","IND","MIL"]),
+    ("Southeast", ["ATL","CHA","CHH","MIA","ORL","WAS"]),
+    ("Northwest", ["DEN","MIN","OKC","POR","UTA","SEA"]),
+    ("Pacific",   ["GSW","LAC","LAL","PHX","PHO","SAC"]),
+    ("Southwest", ["DAL","HOU","MEM","NOP","SAS","NOH","VAN","NOK"]),
+] for t in teams}
+
+def get_nba_division(team):
+    if not team:
+        return None
+    return _TEAM_TO_DIV.get(team.upper().strip())
+
 HAND_TYPES = {
+    "royal_flush":      {"name": "Royal Flush",      "mult": 12.0, "desc": "5-6 cards all from same NBA division"},
     "starting_lineup":  {"name": "Starting Lineup",   "mult": 3.5,  "desc": "G + F + C all present (5+ cards)"},
     "six_man_rotation": {"name": "Six Man Rotation",  "mult": 5.5,  "desc": "6 of the same position"},
     "zone_press":       {"name": "Zone Press",         "mult": 5.0,  "desc": "5 of same position"},
@@ -278,6 +313,7 @@ def _build_deck_pool(conn):
             "college": college,
             "undrafted": r[5] is None,
             "conference": get_nba_conference(r[3]),
+            "division": get_nba_division(r[3]),
         })
     return cards
 
@@ -297,6 +333,12 @@ def evaluate_hand(cards):
 
     pos_counts = Counter(c["pos"] for c in cards)
     max_count = max(pos_counts.values()) if pos_counts else 0
+
+    # Royal Flush: 5-6 cards all from same division
+    if n >= 5:
+        divs = [get_nba_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "royal_flush", cards
 
     # six_man_rotation: 6 of same position
     if max_count >= 6:
