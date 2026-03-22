@@ -146,6 +146,15 @@ JOKERS = [
     {"id": "flush_xmult",     "name": "Super Bowl MVP",         "desc": "×3 Mult if played hand is Position Flush (multiplicative).",                   "rarity": "rare"},
     {"id": "four_xmult",      "name": "Hall of Fame",           "desc": "×4 Mult if played hand is Quad Set (multiplicative).",                         "rarity": "rare"},
     {"id": "delayed_coins",   "name": "Injury Report",          "desc": "Earn $2 at end of fight if no discards were used that fight.",                  "rarity": "common"},
+    # ── On-scored per-card attribute jokers ──────────────────────────────────────
+    {"id": "high_scorer_chip", "name": "Elite Stat Line",       "desc": "Each scored card with 200+ PPR adds +25 base pts.",                              "rarity": "common"},
+    {"id": "pro_bowl_chip",    "name": "All-Pro Bonus",         "desc": "Each scored card with 3+ Pro Bowls adds +20 base pts.",                          "rarity": "uncommon"},
+    {"id": "veteran_chip",     "name": "Grizzled Vet",          "desc": "Each scored card drafted before 2015 adds +10 base pts.",                        "rarity": "common"},
+    {"id": "youth_chip",       "name": "Rookie Deal",           "desc": "Each scored card drafted 2020+ adds +20 base pts.",                              "rarity": "common"},
+    {"id": "late_pick_chip",   "name": "Hidden Gem",            "desc": "Each scored card from draft rounds 3–7 adds +15 base pts.",                      "rarity": "common"},
+    {"id": "top_pick_chip",    "name": "Franchise Cornerstone", "desc": "Each scored top-5 overall pick adds +25 base pts.",                              "rarity": "uncommon"},
+    {"id": "teammate_chip",    "name": "Locker Room Culture",   "desc": "Each scored card sharing a team with another scored card adds +15 base pts.",    "rarity": "uncommon"},
+    {"id": "sec_chip",         "name": "SEC Hotbed",            "desc": "Each scored card from an SEC school adds +12 base pts.",                         "rarity": "uncommon"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
 
@@ -522,6 +531,24 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
             jbonus = joker_state.get("padder_stacks", 0)
         elif jid == "restock_stacker":
             jbonus = joker_state.get("restock_stacks", 0)
+        # ── On-scored per-card attribute jokers ──────────────────────────────
+        elif jid == "high_scorer_chip":
+            jpts = sum(25 for c in scoring_cards if c.get("fantasy_ppr", 0) >= 200)
+        elif jid == "pro_bowl_chip":
+            jpts = sum(20 for c in scoring_cards if (c.get("pro_bowls") or 0) >= 3)
+        elif jid == "veteran_chip":
+            jpts = sum(10 for c in scoring_cards if (c.get("draft_year") or 9999) < 2015)
+        elif jid == "youth_chip":
+            jpts = sum(20 for c in scoring_cards if (c.get("draft_year") or 0) >= 2020)
+        elif jid == "late_pick_chip":
+            jpts = sum(15 for c in scoring_cards if (c.get("draft_round") or 0) >= 3)
+        elif jid == "top_pick_chip":
+            jpts = sum(25 for c in scoring_cards if c.get("draft_pick") is not None and c["draft_pick"] <= 5)
+        elif jid == "teammate_chip":
+            _team_counts = Counter(c.get("team") for c in scoring_cards if c.get("team"))
+            jpts = sum(15 for c in scoring_cards if _team_counts.get(c.get("team"), 0) >= 2)
+        elif jid == "sec_chip":
+            jpts = sum(12 for c in scoring_cards if get_conference(c.get("college", "")) == "SEC")
         # Apply joker enhancements to per-joker contribution
         if jbonus != 0:
             enhs = joker_enhancements.get(jid, [])

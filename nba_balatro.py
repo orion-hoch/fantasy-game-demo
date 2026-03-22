@@ -119,6 +119,15 @@ JOKERS = [
     {"id": "flush_xmult",     "name": "Finals MVP",             "desc": "×3 Mult if played hand is Zone Press (multiplicative).",                       "rarity": "rare"},
     {"id": "four_xmult",      "name": "Hall of Fame",           "desc": "×4 Mult if played hand is Starting Four (multiplicative).",                    "rarity": "rare"},
     {"id": "delayed_coins",   "name": "Injury Report",          "desc": "Earn $2 at end of fight if no discards were used that fight.",                  "rarity": "common"},
+    # ── On-scored per-card attribute jokers ──────────────────────────────────────
+    {"id": "high_scorer_chip", "name": "Big Game Player",       "desc": "Each scored card with 40+ fantasy pts adds +25 base pts.",                      "rarity": "common"},
+    {"id": "big_man_chip",     "name": "Post Presence",         "desc": "Each scored C card adds +30 base pts.",                                          "rarity": "common"},
+    {"id": "veteran_chip",     "name": "Veteran IQ",            "desc": "Each scored card from seasons before 2000 adds +15 base pts.",                   "rarity": "common"},
+    {"id": "youth_chip",       "name": "Young Gun",             "desc": "Each scored card from seasons 2015+ adds +15 base pts.",                         "rarity": "common"},
+    {"id": "late_pick_chip",   "name": "Undrafted Upside",      "desc": "Each scored undrafted player or pick 31+ adds +20 base pts.",                    "rarity": "common"},
+    {"id": "top_pick_chip",    "name": "Lottery Selection",     "desc": "Each scored top-5 draft pick adds +25 base pts.",                               "rarity": "uncommon"},
+    {"id": "teammate_chip",    "name": "Team Chemistry",        "desc": "Each scored card sharing a team with another scored card adds +20 base pts.",    "rarity": "uncommon"},
+    {"id": "west_chip",        "name": "West Coast Game",       "desc": "Each scored Western Conference card adds +10 base pts.",                         "rarity": "uncommon"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
 
@@ -229,8 +238,8 @@ def _get_effective_pts(card, skill_levels, card_effects):
 
 
 def _build_deck_pool(conn):
-    """Fetch cards with exact position counts: G=16, F=14, C=10 = 40 total."""
-    exact_counts = {"G": 16, "F": 14, "C": 10}
+    """Fetch cards with exact position counts: G=12, F=12, C=10 = 34 total."""
+    exact_counts = {"G": 12, "F": 12, "C": 10}
     pool_rows = []
     used = set()
 
@@ -463,6 +472,24 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
             jbonus = joker_state.get("padder_stacks", 0)
         elif jid == "restock_stacker":
             jbonus = joker_state.get("restock_stacks", 0)
+        # ── On-scored per-card attribute jokers ──────────────────────────────
+        elif jid == "high_scorer_chip":
+            jpts = sum(25 for c in cards_played if c.get("fantasy_pts", 0) >= 40)
+        elif jid == "big_man_chip":
+            jpts = sum(30 for c in cards_played if c.get("pos") == "C")
+        elif jid == "veteran_chip":
+            jpts = sum(15 for c in cards_played if (c.get("season") or 9999) < 2000)
+        elif jid == "youth_chip":
+            jpts = sum(15 for c in cards_played if (c.get("season") or 0) >= 2015)
+        elif jid == "late_pick_chip":
+            jpts = sum(20 for c in cards_played if c.get("undrafted") or (c.get("draft_pick") or 0) > 30)
+        elif jid == "top_pick_chip":
+            jpts = sum(25 for c in cards_played if c.get("draft_pick") is not None and c["draft_pick"] <= 5)
+        elif jid == "teammate_chip":
+            _team_counts = Counter(c.get("team") for c in cards_played if c.get("team"))
+            jpts = sum(20 for c in cards_played if _team_counts.get(c.get("team"), 0) >= 2)
+        elif jid == "west_chip":
+            jpts = sum(10 for c in cards_played if get_nba_conference(c.get("team")) == "West")
 
         # Apply joker enhancements
         if jbonus != 0:
