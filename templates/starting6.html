@@ -83,13 +83,15 @@
         </div>
     </div>
 
-    <!-- RESULTS -->
-    <div id="results-panel" class="hidden">
-        <div id="winner-banner">
-            <div id="winner-text"></div>
+    <!-- WIN OVERLAY -->
+    <div id="win-overlay" class="hidden">
+        <canvas id="confetti-canvas"></canvas>
+        <div id="win-content">
+            <div id="win-congrats">CONGRATULATIONS</div>
+            <div id="win-name"></div>
+            <div id="win-score"></div>
+            <button id="play-again-btn" onclick="resetGame()">Play Again</button>
         </div>
-        <div id="results-rosters"></div>
-        <button onclick="resetGame()" class="play-again-btn">Play Again</button>
     </div>
 </div>
 

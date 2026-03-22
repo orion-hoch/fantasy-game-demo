@@ -360,60 +360,100 @@ function renderRosters() {
     });
 }
 
+// ── Confetti ───────────────────────────────────────────────────────────────
+
+let confettiRAF = null;
+const CONFETTI_COLORS = ["#e8b820","#ff3c3c","#18a894","#ffffff","#a855f7","#3b82f6","#f97316"];
+
+function startConfetti() {
+    const canvas = document.getElementById("confetti-canvas");
+    const ctx = canvas.getContext("2d");
+
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const pieces = Array.from({ length: 120 }, () => ({
+        x:     Math.random() * canvas.width,
+        y:     Math.random() * -canvas.height,
+        w:     6 + Math.random() * 8,
+        h:     10 + Math.random() * 10,
+        color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        rot:   Math.random() * Math.PI * 2,
+        vx:    (Math.random() - 0.5) * 2.5,
+        vy:    2.5 + Math.random() * 3.5,
+        vr:    (Math.random() - 0.5) * 0.18,
+    }));
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+            p.x  += p.vx;
+            p.y  += p.vy;
+            p.rot += p.vr;
+            if (p.y > canvas.height + 20) {
+                p.y  = -20;
+                p.x  = Math.random() * canvas.width;
+            }
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = 0.85;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+        });
+        confettiRAF = requestAnimationFrame(draw);
+    }
+    draw();
+}
+
+function stopConfetti() {
+    if (confettiRAF) {
+        cancelAnimationFrame(confettiRAF);
+        confettiRAF = null;
+    }
+    const canvas = document.getElementById("confetti-canvas");
+    if (canvas) canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+}
+
 // ── Results ────────────────────────────────────────────────────────────────
 
 function showResults() {
     document.getElementById("game-panel").classList.add("hidden");
-    document.getElementById("results-panel").classList.remove("hidden");
 
     const totals = state.players.map(p => rosterTotal(p.roster));
     const maxTotal = Math.max(...totals);
     const winners = state.players.filter((_, i) => totals[i] === maxTotal);
 
-    const winnerText = document.getElementById("winner-text");
+    const overlay = document.getElementById("win-overlay");
+    overlay.classList.remove("hidden");
+
     if (winners.length > 1) {
-        winnerText.innerHTML = `<span class="tie">It's a Tie! ${maxTotal.toFixed(1)} pts each</span>`;
+        document.getElementById("win-congrats").textContent = "IT'S A TIE!";
+        document.getElementById("win-name").textContent = winners.map(w => w.name).join(" & ");
+        const scoreEl = document.getElementById("win-score");
+        scoreEl.textContent = `${maxTotal.toFixed(1)} PPR pts each`;
+        scoreEl.className = "tie-score";
     } else {
         const wi = totals.indexOf(maxTotal);
-        winnerText.innerHTML = `
-            <span class="winner-name">${state.players[wi].name}</span> wins!
-            <span class="winner-score">${maxTotal.toFixed(1)} PPR pts</span>`;
+        document.getElementById("win-congrats").textContent = "CONGRATULATIONS";
+        document.getElementById("win-name").textContent = state.players[wi].name;
+        document.getElementById("win-score").textContent = `${maxTotal.toFixed(1)} PPR pts`;
+        document.getElementById("win-score").className = "";
     }
 
-    const container = document.getElementById("results-rosters");
-    // Sort by total descending
-    const order = totals.map((t, i) => ({ i, t })).sort((a, b) => b.t - a.t);
-
-    container.innerHTML = order.map(({ i }) => {
-        const p = state.players[i];
-        const total = totals[i];
-        const isWinner = total === maxTotal && winners.length === 1;
-        return `
-            <div class="result-roster">
-                <div class="result-header ${isWinner ? "result-winner" : ""}">
-                    <span>${p.name}</span>
-                    <span>${total.toFixed(1)} pts</span>
-                </div>
-                ${SLOTS.map(s => {
-                    const pick = p.roster[s.key];
-                    const gotBonus = pick?.bonusMultiplier > 1;
-                    return `
-                        <div class="result-slot${gotBonus ? " bonus-slot" : ""}">
-                            <span class="slot-label">${s.label}</span>
-                            ${pick
-                                ? `<span class="result-player">${pick.player} <small>${pick.season} · ${pick.team}</small></span>
-                                   <span class="result-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(1)}${gotBonus ? " ★" : ""}</span>`
-                                : `<span class="result-empty">—</span><span></span>`
-                            }
-                        </div>`;
-                }).join("")}
-            </div>`;
-    }).join("");
+    startConfetti();
 }
 
 function resetGame() {
-    document.getElementById("results-panel").classList.add("hidden");
+    stopConfetti();
+    document.getElementById("win-overlay").classList.add("hidden");
     document.getElementById("setup-panel").classList.remove("hidden");
+    renderNameInputs();
 }
 
 // Close dropdown on outside click
