@@ -39,15 +39,17 @@ def get_nfl_division(team):
     return NFL_DIVISIONS.get(team.upper().strip())
 
 HAND_TYPES = {
-    "royal_flush":      {"name": "Royal Flush",      "mult": 12.0, "desc": "5-6 cards all from same NFL division"},
-    "balanced_offense": {"name": "Balanced Offense", "mult": 3.5,  "desc": "QB + 2 WRs + 2 RBs + TE"},
-    "six_of_a_kind":    {"name": "Six of a Kind",    "mult": 5.5,  "desc": "6 of the same position"},
-    "flush":            {"name": "Position Flush",   "mult": 5.0,  "desc": "5 of same position"},
-    "position_split":   {"name": "Position Split",   "mult": 4.0,  "desc": "3 of one position + 3 of another"},
-    "quad":             {"name": "Quad Set",          "mult": 3.0,  "desc": "4 of same position"},
-    "trips":            {"name": "Triple Threat",     "mult": 2.0,  "desc": "3 of same position"},
-    "double":           {"name": "Dynamic Duo",       "mult": 1.5,  "desc": "2 of same position"},
-    "single":           {"name": "Highlight Reel",    "mult": 1.0,  "desc": "Best single card"},
+    "royal_flush":      {"name": "Royal Flush",       "mult": 20.0, "desc": "5-6 cards all same position & same division"},
+    "division_six":     {"name": "Division Six",      "mult": 6.0,  "desc": "6 cards all from same division"},
+    "six_of_a_kind":    {"name": "Six of a Kind",     "mult": 5.5,  "desc": "6 of the same position"},
+    "flush":            {"name": "Position Flush",    "mult": 5.0,  "desc": "5 of same position"},
+    "division_five":    {"name": "Division Straight", "mult": 5.0,  "desc": "5 cards all from same division"},
+    "position_split":   {"name": "Position Split",    "mult": 4.0,  "desc": "3 of one position + 3 of another"},
+    "balanced_offense": {"name": "Balanced Offense",  "mult": 3.5,  "desc": "QB + 2 WRs + 2 RBs + TE"},
+    "quad":             {"name": "Quad Set",           "mult": 3.0,  "desc": "4 of same position"},
+    "trips":            {"name": "Triple Threat",      "mult": 2.0,  "desc": "3 of same position"},
+    "double":           {"name": "Dynamic Duo",        "mult": 1.5,  "desc": "2 of same position"},
+    "single":           {"name": "Highlight Reel",     "mult": 1.0,  "desc": "Best single card"},
 }
 
 LEVEL_TARGETS = [2000, 6000, 15000, 40000, 100000, 250000, 600000, 1500000]
@@ -407,23 +409,35 @@ def evaluate_hand(cards):
 
     pos_counts = Counter(c["pos"] for c in cards)
 
-    # Royal Flush: 5-6 cards all from same division
+    # Royal Flush: 5-6 cards all same position AND all same division (20x)
     if n >= 5:
         divs = [get_nfl_division(c.get("team", "")) for c in cards]
-        if divs[0] and all(d == divs[0] for d in divs):
+        if divs[0] and all(d == divs[0] for d in divs) and len(pos_counts) == 1:
             return "royal_flush", cards
 
-    # Balanced Offense: exactly QB=1, WR=2, RB=2, TE=1 (needs 6 cards)
-    if n == 6 and pos_counts.get("QB") == 1 and pos_counts.get("WR") == 2 and pos_counts.get("RB") == 2 and pos_counts.get("TE") == 1:
-        return "balanced_offense", cards
+    # Division Six: 6 cards all from same division (6x)
+    if n == 6:
+        divs = [get_nfl_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "division_six", cards
 
     # Six of a Kind: 6 of same position
     if n == 6 and len(pos_counts) == 1:
         return "six_of_a_kind", cards
 
+    # Division Five: 5 cards all from same division (5x)
+    if n == 5:
+        divs = [get_nfl_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "division_five", cards
+
     # Flush: 5 of same position
     if n == 5 and len(pos_counts) == 1:
         return "flush", cards
+
+    # Balanced Offense: exactly QB=1, WR=2, RB=2, TE=1 (needs 6 cards)
+    if n == 6 and pos_counts.get("QB") == 1 and pos_counts.get("WR") == 2 and pos_counts.get("RB") == 2 and pos_counts.get("TE") == 1:
+        return "balanced_offense", cards
 
     # Position Split: exactly 3 of one position + 3 of another (6 cards, 2 positions)
     if n == 6 and len(pos_counts) == 2:

@@ -65,11 +65,13 @@ def get_nba_division(team):
     return _TEAM_TO_DIV.get(team.upper().strip())
 
 HAND_TYPES = {
-    "royal_flush":      {"name": "Royal Flush",      "mult": 12.0, "desc": "5-6 cards all from same NBA division"},
-    "starting_lineup":  {"name": "Starting Lineup",   "mult": 3.5,  "desc": "G + F + C all present (5+ cards)"},
+    "royal_flush":      {"name": "Royal Flush",       "mult": 20.0, "desc": "5-6 cards all same position & same division"},
+    "division_six":     {"name": "Division Six",      "mult": 6.0,  "desc": "6 cards all from same division"},
     "six_man_rotation": {"name": "Six Man Rotation",  "mult": 5.5,  "desc": "6 of the same position"},
     "zone_press":       {"name": "Zone Press",         "mult": 5.0,  "desc": "5 of same position"},
+    "division_five":    {"name": "Division Straight", "mult": 5.0,  "desc": "5 cards all from same division"},
     "twin_towers":      {"name": "Twin Towers",        "mult": 4.0,  "desc": "3 of one position + 3 of another"},
+    "starting_lineup":  {"name": "Starting Lineup",   "mult": 3.5,  "desc": "G + F + C all present (5+ cards)"},
     "starting_four":    {"name": "Starting Four",      "mult": 3.0,  "desc": "4 of same position"},
     "pick_roll":        {"name": "Pick & Roll",        "mult": 2.0,  "desc": "3 of same position"},
     "catch_shoot":      {"name": "Catch & Shoot",      "mult": 1.5,  "desc": "2 of same position"},
@@ -334,11 +336,17 @@ def evaluate_hand(cards):
     pos_counts = Counter(c["pos"] for c in cards)
     max_count = max(pos_counts.values()) if pos_counts else 0
 
-    # Royal Flush: 5-6 cards all from same division
+    # Royal Flush: 5-6 cards all same position AND all same division (20x)
     if n >= 5:
         divs = [get_nba_division(c.get("team", "")) for c in cards]
-        if divs[0] and all(d == divs[0] for d in divs):
+        if divs[0] and all(d == divs[0] for d in divs) and len(pos_counts) == 1:
             return "royal_flush", cards
+
+    # Division Six: 6 cards all from same division (6x)
+    if n == 6:
+        divs = [get_nba_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "division_six", cards
 
     # six_man_rotation: 6 of same position
     if max_count >= 6:
@@ -346,15 +354,21 @@ def evaluate_hand(cards):
         six_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:6]
         return "six_man_rotation", six_cards
 
-    # starting_lineup: all 3 positions present AND n >= 5
-    if n >= 5 and len(pos_counts) == 3 and all(p in pos_counts for p in ["G", "F", "C"]):
-        return "starting_lineup", cards
+    # Division Five: 5 cards all from same division (5x)
+    if n == 5:
+        divs = [get_nba_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "division_five", cards
 
     # zone_press: 5 of same position
     if max_count >= 5:
         best_pos = max(pos_counts, key=lambda p: (pos_counts[p], sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p)))
         five_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:5]
         return "zone_press", five_cards
+
+    # starting_lineup: all 3 positions present AND n >= 5
+    if n >= 5 and len(pos_counts) == 3 and all(p in pos_counts for p in ["G", "F", "C"]):
+        return "starting_lineup", cards
 
     # twin_towers: 2 positions each with count >= 3
     trio_positions = [p for p, cnt in pos_counts.items() if cnt >= 3]
