@@ -1,218 +1,240 @@
-/* ── Global Comic Book Theme ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   GLOBAL BALATRO THEME — shared across all game pages
+   Palette: deep navy · hard black borders · yellow accent · red headers
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap');
 
 :root {
-    --bg:            #0d1017;
-    --surface:       #151a25;
-    --surface-2:     #1b2030;
-    --border:        #252b3a;
-    --border-accent: #3a1520;
-    --shadow:        rgba(0, 0, 0, 0.85);
-    --red:           #b31c2c;
-    --red-dark:      #5c0e16;
-    --red-bright:    #e02035;
-    --teal:          #147a6e;
-    --teal-bright:   #1aad9d;
-    --gold:          #b8920e;
-    --gold-bright:   #e8b820;
-    --text:          #ddd5c4;
-    --text-muted:    #5a6070;
-    --text-dim:      #8898a8;
+    /* ── Backgrounds ──────────────────────────────── */
+    --bg:          #12122a;
+    --surface:     #1a1a3e;
+    --surface-2:   #1e1e48;
+    --surface-3:   #222260;
+
+    /* ── Borders & Shadows ────────────────────────── */
+    --border:      #1a1a1a;     /* HARD black — the Balatro look */
+    --border-dim:  #2a2a6a;     /* soft navy for dividers only  */
+    --shadow:      #1a1a1a;
+
+    /* ── Accent Colors ────────────────────────────── */
+    --yellow:      #f5c700;
+    --yellow-dim:  #8a6a00;
+    --red:         #d62828;
+    --red-bright:  #ff4444;
+    --teal:        #147a6e;
+    --teal-bright: #1aad9d;
+    --card-face:   #f7f0df;
+
+    /* ── Text ─────────────────────────────────────── */
+    --text:        #f7f0df;
+    --text-dim:    #8888bb;
+    --text-muted:  #55558a;
+    --text-dark:   #1a1a1a;
+
+    /* ── Legacy aliases (chain/ttb/starting6 use these) ── */
+    --gold:        var(--yellow);
+    --gold-bright: var(--yellow);
+    --red-dark:    #8a1515;
+    --red-bright:  #ff4444;
+    --cream:       var(--card-face);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-    font-family: "Segoe UI", Arial, sans-serif;
-    background-color: var(--bg);
-    /* Halftone dot texture */
-    background-image: radial-gradient(circle, #1c2235 1.5px, transparent 1.5px);
-    background-size: 14px 14px;
-    background-attachment: fixed;
+    font-family: 'Barlow Condensed', Impact, 'Arial Black', sans-serif;
+    background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    position: relative;
 }
 
-/* Radial starburst — subtle, like the reference images */
-body::before {
-    content: '';
-    position: fixed;
-    bottom: -30vh;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 240vw;
-    height: 240vw;
-    background: repeating-conic-gradient(
-        from 0deg,
-        rgba(255,255,255,0.013) 0deg 4.5deg,
-        transparent 4.5deg 9deg
-    );
-    pointer-events: none;
-    z-index: 0;
-}
+/* ── App container ───────────────────────────────────────────────────────── */
 
 #app {
     max-width: 800px;
     margin: 0 auto;
-    padding: 24px;
-    position: relative;
-    z-index: 1;
+    padding: 0 0 40px;
 }
 
-/* ── Global header ────────────────────────────────────────────────────────── */
+/* ── Global header ───────────────────────────────────────────────────────── */
 
 header {
-    background: var(--surface-2);
-    padding: 16px 24px;
-    border-bottom: 3px solid var(--red);
-    box-shadow: 0 4px 0 rgba(0,0,0,0.6);
-    position: relative;
-    z-index: 1;
+    background: var(--red);
+    padding: 14px 24px;
+    border-bottom: 4px solid var(--border);
+    box-shadow: 0 4px 0 var(--border);
 }
 
 header h1 {
-    color: var(--red-bright);
-    font-size: 1.6rem;
+    color: var(--yellow);
+    font-size: 1.8rem;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 5px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+    line-height: 1;
 }
 
-/* ── Home page cards ──────────────────────────────────────────────────────── */
+.header-inner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* ── Back / nav links ────────────────────────────────────────────────────── */
+
+.back-link {
+    color: var(--yellow);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 800;
+    padding: 6px 12px;
+    border: 2px solid var(--yellow);
+    white-space: nowrap;
+    transition: filter 0.12s;
+    box-shadow: 2px 2px 0 var(--border);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-family: 'Barlow Condensed', sans-serif;
+}
+.back-link:hover { filter: brightness(1.15); }
+
+#back-btn {
+    background: none;
+    border: 2px solid var(--border-dim);
+    color: var(--text-dim);
+    padding: 8px 12px;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--border);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    font-family: 'Barlow Condensed', sans-serif;
+    transition: color 0.12s, border-color 0.12s;
+}
+#back-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+/* ── Home page: section label ────────────────────────────────────────────── */
 
 #question-select {
-    padding-top: 32px;
+    padding: 0;
 }
 
 #question-select h2 {
-    margin-bottom: 20px;
+    margin: 0;
+    padding: 12px 24px;
     color: var(--text-muted);
-    font-size: 0.72rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 3px;
-    font-weight: 700;
+    letter-spacing: 4px;
+    font-weight: 900;
+    font-family: 'Barlow Condensed', sans-serif;
+    background: var(--bg);
+    border-bottom: 2px solid var(--border);
 }
+
+/* ── Game card buttons ───────────────────────────────────────────────────── */
 
 #question-list { display: block; }
 
 .q-btn {
     background: var(--surface);
-    border: 2px solid var(--border);
+    border: 3px solid var(--border);
+    border-top: none;
     color: var(--text);
-    padding: 28px 28px;
+    padding: 0;
     text-align: left;
-    border-radius: 0;
     cursor: pointer;
-    transition: border-color 0.15s, transform 0.1s;
-    line-height: 1.6;
+    transition: transform 0.08s, box-shadow 0.08s;
     display: block;
     text-decoration: none;
-    margin-bottom: 72px;
+    box-shadow: 4px 4px 0 var(--border);
+    position: relative;
 }
-
-.q-btn:last-child { margin-bottom: 0; }
 
 .q-btn:hover {
-    border-color: var(--red);
-    transform: translateX(-2px);
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 var(--border);
+    z-index: 1;
+}
+.q-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--border);
 }
 
-.q-btn strong { font-size: 1.05rem; color: #fff; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
-.q-btn small  { color: var(--text-dim); font-size: 0.86rem; line-height: 1.4; }
-
-/* ── Back button / nav ────────────────────────────────────────────────────── */
-
-#back-btn {
-    background: none;
-    border: 2px solid var(--border);
-    color: var(--text-dim);
-    padding: 8px 12px;
-    border-radius: 0;
-    cursor: pointer;
-    white-space: nowrap;
-    margin-top: 4px;
-    box-shadow: 2px 2px 0 var(--shadow);
-    font-weight: 700;
+.q-btn strong {
+    font-size: 1.05rem;
+    color: var(--yellow);
+    font-weight: 900;
     text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 2px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    line-height: 1.1;
 }
-#back-btn:hover { border-color: var(--teal); color: var(--teal); }
-
-.back-link {
+.q-btn small {
     color: var(--text-dim);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 700;
-    padding: 6px 10px;
-    border: 2px solid var(--border);
-    border-radius: 0;
-    white-space: nowrap;
-    transition: color 0.15s, border-color 0.15s;
-    box-shadow: 2px 2px 0 var(--shadow);
+    font-size: 0.84rem;
+    line-height: 1.4;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 400;
+}
+
+/* ── Misc shared elements ────────────────────────────────────────────────── */
+
+.section-label {
+    font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    font-weight: 800;
+    font-family: 'Barlow Condensed', sans-serif;
 }
-.back-link:hover { color: var(--teal-bright); border-color: var(--teal); }
-
-/* ── Game panel / score ───────────────────────────────────────────────────── */
-
-#game-panel.hidden { display: none; }
-#question-select.hidden { display: none; }
-
-#game-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-#game-header > div { flex: 1; }
-#q-title { font-size: 1.2rem; color: #fff; font-weight: 800; text-transform: uppercase; }
-#q-desc  { color: var(--text-dim); margin-top: 4px; font-size: 0.88rem; }
 
 #score-box {
     background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 0;
+    border: 3px solid var(--border);
     padding: 10px 18px;
     text-align: center;
     white-space: nowrap;
-    font-size: 1.1rem;
-    box-shadow: 3px 3px 0 var(--shadow);
+    box-shadow: 3px 3px 0 var(--border);
 }
-#found-count { color: var(--teal-bright); font-size: 1.4rem; font-weight: 900; }
+#found-count { color: var(--teal-bright); font-size: 1.4rem; font-weight: 900; font-family: 'Bebas Neue', Impact, sans-serif; }
 
-/* ── Search ───────────────────────────────────────────────────────────────── */
-
+/* Search (used in chain‐style pages loaded via style.css) */
 #search-area { position: relative; margin-bottom: 24px; }
 
 #search-input {
     width: 100%;
     padding: 12px 16px;
     background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 0;
+    border: 3px solid var(--border);
     color: #fff;
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.15s;
-    box-shadow: 3px 3px 0 var(--shadow);
+    transition: border-color 0.12s;
+    box-shadow: 3px 3px 0 var(--border);
+    font-family: 'Barlow Condensed', sans-serif;
 }
-#search-input:focus { border-color: var(--teal); }
+#search-input:focus { border-color: var(--yellow); }
 
 #search-results {
     position: absolute;
-    top: 100%;
-    left: 0; right: 0;
+    top: 100%; left: 0; right: 0;
     background: var(--surface-2);
-    border: 2px solid var(--border);
+    border: 3px solid var(--border);
     border-top: none;
-    border-radius: 0;
     z-index: 100;
     max-height: 300px;
     overflow-y: auto;
-    box-shadow: 4px 4px 0 var(--shadow);
+    box-shadow: 4px 4px 0 var(--border);
 }
 
 .result-item {
@@ -221,7 +243,9 @@ header h1 {
     display: flex;
     align-items: center;
     gap: 10px;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-dim);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.95rem;
 }
 .result-item:last-child { border-bottom: none; }
 .result-item:hover { background: var(--surface); }
@@ -229,66 +253,46 @@ header h1 {
 .result-item.invalid { color: var(--text-muted); }
 
 .result-badge {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     padding: 2px 6px;
-    border-radius: 0;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    border: 1px solid;
+    font-family: 'Barlow Condensed', sans-serif;
 }
-.badge-valid   { background: #0e2520; color: var(--teal-bright); border: 1px solid #1a4a40; }
-.badge-invalid { background: #1e0a0a; color: #ff6666; border: 1px solid #3a1515; }
+.badge-valid   { background: #0a1e16; color: var(--teal-bright); border-color: var(--teal); }
+.badge-invalid { background: #1e0808; color: #ff6666; border-color: #882222; }
 
-/* ── Guesses ──────────────────────────────────────────────────────────────── */
-
+/* Guess chips */
 #guesses h3 {
     color: var(--text-muted);
-    font-size: 0.72rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 12px;
     font-weight: 700;
+    font-family: 'Barlow Condensed', sans-serif;
 }
-
 #guess-list { display: flex; flex-wrap: wrap; gap: 8px; }
-
 .guess-chip {
     padding: 6px 14px;
-    border-radius: 0;
     font-size: 0.88rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 2px 2px 0 var(--shadow);
+    box-shadow: 2px 2px 0 var(--border);
+    border: 2px solid;
+    font-family: 'Barlow Condensed', sans-serif;
 }
-.guess-chip.correct { background: #0d2a22; border: 2px solid var(--teal); color: var(--teal-bright); }
-.guess-chip.wrong   { background: #200a0a; border: 2px solid var(--red); color: #ff7070; }
+.guess-chip.correct { background: #0a1e16; border-color: var(--teal); color: var(--teal-bright); }
+.guess-chip.wrong   { background: #1e0808; border-color: var(--red); color: #ff7070; }
 
-/* ── Section label (shared) ───────────────────────────────────────────────── */
-
-.section-label {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-    font-weight: 700;
-}
-
-/* ── Header inner ─────────────────────────────────────────────────────────── */
-
-.header-inner { display: flex; align-items: center; gap: 20px; }
-
-/* ── Mobile ───────────────────────────────────────────────────────────────── */
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
-    #app { padding: 12px; }
+    #app { padding: 0 0 24px; }
     header { padding: 12px 16px; }
-    header h1 { font-size: 1.2rem; }
-
-    #game-header { flex-wrap: wrap; }
-    #game-header > div { flex: 1 1 100%; order: 1; }
-    #back-btn { order: 0; }
-    #score-box { order: 2; width: 100%; text-align: left; }
+    header h1 { font-size: 1.3rem; letter-spacing: 3px; }
     #search-results { max-height: 200px; }
 }

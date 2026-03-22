@@ -185,6 +185,13 @@ JOKERS = [
     {"id": "top_pick_chip",    "name": "Franchise Cornerstone", "desc": "Each scored top-5 overall pick adds +25 base pts.",                              "rarity": "uncommon"},
     {"id": "teammate_chip",    "name": "Locker Room Culture",   "desc": "Each scored card sharing a team with another scored card adds +15 base pts.",    "rarity": "uncommon"},
     {"id": "sec_chip",         "name": "SEC Hotbed",            "desc": "Each scored card from an SEC school adds +12 base pts.",                         "rarity": "uncommon"},
+    # Division jokers
+    {"id": "div_scout",     "name": "Division Scout",      "desc": "4 same-division cards score as Division Straight (5×).",          "rarity": "uncommon"},
+    {"id": "div_dynasty",   "name": "Division Dynasty",    "desc": "5 same-division cards score as Division Six (6×).",               "rarity": "rare"},
+    {"id": "div_dominance", "name": "Division Dominance",  "desc": "4 cards same position & division score as Royal Flush (20×).",    "rarity": "rare"},
+    {"id": "homefield",     "name": "Home Field Advantage","desc": "Division hands (Straight/Six/Royal Flush) get +4 mult.",          "rarity": "uncommon"},
+    {"id": "div_stacker",   "name": "Division Stacker",    "desc": "Each scored card in a division hand adds +20 base pts.",          "rarity": "common"},
+    {"id": "div_escalator", "name": "Conference Escalator","desc": "Each division hand played this run permanently adds +0.5 mult.",  "rarity": "rare"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
 
@@ -411,13 +418,13 @@ def evaluate_hand(cards):
 
     # Royal Flush: 5-6 cards all same position AND all same division (20x)
     if n >= 5:
-        divs = [get_nfl_division(c.get("team", "")) for c in cards]
+        divs = [c.get("division") or get_nfl_division(c.get("team", "")) for c in cards]
         if divs[0] and all(d == divs[0] for d in divs) and len(pos_counts) == 1:
             return "royal_flush", cards
 
     # Division Six: 6 cards all from same division (6x)
     if n == 6:
-        divs = [get_nfl_division(c.get("team", "")) for c in cards]
+        divs = [c.get("division") or get_nfl_division(c.get("team", "")) for c in cards]
         if divs[0] and all(d == divs[0] for d in divs):
             return "division_six", cards
 
@@ -427,7 +434,7 @@ def evaluate_hand(cards):
 
     # Division Five: 5 cards all from same division (5x)
     if n == 5:
-        divs = [get_nfl_division(c.get("team", "")) for c in cards]
+        divs = [c.get("division") or get_nfl_division(c.get("team", "")) for c in cards]
         if divs[0] and all(d == divs[0] for d in divs):
             return "division_five", cards
 
@@ -599,6 +606,14 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
             jpts = sum(15 for c in scoring_cards if _team_counts.get(c.get("team"), 0) >= 2)
         elif jid == "sec_chip":
             jpts = sum(12 for c in scoring_cards if get_conference(c.get("college", "")) == "SEC")
+        elif jid == "homefield":
+            if hand_type in ("division_five", "division_six", "royal_flush"):
+                jbonus = 4
+        elif jid == "div_stacker":
+            if hand_type in ("division_five", "division_six", "royal_flush"):
+                jpts = sum(20 for _ in scoring_cards)
+        elif jid == "div_escalator":
+            jbonus = joker_state.get("div_escalator_stacks", 0) * 0.5
         # Apply joker enhancements to per-joker contribution
         if jbonus != 0:
             enhs = joker_enhancements.get(jid, [])
@@ -684,6 +699,31 @@ def _calc_coins_earned(hand_type, scoring_cards, all_played, joker_ids, coins, j
     return earned
 
 
+def _maybe_upgrade_hand_for_jokers(hand_type, scoring_cards, cards_played, joker_ids, joker_state):
+    """Upgrade hand type if division-reducing jokers are owned."""
+    if not joker_ids:
+        return hand_type, scoring_cards
+    n = len(cards_played)
+    if n < 4:
+        return hand_type, scoring_cards
+
+    def _get_div(c):
+        return c.get("division") or get_nfl_division(c.get("team", ""))
+
+    divs = [_get_div(c) for c in cards_played]
+    same_div = bool(divs[0]) and all(d == divs[0] for d in divs)
+    pos_counts = Counter(c["pos"] for c in cards_played)
+    same_pos = len(pos_counts) == 1
+
+    if "div_dominance" in joker_ids and n >= 4 and same_div and same_pos:
+        return "royal_flush", cards_played
+    if "div_dynasty" in joker_ids and n >= 5 and same_div and hand_type not in ("royal_flush", "division_six"):
+        return "division_six", cards_played
+    if "div_scout" in joker_ids and n >= 4 and same_div and hand_type not in ("royal_flush", "division_six", "division_five"):
+        return "division_five", cards_played
+    return hand_type, scoring_cards
+
+
 def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, card_effects=None, joker_state=None, floor=1, joker_enhancements=None, deck_size=0, is_last_hand=False):
     """Score a played hand with skill levels, combo boosts, and card effects."""
     if skill_levels is None:
@@ -701,6 +741,7 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
         return {"score": 0, "hand_type": None}
 
     hand_type, scoring_cards = evaluate_hand(cards_played)
+    hand_type, scoring_cards = _maybe_upgrade_hand_for_jokers(hand_type, scoring_cards, cards_played, joker_ids, joker_state)
 
     # Calculate base pts with effective PPR and position multipliers
     base_pts = 0.0
@@ -951,6 +992,20 @@ def _generate_shop(conn, state):
         eitem2["effect"] = ey2["effect"]
     training_pool.append(eitem2)
 
+    # Division sticker (always available floor 2+)
+    if floor >= 2:
+        items.append({
+            "shop_id": str(uuid.uuid4())[:8],
+            "slot": slot_idx,
+            "section": "training",
+            "type": "division_sticker",
+            "name": "Division Sticker",
+            "desc": "Reassign any card to a new NFL division. Slap it on!",
+            "cost": scale_cost(7),
+            "sold": False,
+        })
+        slot_idx += 1
+
     # Pick 3 (skill always included; randomly pick 2 of the remaining options)
     random.shuffle(training_pool[1:])
     for tp in training_pool[:3]:
@@ -1070,6 +1125,9 @@ def play_hand(gid, card_ids):
     joker_state["clockwork_stacks"] = joker_state.get("clockwork_stacks", 0) + 1
 
     result = score_hand(played, g["jokers"], skill_levels, combo_boosts, card_effects, joker_state=joker_state, floor=g.get("floor", 1), joker_enhancements=joker_enhancements, deck_size=deck_size, is_last_hand=is_last_hand)
+
+    if result.get("hand_type") in ("division_five", "division_six", "royal_flush"):
+        joker_state["div_escalator_stacks"] = joker_state.get("div_escalator_stacks", 0) + 1
 
     # Apply boss score factors
     boss_factor = 1.0
@@ -1913,3 +1971,15 @@ def confirm_pack_picks(gid, selected_ids):
         "added_cards": selected,
         "card_effects": g["card_effects"],
     }, None
+
+
+def apply_division_sticker(game_id, card_id, new_division):
+    """Update a card's division in the game's deck pool."""
+    state = _GAMES.get(game_id)
+    if not state:
+        return {"error": "Game not found"}
+    for card in state["deck_pool"]:
+        if card["id"] == card_id:
+            card["division"] = new_division
+            return {"ok": True, "card_id": card_id, "division": new_division}
+    return {"error": "Card not found"}

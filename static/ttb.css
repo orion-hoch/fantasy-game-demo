@@ -1,130 +1,130 @@
-/* ── Ticking Time Bomb ───────────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   TICKING TIME BOMB — Balatro theme
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 #ttb-app {
     max-width: 680px;
     margin: 0 auto;
     padding: 0 0 60px;
-    position: relative;
-    z-index: 1;
 }
 
-/* ── Header ───────────────────────────────────────────────────────────────── */
+/* ── Header ──────────────────────────────────────────────────────────────── */
 
 #ttb-app header {
-    background: var(--surface-2);
+    background: var(--red);
     padding: 14px 24px;
-    border-bottom: 3px solid var(--red);
-    box-shadow: 0 4px 0 rgba(0,0,0,0.6);
+    border-bottom: 4px solid var(--border);
+    box-shadow: 0 4px 0 var(--border);
 }
 
-.header-inner { display: flex; align-items: center; gap: 20px; }
+.header-inner { display: flex; align-items: center; gap: 16px; }
 
 #ttb-app header h1 {
-    color: var(--red-bright);
-    font-size: 1.5rem;
+    color: var(--yellow);
+    font-size: 1.7rem;
     font-weight: 900;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 4px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
 }
 
-/* ── Hint bar ─────────────────────────────────────────────────────────────── */
+/* ── Hint bar ────────────────────────────────────────────────────────────── */
 
 #hint-bar {
-    background: var(--bg);
-    border-bottom: 2px solid var(--border);
+    background: var(--surface);
+    border-bottom: 3px solid var(--border);
     padding: 8px 24px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-muted);
     text-align: center;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-transform: uppercase;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
-/* ── Mode toggle bar ──────────────────────────────────────────────────────── */
+/* ── Mode toggle bar ─────────────────────────────────────────────────────── */
 
 #ttb-mode-bar {
     display: flex;
-    gap: 0;
     background: var(--surface);
-    border-bottom: 2px solid var(--border);
+    border-bottom: 3px solid var(--border);
     padding: 0 24px;
-    box-shadow: 0 3px 0 rgba(0,0,0,0.4);
+    box-shadow: 0 3px 0 var(--border);
 }
 
 .mode-btn {
     padding: 10px 20px;
     background: none;
     border: none;
-    border-bottom: 3px solid transparent;
+    border-bottom: 4px solid transparent;
     color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 800;
     cursor: pointer;
     letter-spacing: 1px;
-    transition: color 0.15s, border-color 0.15s;
-    margin-bottom: -2px;
+    transition: color 0.12s, border-color 0.12s;
+    margin-bottom: -3px;
     text-transform: uppercase;
+    font-family: 'Barlow Condensed', Impact, sans-serif;
 }
 .mode-btn:hover { color: var(--text); }
-.mode-btn.active { color: var(--red-bright); border-bottom-color: var(--red-bright); }
-.mode-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.mode-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+.mode-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* Vintage active tab */
-#ttb-app.vintage .mode-btn.active { color: var(--gold-bright); border-bottom-color: var(--gold-bright); }
+#ttb-app.vintage .mode-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
 
-/* ── Draft year filter bar ────────────────────────────────────────────────── */
+/* ── Draft year filter bar ───────────────────────────────────────────────── */
 
 #ttb-filter-bar {
     display: flex;
     align-items: center;
     gap: 14px;
     background: var(--bg);
-    border-bottom: 2px solid var(--border);
-    padding: 8px 24px;
+    border-bottom: 3px solid var(--border);
+    padding: 10px 24px;
 }
 
 #ttb-filter-label {
-    font-size: 0.73rem;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-muted);
     white-space: nowrap;
     flex-shrink: 0;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    font-family: 'Barlow Condensed', sans-serif;
 }
-
-#ttb-filter-label span {
-    color: var(--text);
-    font-weight: 800;
-}
+#ttb-filter-label span { color: var(--yellow); font-weight: 800; }
 
 #ttb-year-slider {
     flex: 1;
     max-width: 220px;
-    accent-color: var(--red-bright);
+    accent-color: var(--yellow);
     cursor: pointer;
     height: 4px;
 }
-#ttb-year-slider:disabled { opacity: 0.35; cursor: not-allowed; }
+#ttb-year-slider:disabled { opacity: 0.3; cursor: not-allowed; }
 
-#ttb-app.vintage #ttb-year-slider { accent-color: var(--gold-bright); }
-#ttb-app.vintage #ttb-filter-label span { color: var(--gold-bright); }
+#ttb-app.vintage #ttb-year-slider { accent-color: var(--yellow); }
+#ttb-app.vintage #ttb-filter-label span { color: var(--yellow); }
 
-/* ── Main game area ───────────────────────────────────────────────────────── */
+/* ── Main game area ──────────────────────────────────────────────────────── */
 
 #game-area {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 28px 24px 20px;
-    background: #09080f;
-    border-bottom: 2px solid var(--border);
+    padding: 32px 24px 24px;
+    background: #0e0e28;
+    border-bottom: 3px solid var(--border);
     min-height: 260px;
-    box-shadow: inset 0 -6px 20px rgba(0,0,0,0.5);
+    box-shadow: inset 0 -4px 20px rgba(0,0,0,0.6);
 }
 
-/* ── Fuse chain ───────────────────────────────────────────────────────────── */
+/* ── Fuse chain ──────────────────────────────────────────────────────────── */
 
 #fuse-chain {
     display: flex;
@@ -181,29 +181,30 @@
     flex-shrink: 0;
 }
 
-/* Teammate name pill — angular, hard shadow */
+/* Teammate name pill */
 .chain-pill {
     display: flex;
     align-items: center;
     gap: 8px;
     background: var(--surface);
-    border: 2px solid var(--red);
-    border-radius: 0;
+    border: 3px solid var(--border);
     padding: 8px 18px;
     font-size: 0.95rem;
     font-weight: 700;
     color: var(--text);
     white-space: nowrap;
     max-width: 320px;
-    box-shadow: 3px 3px 0 var(--shadow);
+    box-shadow: 3px 3px 0 var(--border);
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
 .pill-name {
     font-weight: 800;
     color: #fff;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
     font-size: 0.88rem;
+    font-family: 'Bebas Neue', Impact, sans-serif;
 }
 
 #chain-tail {
@@ -218,7 +219,7 @@
 }
 #chain-tail.hidden { display: none; }
 
-/* ── Bomb ─────────────────────────────────────────────────────────────────── */
+/* ── Bomb ────────────────────────────────────────────────────────────────── */
 
 #bomb-wrap {
     display: flex;
@@ -230,8 +231,7 @@
     width: 28px;
     height: 10px;
     background: #2a2020;
-    border: 2px solid #3a2a2a;
-    border-radius: 0;
+    border: 2px solid var(--border);
     margin-bottom: -2px;
     z-index: 1;
 }
@@ -244,7 +244,7 @@
     background:
         radial-gradient(circle at 37% 30%, rgba(255,255,255,0.10) 0%, transparent 44%),
         radial-gradient(circle at 50% 50%, #3a2a2a, #111 65%, #060606);
-    border: 3px solid #2a2020;
+    border: 3px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -253,9 +253,27 @@
         inset 0 -4px 10px rgba(0,0,0,0.55),
         inset 0 3px 6px rgba(255,255,255,0.04),
         0 8px 0 rgba(0,0,0,0.9),
-        6px 8px 0 rgba(0,0,0,0.6);
+        6px 8px 0 var(--border);
     transition: box-shadow 0.5s;
     overflow: hidden;
+}
+
+/* Clickable when not mid-game (no glow class active) */
+#bomb-body:not(.glow-1):not(.glow-2):not(.glow-3):not(.glow-4):not(.glow-5) {
+    cursor: pointer;
+    transition: box-shadow 0.5s, transform 0.1s, filter 0.1s;
+}
+#bomb-body:not(.glow-1):not(.glow-2):not(.glow-3):not(.glow-4):not(.glow-5):hover {
+    filter: brightness(1.18);
+    transform: scale(1.05) translateY(-2px);
+    box-shadow:
+        inset 0 -4px 10px rgba(0,0,0,0.55),
+        inset 0 3px 6px rgba(255,255,255,0.04),
+        0 12px 0 rgba(0,0,0,0.9),
+        8px 10px 0 var(--border);
+}
+#bomb-body:not(.glow-1):not(.glow-2):not(.glow-3):not(.glow-4):not(.glow-5):active {
+    transform: scale(0.97) translateY(2px);
 }
 
 /* Glow states */
@@ -270,7 +288,6 @@
     50%       { transform: scale(1.03); }
 }
 
-/* Explode */
 #bomb-body.exploded {
     animation: bomb-burst 0.65s ease-out forwards !important;
     background: radial-gradient(circle, #ff9900, #ff2200, #550000) !important;
@@ -281,7 +298,6 @@
     100% { transform: scale(3);   opacity: 0; }
 }
 
-/* Win */
 #bomb-body.defused {
     animation: none !important;
     background:
@@ -290,7 +306,6 @@
     box-shadow: inset 0 -4px 10px rgba(0,0,0,0.4), 0 0 50px #00ff8877, 0 0 90px #00ff8833 !important;
 }
 
-/* Inner display */
 #bomb-inner {
     display: flex;
     flex-direction: column;
@@ -307,14 +322,16 @@
     line-height: 1;
     transition: color 0.5s, font-size 0.3s;
     user-select: none;
+    font-family: 'Bebas Neue', Impact, sans-serif;
 }
 #bomb-label {
     font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     font-weight: 800;
     user-select: none;
     transition: color 0.5s;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
 /* Number colour by turns remaining */
@@ -327,7 +344,6 @@
 #bomb-body.defused  #bomb-num  { color: #00ff88; }
 #bomb-body.defused  #bomb-label { color: #00cc66; }
 
-/* Wrong guess flash */
 #bomb-inner.flash-wrong #bomb-num {
     font-size: 0.9rem;
     color: #ff5555;
@@ -356,39 +372,40 @@
     100% { opacity: 0; }
 }
 
-/* Skip flash */
 #bomb-inner.flash-skip #bomb-num { font-size: 2rem; color: #6a7080; animation: wrong-shake 0.3s ease-out; }
 #bomb-inner.flash-skip #bomb-label { color: #454a55; }
 
-/* ── Answer reveal ────────────────────────────────────────────────────────── */
+/* ── Answer reveal ───────────────────────────────────────────────────────── */
 
 #answer-reveal {
     margin: 16px 24px 0;
-    background: #0f0a18;
-    border: 3px solid var(--red);
-    border-radius: 0;
+    background: var(--surface);
+    border: 3px solid var(--border);
+    border-left: 6px solid var(--red);
     padding: 18px 22px;
     text-align: center;
     animation: clue-appear 0.4s ease-out;
-    box-shadow: 5px 5px 0 var(--shadow);
+    box-shadow: 5px 5px 0 var(--border);
 }
 #answer-reveal.hidden { display: none; }
 
 .answer-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     font-weight: 800;
     color: var(--red-bright);
     margin-bottom: 8px;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
 #answer-name {
-    font-size: 1.7rem;
+    font-size: 1.9rem;
     font-weight: 900;
     color: #fff;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
     text-transform: uppercase;
+    font-family: 'Bebas Neue', Impact, sans-serif;
 }
 
 @keyframes clue-appear {
@@ -396,46 +413,46 @@
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Hints section ────────────────────────────────────────────────────────── */
+/* ── Hints section ───────────────────────────────────────────────────────── */
 
-#hints-section { padding: 12px 24px 0; }
+#hints-section { padding: 14px 24px 0; }
 
 .ttb-btn-hint {
     background: none;
-    border: 2px solid var(--border);
+    border: 3px solid var(--border-dim);
     color: var(--text-muted);
     font-size: 0.8rem;
     font-weight: 800;
-    padding: 7px 14px;
+    padding: 8px 16px;
     display: flex;
     align-items: center;
     gap: 6px;
-    border-radius: 0;
     cursor: pointer;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 2px 2px 0 var(--shadow);
-    transition: border-color 0.15s, color 0.15s, box-shadow 0.1s, transform 0.1s;
+    letter-spacing: 1px;
+    box-shadow: 2px 2px 0 var(--border);
+    transition: border-color 0.12s, color 0.12s, box-shadow 0.08s, transform 0.08s;
+    font-family: 'Barlow Condensed', Impact, sans-serif;
 }
 .ttb-btn-hint:hover {
-    border-color: var(--gold);
-    color: var(--gold-bright);
-    box-shadow: 3px 3px 0 var(--shadow);
+    border-color: var(--yellow);
+    color: var(--yellow);
+    box-shadow: 3px 3px 0 var(--border);
     transform: translate(-1px, -1px);
 }
 
 .hint-badge {
     background: var(--surface-2);
-    border: 1px solid var(--border);
-    border-radius: 0;
+    border: 1px solid var(--border-dim);
     padding: 1px 7px;
     font-size: 0.7rem;
-    color: var(--gold-bright);
+    color: var(--yellow);
     font-weight: 800;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
 #hints-panel {
-    margin-top: 8px;
+    margin-top: 10px;
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -447,12 +464,11 @@
     align-items: center;
     gap: 10px;
     background: var(--surface);
-    border: 2px solid var(--border);
-    border-left: 4px solid var(--gold);
-    border-radius: 0;
-    padding: 9px 14px;
+    border: 3px solid var(--border);
+    border-left: 5px solid var(--yellow);
+    padding: 10px 14px;
     animation: clue-appear 0.3s ease-out;
-    box-shadow: 2px 2px 0 var(--shadow);
+    box-shadow: 3px 3px 0 var(--border);
 }
 
 .hint-icon { font-size: 1.1rem; flex-shrink: 0; width: 24px; text-align: center; }
@@ -461,58 +477,65 @@
 .hint-label {
     font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: 2px;
     color: var(--text-muted);
     font-weight: 800;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
-.hint-text { font-size: 0.9rem; color: var(--text); font-weight: 600; }
+.hint-text {
+    font-size: 0.92rem;
+    color: var(--text);
+    font-weight: 700;
+    font-family: 'Barlow Condensed', sans-serif;
+}
 
-/* ── Wrong guesses ────────────────────────────────────────────────────────── */
+/* ── Wrong guesses ───────────────────────────────────────────────────────── */
 
 #wrong-guesses {
-    padding: 12px 24px 0;
+    padding: 14px 24px 0;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
 }
 
 .wrong-chip {
-    padding: 4px 12px;
-    border-radius: 0;
-    background: #200808;
-    border: 2px solid var(--red);
+    padding: 5px 14px;
+    background: #1e0808;
+    border: 3px solid var(--border);
+    border-left: 4px solid var(--red);
     color: #ff8888;
     font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 2px 2px 0 var(--shadow);
+    letter-spacing: 1px;
+    box-shadow: 2px 2px 0 var(--border);
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
-/* ── Feedback ─────────────────────────────────────────────────────────────── */
+/* ── Feedback ────────────────────────────────────────────────────────────── */
 
 #ttb-feedback {
     margin: 10px 24px 0;
     padding: 13px 16px;
-    border-radius: 0;
     font-size: 0.93rem;
     line-height: 1.5;
     font-weight: 600;
     display: none;
-    border-left: 4px solid;
-    box-shadow: 3px 3px 0 var(--shadow);
+    border-left: 5px solid;
+    box-shadow: 3px 3px 0 var(--border);
+    font-family: 'Barlow Condensed', sans-serif;
 }
-#ttb-feedback.correct { display: block; background: #0c2420; border-color: var(--teal-bright); color: var(--teal-bright); }
-#ttb-feedback.wrong   { display: block; background: #1e0808; border-color: var(--red-bright);  color: #ff8888; }
-#ttb-feedback.reveal  { display: block; background: #0f0a18; border-color: var(--red);          color: #cc88ff; }
+#ttb-feedback.correct { display: block; background: #0a1e1a; border-color: var(--teal-bright); color: var(--teal-bright); }
+#ttb-feedback.wrong   { display: block; background: #1e0808; border-color: var(--red);         color: #ff8888; }
+#ttb-feedback.reveal  { display: block; background: #180a28; border-color: #8844cc;             color: #cc88ff; }
 
-/* ── Search ───────────────────────────────────────────────────────────────── */
+/* ── Search ──────────────────────────────────────────────────────────────── */
 
 #ttb-search-area {
     display: flex;
     gap: 10px;
-    padding: 14px 24px 0;
+    padding: 16px 24px 0;
     align-items: flex-start;
     position: relative;
     z-index: 10;
@@ -523,69 +546,69 @@
     width: 100%;
     padding: 12px 16px;
     background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 0;
+    border: 3px solid var(--border);
     color: #fff;
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.15s;
-    box-shadow: 3px 3px 0 var(--shadow);
+    transition: border-color 0.12s;
+    box-shadow: 3px 3px 0 var(--border);
+    font-family: 'Barlow Condensed', sans-serif;
 }
-#ttb-input:focus    { border-color: var(--red); }
-#ttb-input:disabled { opacity: 0.4; cursor: not-allowed; }
+#ttb-input:focus    { border-color: var(--yellow); }
+#ttb-input:disabled { opacity: 0.35; cursor: not-allowed; }
 
 #ttb-search-results {
     position: absolute; top: 100%; left: 0; right: 0;
     background: var(--surface-2);
-    border: 2px solid var(--border);
+    border: 3px solid var(--border);
     border-top: none;
-    border-radius: 0;
     z-index: 200;
     max-height: 280px;
     overflow-y: auto;
-    box-shadow: 4px 4px 0 var(--shadow);
+    box-shadow: 4px 4px 0 var(--border);
 }
 
 .ttb-result-item {
     padding: 10px 16px;
     cursor: pointer;
     color: var(--text);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--border-dim);
     font-size: 0.93rem;
     transition: background 0.1s;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 .ttb-result-item:last-child { border-bottom: none; }
 .ttb-result-item:hover,
 .ttb-result-item.highlighted { background: var(--surface); color: #fff; }
 
 #ttb-submit-btn {
-    padding: 12px 20px;
+    padding: 12px 22px;
     background: var(--red);
-    border: 2px solid var(--red-bright);
-    border-radius: 0;
+    border: 3px solid var(--border);
     color: #fff;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 800;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    transition: background 0.15s, box-shadow 0.1s, transform 0.1s;
-    box-shadow: 4px 4px 0 var(--shadow);
+    transition: background 0.12s, box-shadow 0.08s, transform 0.08s;
+    box-shadow: 4px 4px 0 var(--border);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    font-family: 'Barlow Condensed', Impact, sans-serif;
 }
 #ttb-submit-btn:hover:not(:disabled) {
     background: var(--red-bright);
-    box-shadow: 5px 5px 0 var(--shadow);
+    box-shadow: 5px 5px 0 var(--border);
     transform: translate(-1px, -1px);
 }
 #ttb-submit-btn:active:not(:disabled) {
-    box-shadow: 2px 2px 0 var(--shadow);
+    box-shadow: 2px 2px 0 var(--border);
     transform: translate(2px, 2px);
 }
-#ttb-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+#ttb-submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
-/* ── Action buttons ───────────────────────────────────────────────────────── */
+/* ── Action buttons ──────────────────────────────────────────────────────── */
 
 #ttb-action-area {
     padding: 14px 24px 0;
@@ -595,82 +618,65 @@
 }
 
 .ttb-btn {
-    padding: 11px 22px;
-    border-radius: 0;
-    font-size: 0.88rem;
+    padding: 12px 24px;
+    font-size: 0.9rem;
     font-weight: 800;
     cursor: pointer;
-    border: 2px solid;
-    transition: background 0.15s, box-shadow 0.1s, transform 0.1s;
-    box-shadow: 4px 4px 0 var(--shadow);
+    border: 3px solid var(--border);
+    transition: background 0.12s, box-shadow 0.08s, transform 0.08s;
+    box-shadow: 4px 4px 0 var(--border);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
+    font-family: 'Bebas Neue', Impact, sans-serif;
 }
 .ttb-btn.hidden { display: none; }
+
+/* Start is handled by clicking the bomb */
+#ttb-start-btn { display: none !important; }
 .ttb-btn:hover:not(:disabled) {
-    box-shadow: 5px 5px 0 var(--shadow);
+    box-shadow: 5px 5px 0 var(--border);
     transform: translate(-1px, -1px);
 }
 .ttb-btn:active:not(:disabled) {
-    box-shadow: 2px 2px 0 var(--shadow);
+    box-shadow: 2px 2px 0 var(--border);
     transform: translate(2px, 2px);
 }
 
-.ttb-btn-red   { background: var(--red); border-color: var(--red-bright); color: #fff; }
+.ttb-btn-red   { background: var(--red); border-color: var(--border); color: #fff; }
 .ttb-btn-red:hover { background: var(--red-bright); }
 
-.ttb-btn-ghost { background: none; border-color: var(--border); color: var(--text-dim); }
+.ttb-btn-ghost { background: none; border-color: var(--border-dim); color: var(--text-dim); }
 .ttb-btn-ghost:hover { border-color: var(--red); color: #ff8888; }
 
-/* ── Vintage mode theme ───────────────────────────────────────────────────── */
+/* ── Vintage mode ────────────────────────────────────────────────────────── */
 
-#ttb-app.vintage header { border-bottom-color: var(--gold); }
-#ttb-app.vintage header h1 { color: var(--gold-bright); }
+#ttb-app.vintage header { border-bottom-color: var(--border); }
+#ttb-app.vintage header h1 { color: var(--yellow); }
+#ttb-app.vintage .chain-pill { border-color: var(--border); }
+#ttb-app.vintage .pill-name { color: var(--yellow); }
+#ttb-app.vintage #ttb-input:focus { border-color: var(--yellow); }
+#ttb-app.vintage #ttb-submit-btn { background: var(--yellow); color: var(--text-dark); }
+#ttb-app.vintage #ttb-submit-btn:hover:not(:disabled) { filter: brightness(1.1); }
+#ttb-app.vintage .ttb-btn-red { background: var(--yellow); color: var(--text-dark); }
+#ttb-app.vintage #answer-reveal { border-left-color: var(--yellow); }
+#ttb-app.vintage .answer-label  { color: var(--yellow); }
+#ttb-app.vintage #ttb-feedback.correct { border-color: var(--yellow); color: var(--yellow); background: #1a1400; }
 
-#ttb-app.vintage .chain-pill {
-    border-color: var(--gold);
-    box-shadow: 3px 3px 0 var(--shadow);
-}
-#ttb-app.vintage .pill-name { color: var(--gold-bright); }
-
-#ttb-app.vintage #ttb-input:focus { border-color: var(--gold); }
-#ttb-app.vintage #ttb-submit-btn { background: var(--gold); border-color: var(--gold-bright); }
-#ttb-app.vintage #ttb-submit-btn:hover:not(:disabled) { background: var(--gold-bright); }
-
-#ttb-app.vintage .ttb-btn-red { background: var(--gold); border-color: var(--gold-bright); }
-#ttb-app.vintage .ttb-btn-red:hover { background: var(--gold-bright); }
-
-#ttb-app.vintage #answer-reveal { border-color: var(--gold); }
-#ttb-app.vintage .answer-label  { color: var(--gold-bright); }
-
-#ttb-app.vintage #ttb-feedback.correct { border-color: var(--gold-bright); color: var(--gold-bright); background: #1a1200; }
-
-#ttb-app.vintage .hint-badge { color: var(--gold-bright); }
-#ttb-app.vintage .ttb-btn-hint:hover { border-color: var(--gold); color: var(--gold-bright); }
-
-/* ── Defense toggle ───────────────────────────────────────────────────────── */
+/* ── Defense & Hard toggles ──────────────────────────────────────────────── */
 
 .mode-bar-sep { flex: 1; }
-
 .mode-defense-toggle { color: var(--text-muted); }
-.mode-defense-toggle.defense-active {
-    color: var(--teal-bright);
-    border-bottom-color: var(--teal-bright);
-}
-
+.mode-defense-toggle.defense-active { color: var(--teal-bright); border-bottom-color: var(--teal-bright); }
 .mode-hard-toggle { color: var(--text-muted); }
-.mode-hard-toggle.hard-active {
-    color: #ff6644;
-    border-bottom-color: #ff6644;
-}
+.mode-hard-toggle.hard-active { color: #ff6644; border-bottom-color: #ff6644; }
 
-/* ── Mobile ───────────────────────────────────────────────────────────────── */
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {
     #ttb-app header { padding: 12px 14px; }
-    #ttb-app header h1 { font-size: 1.2rem; }
+    #ttb-app header h1 { font-size: 1.3rem; }
     #hint-bar { padding: 7px 14px; }
-    #game-area { padding: 20px 14px 16px; }
+    #game-area { padding: 22px 14px 18px; }
     #bomb-body { width: 120px; height: 120px; }
     #bomb-num  { font-size: 2.6rem; }
     .chain-pill { font-size: 0.82rem; padding: 7px 12px; max-width: 260px; }
@@ -683,4 +689,6 @@
     #ttb-submit-btn { width: 100%; text-align: center; }
     #ttb-action-area { padding: 12px 14px 0; }
     .ttb-btn { width: 100%; text-align: center; }
+    #ttb-mode-bar { padding: 0 14px; }
+    #ttb-filter-bar { padding: 8px 14px; }
 }

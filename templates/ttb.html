@@ -21,7 +21,7 @@
 <div id="ttb-app">
     <header>
         <div class="header-inner">
-            <a href="/" class="back-link">&#8592; Home</a>
+            <a href="/?tab=nfl" class="back-link">&#8592; Back</a>
             <img src="/static/img/bomb.svg" class="header-icon" alt="">
             <h1>Ticking Time Bomb</h1>
         </div>
@@ -59,7 +59,7 @@
         </div>
         <div id="bomb-wrap">
             <div id="bomb-cap" class="hidden"></div>
-            <div id="bomb-body">
+            <div id="bomb-body" onclick="if(document.getElementById('ttb-skip-btn').classList.contains('hidden'))ttbStart()">
                 <div id="bomb-inner">
                     <span id="bomb-num">?</span>
                     <span id="bomb-label">press start</span>

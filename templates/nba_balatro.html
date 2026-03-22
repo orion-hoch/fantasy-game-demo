@@ -13,6 +13,7 @@
   <!-- Start Screen -->
   <div id="start-screen" class="screen active">
     <div class="start-inner">
+      <a href="/?tab=nba" class="back-link">&#8592; Back</a>
       <div class="start-logo">
         <div class="start-ball">🏀</div>
         <h1 class="start-title">NBA BALATRO</h1>
@@ -36,7 +37,6 @@
           <div class="ht-row ht-royal"><span class="ht-name">Royal Flush</span><span class="ht-mult">20x</span><span class="ht-desc">5-6 cards same position &amp; same division</span></div>
         </div>
       </div>
-      <a href="/?tab=nba" class="back-link">&#8592; Back</a>
     </div>
   </div>
 
@@ -286,6 +286,28 @@
       <button class="overlay-close" onclick="toggleDeckViewer()">✕</button>
     </div>
     <div id="deck-viewer-content"></div>
+  </div>
+
+  <!-- Division Sticker Modal -->
+  <div id="div-sticker-modal" class="overlay hidden">
+    <div class="overlay-backdrop" onclick="closeDivisionStickerModal()"></div>
+    <div class="overlay-panel sticker-modal-panel">
+      <h3 class="sticker-modal-title">🏷️ Division Sticker</h3>
+
+      <!-- Step 1: Pick a card -->
+      <div id="div-sticker-step1">
+        <p class="sticker-modal-sub">Pick a card to re-assign its division</p>
+        <div id="div-sticker-card-grid" class="sticker-card-grid"></div>
+      </div>
+
+      <!-- Step 2: Pick a division -->
+      <div id="div-sticker-step2" class="hidden">
+        <p class="sticker-modal-sub">Slap a new division onto: <strong id="div-sticker-chosen-card"></strong></p>
+        <div class="sticker-div-options" id="sticker-div-options"></div>
+      </div>
+
+      <button class="btn-secondary" onclick="closeDivisionStickerModal()" style="margin-top:12px">Cancel</button>
+    </div>
   </div>
 
   <script src="/static/nba_balatro.js"></script>

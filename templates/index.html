@@ -6,221 +6,177 @@
     <title>Fantasy Sports Trivia</title>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        .q-card-icon {
-            width: 60px;
-            height: 60px;
-            flex-shrink: 0;
-            display: block;
-            image-rendering: crisp-edges;
+        /* ── Tab bar ──────────────────────────────────────────────── */
+        #tab-bar {
+            display: flex;
+            padding: 16px 24px 0;
+            gap: 0;
         }
+
+        .tab-btn {
+            flex: 1;
+            padding: 11px 16px;
+            background: var(--surface);
+            border: 3px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-family: 'Barlow Condensed', Impact, sans-serif;
+            box-shadow: 3px 3px 0 var(--border);
+            transition: background 0.12s, color 0.12s;
+            margin-right: -3px;
+            position: relative;
+            z-index: 0;
+        }
+        .tab-btn:last-child { margin-right: 0; }
+        .tab-btn:hover { background: var(--surface-2); color: var(--text); }
+        .tab-btn.active {
+            background: var(--yellow);
+            color: var(--text-dark);
+            z-index: 1;
+        }
+
+        /* ── Tab panels ───────────────────────────────────────────── */
+        .tab-panel { display: none; padding: 20px 24px 40px; }
+        .tab-panel.active { display: block; }
+
+        /* ── Game list ────────────────────────────────────────────── */
+        .game-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .q-btn {
+            display: flex !important;
+            align-items: stretch;
+            text-decoration: none;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--border);
+            background: var(--surface);
+            transition: transform 0.08s, box-shadow 0.08s;
+        }
+        .q-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0 var(--border);
+        }
+        .q-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0 var(--border);
+        }
+
+        .q-btn-accent {
+            width: 6px;
+            flex-shrink: 0;
+        }
+        .accent-yellow { background: var(--yellow); }
+        .accent-red    { background: var(--red); }
+
         .q-card-body {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 4px;
+            padding: 14px 18px;
+            flex: 1;
         }
-        .q-btn {
-            display: flex !important;
-            align-items: center;
-            gap: 24px;
-            margin-bottom: 16px; /* override the 72px default */
-        }
-        .q-btn:last-child { margin-bottom: 0; }
+
         .q-btn strong {
             display: block;
-            margin-bottom: 2px;
-        }
-
-        /* ── Sport section banners ──────────────────────────────────────── */
-
-        .sport-header {
-            display: flex;
-            align-items: stretch;
-            height: 76px;
-            margin: 0 0 16px;
-            border: 2px solid var(--border);
-            box-shadow: 6px 6px 0 rgba(0,0,0,0.9);
-            overflow: hidden;
-            position: relative;
-            background: var(--surface);
-        }
-
-        /* NBA banner gets a clear section break above it */
-        .nba-sport-header {
-            margin-top: 48px;
-        }
-
-        /* Chapter number block */
-        .sh-num {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 60px;
-            flex-shrink: 0;
+            font-family: 'Bebas Neue', Impact, sans-serif;
             font-size: 1.1rem;
             font-weight: 900;
-            font-family: "Courier New", monospace;
-            letter-spacing: -1px;
-            border-right: 2px solid var(--border);
-            user-select: none;
-            line-height: 1;
-            flex-direction: column;
-            gap: 1px;
-        }
-
-        .sh-num-label {
-            font-size: 0.42rem;
-            letter-spacing: 2px;
-            font-weight: 800;
-            text-transform: uppercase;
-            opacity: 0.6;
-        }
-
-        /* Title + subtitle */
-        .sh-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 22px;
-            gap: 3px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .sh-title {
-            font-size: 2rem;
-            font-weight: 900;
-            letter-spacing: 10px;
+            letter-spacing: 3px;
             text-transform: uppercase;
             line-height: 1;
+            margin-bottom: 2px;
+        }
+        .accent-yellow ~ .q-card-body strong { color: var(--yellow); }
+        .accent-red    ~ .q-card-body strong { color: var(--red-bright); }
+
+        .q-btn small {
+            font-family: 'Barlow Condensed', Arial, sans-serif;
+            font-size: 0.84rem;
+            line-height: 1.4;
+            font-weight: 400;
+            color: var(--text-dim);
         }
 
-        .sh-sub {
-            font-size: 0.58rem;
-            font-weight: 800;
-            letter-spacing: 3.5px;
+        /* ── About panel ──────────────────────────────────────────── */
+        .about-intro {
+            background: var(--surface);
+            border: 3px solid var(--border);
+            border-left: 6px solid var(--yellow);
+            box-shadow: 4px 4px 0 var(--border);
+            padding: 20px 22px;
+            margin-bottom: 20px;
+        }
+
+        .about-intro h2 {
+            font-family: 'Bebas Neue', Impact, sans-serif;
+            color: var(--yellow);
+            font-size: 1.6rem;
+            letter-spacing: 4px;
             text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .about-intro p {
+            font-family: 'Barlow Condensed', sans-serif;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            line-height: 1.55;
+        }
+
+        .blog-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
             color: var(--text-muted);
+            font-weight: 800;
+            font-family: 'Barlow Condensed', sans-serif;
+            margin-bottom: 12px;
         }
 
-        /* Cross-hatch decoration panel */
-        .sh-deco {
-            width: 100px;
-            flex-shrink: 0;
-            border-left: 1px solid var(--border);
-            position: relative;
+        .blog-list { display: flex; flex-direction: column; gap: 8px; }
+
+        .blog-post {
+            background: var(--surface);
+            border: 3px solid var(--border);
+            border-left: 6px solid var(--red);
+            box-shadow: 4px 4px 0 var(--border);
+            padding: 16px 18px;
         }
 
-        /* Sport ball icon */
-        .sh-ball {
-            width: 48px;
-            height: 48px;
-            flex-shrink: 0;
-            align-self: center;
-            margin: 0 16px 0 12px;
-            position: relative;
-            z-index: 1;
+        .blog-post-title {
+            font-family: 'Bebas Neue', Impact, sans-serif;
+            font-size: 1.05rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text);
+            margin-bottom: 6px;
         }
 
-        /* ── NFL theme ────────────────────────────────────────────────── */
-
-        .nfl-sport-header {
-            border-color: var(--red-dark);
-            border-top: 4px solid var(--red-bright);
-            border-left: 5px solid var(--red-bright);
+        .blog-post-date {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            font-weight: 800;
+            font-family: 'Barlow Condensed', sans-serif;
+            margin-bottom: 8px;
         }
 
-        .nfl-sport-header .sh-num {
-            background: #160408;
-            border-right-color: var(--red-dark);
-            color: var(--red-bright);
+        .blog-post p {
+            font-family: 'Barlow Condensed', sans-serif;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
 
-        .nfl-sport-header .sh-title {
-            color: var(--red-bright);
-            text-shadow: 3px 3px 0 var(--red-dark);
-        }
-
-        .nfl-sport-header .sh-body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent 0px,
-                transparent 18px,
-                rgba(179,28,44,0.05) 18px,
-                rgba(179,28,44,0.05) 19px
-            );
-            pointer-events: none;
-        }
-
-        .nfl-sport-header .sh-deco {
-            border-left-color: var(--red-dark);
-            background:
-                repeating-linear-gradient(
-                    -52deg,
-                    transparent 0px,
-                    transparent 7px,
-                    rgba(179,28,44,0.12) 7px,
-                    rgba(179,28,44,0.12) 9px
-                ),
-                #0e0204;
-        }
-
-        /* ── NBA theme ────────────────────────────────────────────────── */
-
-        .nba-sport-header {
-            border-color: #5a3c00;
-            border-top: 4px solid var(--gold-bright);
-            border-left: 5px solid var(--gold-bright);
-        }
-
-        .nba-sport-header .sh-num {
-            background: #120e00;
-            border-right-color: #5a3c00;
-            color: var(--gold-bright);
-        }
-
-        .nba-sport-header .sh-title {
-            color: var(--gold-bright);
-            text-shadow: 3px 3px 0 #5a3c00;
-        }
-
-        .nba-sport-header .sh-body::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: repeating-linear-gradient(
-                90deg,
-                transparent 0px,
-                transparent 18px,
-                rgba(184,146,14,0.05) 18px,
-                rgba(184,146,14,0.05) 19px
-            );
-            pointer-events: none;
-        }
-
-        .nba-sport-header .sh-deco {
-            border-left-color: #5a3c00;
-            background:
-                repeating-linear-gradient(
-                    -52deg,
-                    transparent 0px,
-                    transparent 7px,
-                    rgba(184,146,14,0.14) 7px,
-                    rgba(184,146,14,0.14) 9px
-                ),
-                #0e0c00;
-        }
-
-        /* ── Mobile ───────────────────────────────────────────────────── */
+        /* ── Mobile ───────────────────────────────────────────────── */
         @media (max-width: 600px) {
-            .sport-header { height: 62px; }
-            .sh-num { width: 46px; font-size: 0.9rem; }
-            .sh-title { font-size: 1.5rem; letter-spacing: 7px; }
-            .sh-deco { width: 60px; }
-            .sh-ball { width: 38px; height: 38px; margin: 0 10px 0 8px; }
+            #tab-bar { padding: 12px 14px 0; }
+            .tab-panel { padding: 16px 14px 32px; }
+            .tab-btn { font-size: 0.74rem; letter-spacing: 1px; padding: 10px 10px; }
         }
     </style>
 </head>
@@ -228,113 +184,140 @@
 
 <div id="app">
     <header>
-        <h1>Fantasy Sports Trivia</h1>
+        <div class="header-inner">
+            <h1>Fantasy Sports Trivia</h1>
+        </div>
     </header>
 
-    <div id="question-select">
-        <h2>Pick a Game</h2>
+    <!-- ── Tabs ───────────────────────────────────────────────── -->
+    <div id="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('about')">About</button>
+        <button class="tab-btn" onclick="switchTab('nfl')">NFL Games</button>
+        <button class="tab-btn" onclick="switchTab('nba')">NBA Games</button>
+    </div>
 
-        <!-- ── NFL section header ────────────────────────────────────── -->
-        <div class="sport-header nfl-sport-header">
-            <div class="sh-num">
-                <span>01</span>
-                <span class="sh-num-label">VOL.</span>
-            </div>
-            <div class="sh-body">
-                <div class="sh-title">NFL</div>
-                <div class="sh-sub">Fantasy Football</div>
-            </div>
-            <div class="sh-deco"></div>
-            <img src="/static/img/football.svg" class="sh-ball" alt="">
+    <!-- ── About ──────────────────────────────────────────────── -->
+    <div id="tab-about" class="tab-panel active">
+        <div class="about-intro">
+            <h2>Welcome</h2>
+            <p>A collection of fantasy sports trivia games built around NFL and NBA players. Test your knowledge across different game formats — from chain puzzles and ticking time bombs to roguelike dungeon runs and Balatro-style card drafts.</p>
         </div>
 
-        <a href="/chain" class="q-btn" style="text-decoration:none;border-color:#b8920e;">
-            <img src="/static/img/chain.svg" class="q-card-icon" alt="Chain">
-            <div class="q-card-body">
-                <strong style="color:#e8b820">Chain Game</strong>
-                <small>Build a chain of clues — name players that fit every link</small>
+        <div class="blog-label">Updates</div>
+        <div class="blog-list">
+            <div class="blog-post">
+                <div class="blog-post-date">March 2026</div>
+                <div class="blog-post-title">NBA Balatro Added</div>
+                <p>Draft hands of NBA player-season cards, build scoring combos, and beat the shot clock across multiple rounds. Features Guards, Forwards, and Centers with unique joker bonuses.</p>
             </div>
-        </a>
-        <a href="/ttb" class="q-btn" style="text-decoration:none;border-color:#b31c2c;">
-            <img src="/static/img/bomb.svg" class="q-card-icon" alt="Bomb">
-            <div class="q-card-body">
-                <strong style="color:#e02035">Ticking Time Bomb</strong>
-                <small>5 clues, 5 guesses — identify the mystery player before the bomb explodes</small>
+            <div class="blog-post">
+                <div class="blog-post-date">February 2026</div>
+                <div class="blog-post-title">Dungeon Adventure Expanded</div>
+                <p>Added NBA mode to Dungeon Adventure. Pick a class, collect relics that filter your player pool, and work through 6 dungeon floors of trivia combat.</p>
             </div>
-        </a>
-        <a href="/starting6" class="q-btn" style="text-decoration:none;border-color:#147a6e;">
-            <img src="/static/img/football.svg" class="q-card-icon" alt="Football">
-            <div class="q-card-body">
-                <strong style="color:#1aad9d">Starting 6 — 2 Player Draft</strong>
-                <small>Draw a random team each round and draft your best lineup vs a friend</small>
-            </div>
-        </a>
-        <a href="/dungeon_adventure" class="q-btn" style="text-decoration:none;border-color:#36455b;">
-            <img src="/static/img/dungeon_icons/relic.svg" class="q-card-icon" alt="Dungeon">
-            <div class="q-card-body">
-                <strong style="color:#d8a84f">Dungeon Adventure</strong>
-                <small>Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 dungeon floors</small>
-            </div>
-        </a>
-        <a href="/nfl_balatro" class="q-btn" style="text-decoration:none;border-color:#1e4a1e;">
-            <img src="/static/img/football.svg" class="q-card-icon" alt="Cards">
-            <div class="q-card-body">
-                <strong style="color:#39ff14">NFL Balatro: Skill Position Edition</strong>
-                <small>Roguelike card game — draft player-season cards, build combos, beat 8 rounds to win the Super Bowl</small>
-            </div>
-        </a>
-
-        <!-- ── NBA section header ────────────────────────────────────── -->
-        <div class="sport-header nba-sport-header">
-            <div class="sh-num">
-                <span>02</span>
-                <span class="sh-num-label">VOL.</span>
-            </div>
-            <div class="sh-body">
-                <div class="sh-title">NBA</div>
-                <div class="sh-sub">Basketball Trivia</div>
-            </div>
-            <div class="sh-deco"></div>
-            <img src="/static/img/basketball.svg" class="sh-ball" alt="">
         </div>
+    </div>
 
-        <a href="/nba_chain" class="q-btn" style="text-decoration:none;border-color:#b8920e;">
-            <img src="/static/img/chain.svg" class="q-card-icon" alt="Chain">
-            <div class="q-card-body">
-                <strong style="color:#e8b820">NBA Chain Game</strong>
-                <small>Build a chain of NBA clues — name players that fit every link</small>
-            </div>
-        </a>
-        <a href="/nba_ttb" class="q-btn" style="text-decoration:none;border-color:#b31c2c;">
-            <img src="/static/img/bomb.svg" class="q-card-icon" alt="Bomb">
-            <div class="q-card-body">
-                <strong style="color:#e02035">NBA Time Bomb</strong>
-                <small>5 clues, 5 guesses — identify the mystery NBA player before the bomb explodes</small>
-            </div>
-        </a>
-        <a href="/nba_starting5" class="q-btn" style="text-decoration:none;border-color:#147a6e;">
-            <img src="/static/img/basketball.svg" class="q-card-icon" alt="Basketball">
-            <div class="q-card-body">
-                <strong style="color:#1aad9d">Starting 5 — NBA Draft</strong>
-                <small>Draw a random NBA team each round and draft your best lineup vs a friend</small>
-            </div>
-        </a>
-        <a href="/nba_dungeon_adventure" class="q-btn" style="text-decoration:none;border-color:#36455b;">
-            <img src="/static/img/dungeon_icons/relic.svg" class="q-card-icon" alt="Dungeon">
-            <div class="q-card-body">
-                <strong style="color:#d8a84f">NBA Dungeon Adventure</strong>
-                <small>Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 NBA dungeon floors</small>
-            </div>
-        </a>
-        <a href="/nba_balatro" class="q-btn" style="text-decoration:none;border-color:#FF7F00;">
-            <span class="q-card-icon" style="font-size:2rem;">🏀</span>
-            <div class="q-card-body">
-                <strong style="color:#FF7F00">NBA Balatro</strong>
-                <small>Draft hands of NBA player-season cards — build combos and beat the shot clock!</small>
-            </div>
-        </a>
+    <!-- ── NFL ────────────────────────────────────────────────── -->
+    <div id="tab-nfl" class="tab-panel">
+        <div class="game-list">
+            <a href="/chain" class="q-btn">
+                <div class="q-btn-accent accent-yellow"></div>
+                <div class="q-card-body">
+                    <strong>Chain Game</strong>
+                    <small>Build a chain of clues — name players that fit every link</small>
+                </div>
+            </a>
+            <a href="/ttb" class="q-btn">
+                <div class="q-btn-accent accent-red"></div>
+                <div class="q-card-body">
+                    <strong>Ticking Time Bomb</strong>
+                    <small>5 clues, 5 guesses — identify the mystery player before the bomb explodes</small>
+                </div>
+            </a>
+            <a href="/starting6" class="q-btn">
+                <div class="q-btn-accent accent-yellow"></div>
+                <div class="q-card-body">
+                    <strong>Starting 6 — 2 Player Draft</strong>
+                    <small>Draw a random team each round and draft your best lineup vs a friend</small>
+                </div>
+            </a>
+            <a href="/dungeon_adventure" class="q-btn">
+                <div class="q-btn-accent accent-red"></div>
+                <div class="q-card-body">
+                    <strong>Dungeon Adventure</strong>
+                    <small>Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 dungeon floors</small>
+                </div>
+            </a>
+            <a href="/nfl_balatro" class="q-btn">
+                <div class="q-btn-accent accent-yellow"></div>
+                <div class="q-card-body">
+                    <strong>NFL Balatro: Skill Position Edition</strong>
+                    <small>Roguelike card game — draft player-season cards, build combos, beat 8 rounds to win the Super Bowl</small>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- ── NBA ────────────────────────────────────────────────── -->
+    <div id="tab-nba" class="tab-panel">
+        <div class="game-list">
+            <a href="/nba_chain" class="q-btn">
+                <div class="q-btn-accent accent-yellow"></div>
+                <div class="q-card-body">
+                    <strong>NBA Chain Game</strong>
+                    <small>Build a chain of NBA clues — name players that fit every link</small>
+                </div>
+            </a>
+            <a href="/nba_ttb" class="q-btn">
+                <div class="q-btn-accent accent-red"></div>
+                <div class="q-card-body">
+                    <strong>NBA Time Bomb</strong>
+                    <small>5 clues, 5 guesses — identify the mystery NBA player before the bomb explodes</small>
+                </div>
+            </a>
+            <a href="/nba_starting5" class="q-btn">
+                <div class="q-btn-accent accent-yellow"></div>
+                <div class="q-card-body">
+                    <strong>Starting 5 — NBA Draft</strong>
+                    <small>Draw a random NBA team each round and draft your best lineup vs a friend</small>
+                </div>
+            </a>
+            <a href="/nba_dungeon_adventure" class="q-btn">
+                <div class="q-btn-accent accent-red"></div>
+                <div class="q-card-body">
+                    <strong>NBA Dungeon Adventure</strong>
+                    <small>Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 NBA dungeon floors</small>
+                </div>
+            </a>
+            <a href="/nba_balatro" class="q-btn">
+                <div class="q-btn-accent accent-yellow"></div>
+                <div class="q-card-body">
+                    <strong>NBA Balatro</strong>
+                    <small>Draft hands of NBA player-season cards — build combos and beat the shot clock!</small>
+                </div>
+            </a>
+        </div>
     </div>
 </div>
+
+<script>
+    function switchTab(name) {
+        document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+            btn.classList.toggle('active', ['about','nfl','nba'][i] === name);
+        });
+        document.querySelectorAll('.tab-panel').forEach(p => {
+            p.classList.toggle('active', p.id === 'tab-' + name);
+        });
+        history.replaceState(null, '', name === 'about' ? '/' : '/?tab=' + name);
+    }
+
+    // Open the correct tab if ?tab= param is present
+    (function () {
+        const tab = new URLSearchParams(location.search).get('tab');
+        if (tab === 'nfl' || tab === 'nba') switchTab(tab);
+    })();
+</script>
 
 </body>
 </html>

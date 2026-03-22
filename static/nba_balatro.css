@@ -192,15 +192,22 @@ html, body {
 }
 
 .back-link {
-  color: var(--nb-dim);
+  color: var(--accent-yellow);
   text-decoration: none;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 800;
   letter-spacing: 1px;
-  transition: color 0.15s;
-  font-family: Arial, sans-serif;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border: 2px solid var(--accent-yellow);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.8);
+  transition: filter 0.12s;
+  font-family: 'Barlow Condensed', sans-serif;
+  display: inline-block;
+  margin-bottom: 16px;
 }
 
-.back-link:hover { color: var(--text-light); }
+.back-link:hover { filter: brightness(1.15); }
 
 /* ── Buttons ────────────────────────────────────────────────────── */
 .btn-primary {
@@ -1634,48 +1641,50 @@ html, body {
 
 /* ── Shop Screen ────────────────────────────────────────────────── */
 #shop-screen {
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
-  padding: 16px 16px 40px;
-  background: var(--bg-primary);
+  padding: 0;
+  background: #2a1608;
   overflow-y: auto;
 }
 
 .shop-inner {
-  width: min(800px, 100%);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
 }
 
-/* ── Store Banner — Industrial/Concrete ──────────────────────────── */
+/* ── Store Banner ────────────────────────────────────────────────── */
 .store-banner {
-  background: linear-gradient(180deg, #1a1a1a 0%, #222 50%, #1a1a1a 100%);
-  border: 3px solid #444;
-  border-bottom: 4px solid #333;
-  box-shadow: inset 0 0 30px rgba(0,0,0,0.6), 0 4px 0 #111;
+  background: #180e04;
+  border-bottom: 5px solid #5c3810;
   overflow: hidden;
+  box-shadow: 0 4px 0 #0a0602;
 }
 
 .store-marquee {
-  background: #111;
-  padding: 4px 0;
+  background: #0e0806;
+  padding: 5px 0;
   text-align: center;
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 0.8rem;
-  letter-spacing: 5px;
+  font-size: 0.78rem;
+  letter-spacing: 6px;
   color: var(--accent-yellow);
-  text-shadow: 0 0 6px rgba(245,199,0,0.8);
-  border-bottom: 2px solid #333;
+  border-bottom: 2px solid #3a2208;
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .store-main-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  gap: 12px;
+  padding: 10px 20px;
+  gap: 16px;
 }
 
 .store-vendor-area {
@@ -1686,21 +1695,20 @@ html, body {
 }
 
 .vendor-emoji {
-  font-size: 2.4rem;
-  filter: drop-shadow(2px 2px 0 rgba(0,0,0,0.5));
+  font-size: 2rem;
 }
 
 .vendor-bubble {
-  background: white;
-  color: #1a1a1a;
-  border: 2px solid var(--card-border);
-  border-radius: 10px;
-  padding: 7px 11px;
+  background: #f7ead5;
+  color: #2a1a0a;
+  border: 2px solid #8a6030;
+  padding: 6px 10px;
   font-size: 0.68rem;
   font-family: Arial, sans-serif;
-  max-width: 160px;
+  max-width: 140px;
   line-height: 1.4;
   position: relative;
+  box-shadow: 2px 2px 0 #3a2208;
 }
 
 .vendor-bubble::before {
@@ -1710,7 +1718,7 @@ html, body {
   top: 50%;
   transform: translateY(-50%);
   border: 5px solid transparent;
-  border-right-color: var(--card-border);
+  border-right-color: #8a6030;
 }
 
 .vendor-bubble::after {
@@ -1720,7 +1728,7 @@ html, body {
   top: 50%;
   transform: translateY(-50%);
   border: 4px solid transparent;
-  border-right-color: white;
+  border-right-color: #f7ead5;
 }
 
 .store-title-area {
@@ -1730,21 +1738,20 @@ html, body {
 
 .store-title-main {
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 2rem;
-  letter-spacing: 6px;
-  color: #f0f0f0;
-  text-shadow: 2px 2px 0 #555, 0 0 20px rgba(255,255,255,0.1);
-  -webkit-text-stroke: 1px #888;
+  font-size: 2.2rem;
+  letter-spacing: 8px;
+  color: var(--accent-yellow);
+  text-shadow: 3px 3px 0 #0a0602;
   line-height: 1;
 }
 
 .store-title-sub {
-  font-size: 0.58rem;
-  letter-spacing: 3px;
-  color: #8888bb;
+  font-size: 0.55rem;
+  letter-spacing: 4px;
+  color: #c89b6e;
   text-transform: uppercase;
-  font-family: Arial, sans-serif;
-  margin-top: 2px;
+  font-family: 'Barlow Condensed', sans-serif;
+  margin-top: 3px;
 }
 
 .store-controls {
@@ -1756,38 +1763,44 @@ html, body {
 }
 
 .shop-coins {
-  font-family: Impact, sans-serif;
-  font-size: 1rem;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.1rem;
   font-weight: 900;
   color: var(--text-dark);
   background: var(--accent-yellow);
-  border: 3px solid var(--card-border);
-  box-shadow: var(--shadow-comic);
-  padding: 4px 12px;
-  letter-spacing: 1px;
+  border: 3px solid #0a0602;
+  box-shadow: 3px 3px 0 #0a0602;
+  padding: 4px 14px;
+  letter-spacing: 2px;
 }
 
 /* ── Your Locker ─────────────────────────────────────────────────── */
 .your-locker-section {
-  background: rgba(255,255,255,0.03);
-  border: 2px solid rgba(255,255,255,0.12);
-  border-left: 4px solid #9b59b6;
-  padding: 10px 12px;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px,
+      transparent 1px, transparent 14px),
+    linear-gradient(180deg, #5c3810 0%, #4a2c0c 60%, #3a2208 100%);
+  border-bottom: 5px solid #2a1608;
+  box-shadow: inset 0 2px 0 rgba(255,200,100,0.1);
+  padding: 10px 20px 14px;
 }
 
 /* ── Shop Item Sections ───────────────────────────────────────────── */
 #shop-items-container {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 
 .shop-section {
-  background: linear-gradient(180deg, #252525 0%, #1e1e1e 100%);
-  border: 2px solid #3a3a3a;
-  border-top: 4px solid #555;
-  box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 2px 0 rgba(255,255,255,0.05);
-  padding: 0;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px,
+      transparent 1px, transparent 14px),
+    linear-gradient(180deg, #5a3510 0%, #4a2c0c 60%, #3a2208 100%);
+  border-bottom: 5px solid #2a1608;
+  box-shadow: inset 0 3px 0 rgba(255,200,100,0.08);
   overflow: hidden;
 }
 
@@ -1795,57 +1808,60 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(90deg, #3a3a3a, #4a4a4a, #3a3a3a);
-  border-bottom: 2px solid #222;
-  padding: 8px 12px;
+  background: #2a1608;
+  border-bottom: 3px solid #1a0e04;
+  padding: 7px 20px;
+  box-shadow: inset 0 1px 0 rgba(255,200,100,0.08);
 }
 
 .shop-section-icon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .shop-section-title {
   font-family: 'Bebas Neue', Impact, sans-serif;
   font-size: 1rem;
-  letter-spacing: 3px;
-  color: #ddd;
-  text-shadow: 1px 1px 0 #000, 0 0 8px var(--section-color, var(--accent-yellow));
+  letter-spacing: 4px;
+  color: #c89b6e;
+  text-shadow: 1px 1px 0 #000;
+  text-transform: uppercase;
 }
 
 .shop-section-items {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 10px;
-  padding: 12px;
+  padding: 12px 20px 16px;
 }
 
-/* ── Shop Item Card (unified) — Locker shelf look ────────────────── */
+/* ── Shop Item Card ──────────────────────────────────────────────── */
 .shop-item {
-  background: linear-gradient(180deg, #f5f0e8 0%, #ece5d8 100%);
-  border: 2px solid #8a7a6a;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 2px 2px 0 #333;
+  background: #f7ead5;
+  border: 2px solid #3a2208;
+  box-shadow: 3px 3px 0 #1a0e04;
   display: flex;
   flex-direction: column;
   color: var(--text-dark);
   transition: transform 0.1s, box-shadow 0.1s;
   overflow: hidden;
-  min-height: 160px;
+  min-height: 148px;
+  cursor: pointer;
 }
 
 .shop-item:not(.cant-afford):not(.sold):hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0 var(--card-border);
+  box-shadow: 5px 5px 0 #1a0e04;
 }
 
 .shop-item.cant-afford {
-  opacity: 0.55;
+  opacity: 0.5;
 }
 
 .shop-item.sold {
-  background: repeating-linear-gradient(45deg, #ddd, #ddd 5px, #eee 5px, #eee 10px);
-  border: 2px dashed #bbb;
-  opacity: 0.4;
-  min-height: 80px;
+  background: repeating-linear-gradient(45deg, #e0d4bb, #e0d4bb 5px, #ede0c8 5px, #ede0c8 10px);
+  border: 2px dashed #a08060;
+  opacity: 0.35;
+  min-height: 60px;
   justify-content: center;
   align-items: center;
 }
@@ -1855,12 +1871,11 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem;
-  padding: 12px 8px;
-  border-bottom: 2px solid var(--card-border);
-  min-height: 64px;
+  font-size: 1.6rem;
+  padding: 10px 6px;
+  border-bottom: 2px solid #3a2208;
+  min-height: 54px;
   position: relative;
-  box-shadow: inset 0 -2px 8px rgba(255,200,100,0.1);
 }
 
 .shop-item-rarity-bar {
@@ -1873,36 +1888,36 @@ html, body {
 }
 
 .shop-item-body {
-  padding: 8px 10px;
+  padding: 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   flex: 1;
 }
 
 .shop-item-type {
-  font-size: 0.5rem;
+  font-size: 0.48rem;
   letter-spacing: 3px;
   text-transform: uppercase;
   font-weight: 700;
-  color: #777;
-  font-family: Arial, sans-serif;
+  color: #7a5030;
+  font-family: 'Barlow Condensed', sans-serif;
 }
 
 .shop-item-name {
-  font-family: Impact, sans-serif;
-  font-size: 0.82rem;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 0.85rem;
   font-weight: 900;
-  color: var(--text-dark);
+  color: #1a0e04;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 .shop-item-desc {
-  font-size: 0.64rem;
-  color: #555;
-  line-height: 1.4;
+  font-size: 0.62rem;
+  color: #5a3a1a;
+  line-height: 1.35;
   flex: 1;
   font-family: Arial, sans-serif;
 }
@@ -1911,36 +1926,35 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 2px solid #ccc;
-  padding: 6px 10px;
-  background: rgba(0,0,0,0.04);
+  border-top: 2px solid #c8a878;
+  padding: 5px 8px;
+  background: rgba(90,50,20,0.08);
 }
 
 .shop-item-cost {
-  font-family: Impact, sans-serif;
-  font-size: 0.82rem;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 0.88rem;
   font-weight: 700;
-  color: #665500;
+  color: #1a6628;
   letter-spacing: 1px;
 }
 
 .shop-item-sold-label {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', Impact, sans-serif;
   font-size: 0.8rem;
   letter-spacing: 3px;
-  color: #999;
+  color: #a08060;
   text-transform: uppercase;
 }
 
 .btn-buy {
   background: var(--accent-red);
   color: white;
-  border: 2px solid var(--card-border);
-  box-shadow: 2px 2px 0 var(--card-border);
-  padding: 4px 10px;
-  font-family: Impact, sans-serif;
-  font-size: 0.65rem;
-  font-weight: 700;
+  border: 2px solid #1a0e04;
+  box-shadow: 2px 2px 0 #1a0e04;
+  padding: 3px 8px;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 0.72rem;
   letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
@@ -1949,13 +1963,13 @@ html, body {
 
 .btn-buy:hover:not(:disabled) {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--card-border);
+  box-shadow: 3px 3px 0 #1a0e04;
 }
 
 .btn-buy:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  background: #999;
+  background: #888;
 }
 
 .shop-actions {
@@ -1964,6 +1978,9 @@ html, body {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  padding: 16px 20px;
+  background: #180e04;
+  border-top: 4px solid #5c3810;
 }
 
 /* ── Stats Overlay ──────────────────────────────────────────────── */
@@ -2341,10 +2358,9 @@ html, body {
 /* ── Shop Joker Display ─────────────────────────────────────────── */
 #shop-jokers-section {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
 }
 
 #shop-jokers-section .joker-slot {
@@ -2927,3 +2943,88 @@ html, body {
 .tier-Common    { background: #555; color: #ccc; }
 .tier-Veteran   { background: #1e7a3c; color: #90ffb8; }
 .tier-Elite     { background: #6a2fa0; color: #d8b0ff; }
+
+/* ── Division Sticker Modal ──────────────────────────────────────────────── */
+.sticker-modal-panel {
+  max-width: 520px;
+  width: 94%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.sticker-modal-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 3px;
+  color: var(--yellow);
+  margin: 0 0 8px;
+}
+.sticker-modal-sub {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin: 0 0 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.sticker-card-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sticker-card-option {
+  padding: 8px 10px;
+  border: 2px solid var(--border-dim);
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 110px;
+  position: relative;
+  transition: border-color 0.12s;
+}
+.sticker-card-option:hover { border-color: var(--yellow); }
+.sticker-card-pos { font-size: 0.55rem; font-weight: 900; text-transform: uppercase; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: var(--text-muted); }
+.sticker-card-name { font-size: 0.82rem; font-weight: 800; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; margin: 2px 0; }
+.sticker-card-meta { font-size: 0.65rem; color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; }
+.sticker-div-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sticker-div-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 900;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  letter-spacing: 2px;
+  cursor: pointer;
+  color: #000;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 3px 3px 0 rgba(0,0,0,0.5);
+}
+.sticker-div-btn:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 rgba(0,0,0,0.5); }
+.sticker-div-btn:active { transform: translate(1px,1px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
+.sticker-div-btn.div-afc-east  { background: #1e90ff; }
+.sticker-div-btn.div-afc-north { background: #9b59b6; }
+.sticker-div-btn.div-afc-south { background: #1abc9c; }
+.sticker-div-btn.div-afc-west  { background: #e67e22; }
+.sticker-div-btn.div-nfc-east  { background: #2980b9; }
+.sticker-div-btn.div-nfc-north { background: #27ae60; }
+.sticker-div-btn.div-nfc-south { background: #c0392b; color:#fff; }
+.sticker-div-btn.div-nfc-west  { background: #d4a017; }
+.sticker-div-btn.div-atlantic  { background: #1e90ff; }
+.sticker-div-btn.div-central   { background: #c0392b; color:#fff; }
+.sticker-div-btn.div-southeast { background: #e67e22; }
+.sticker-div-btn.div-northwest { background: #9b59b6; }
+.sticker-div-btn.div-pacific   { background: #1abc9c; }
+.sticker-div-btn.div-southwest { background: #d4a017; }
+
+/* Sticker overlay on card */
+.card-div-sticker {
+  transform: rotate(-12deg) translate(-2px, -2px);
+  box-shadow: 2px 2px 4px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.2);
+  z-index: 12;
+}
+.div-badge-faded {
+  opacity: 0.35;
+}

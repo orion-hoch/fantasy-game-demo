@@ -45,6 +45,7 @@ def dungeon_adventure_page():
         page_title="Dungeon Adventure",
         game_title="Dungeon Adventure",
         sport_label="NFL",
+        back_tab="nfl",
         api_prefix="/api/dungeon",
     )
 
@@ -56,6 +57,7 @@ def nba_dungeon_adventure_page():
         page_title="NBA Dungeon Adventure",
         game_title="NBA Dungeon Adventure",
         sport_label="NBA",
+        back_tab="nba",
         api_prefix="/api/nba_dungeon",
     )
 
@@ -1083,6 +1085,17 @@ def nba_balatro_advance_fight():
     if err:
         return jsonify({"error": err}), 400
     return jsonify(result)
+
+
+@app.route('/api/nfl_balatro/apply_division_sticker', methods=['POST'])
+def api_nfl_apply_division_sticker():
+    data = request.json
+    return jsonify(nb.apply_division_sticker(data['game_id'], data['card_id'], data['new_division']))
+
+@app.route('/api/nba_balatro/apply_division_sticker', methods=['POST'])
+def api_nba_apply_division_sticker():
+    data = request.json
+    return jsonify(nba_b.apply_division_sticker(data['game_id'], data['card_id'], data['new_division']))
 
 
 if __name__ == "__main__":

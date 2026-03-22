@@ -26,6 +26,17 @@
     return { label: NFL_DIV_LABEL[div] || div, cls: NFL_DIV_CLASS[div] || '' };
   }
 
+  const NFL_DIVISIONS_LIST = [
+    {id:'AFC East', label:'AFC E', cls:'div-afc-east'},
+    {id:'AFC North',label:'AFC N', cls:'div-afc-north'},
+    {id:'AFC South',label:'AFC S', cls:'div-afc-south'},
+    {id:'AFC West', label:'AFC W', cls:'div-afc-west'},
+    {id:'NFC East', label:'NFC E', cls:'div-nfc-east'},
+    {id:'NFC North',label:'NFC N', cls:'div-nfc-north'},
+    {id:'NFC South',label:'NFC S', cls:'div-nfc-south'},
+    {id:'NFC West', label:'NFC W', cls:'div-nfc-west'},
+  ];
+
   // ── State ──────────────────────────────────────────────────────────
   var gameId = null;
   var currentSort = null; // 'pos', 'pts', or null
@@ -551,12 +562,123 @@
       buyShopItemWithJokerTarget(shopId, itemType, item);
       return;
     }
+    if (itemType === 'division_sticker') {
+      openDivisionStickerModal(item);
+      return;
+    }
     if (needsTarget) {
       gs.pendingShopItem = { shopId: shopId, itemType: itemType, item: item };
       openTargetModal(item);
       return;
     }
     executeBuy(shopId, itemType, null, null);
+  }
+
+  // ── Division Sticker Modal ─────────────────────────────────────────
+  var pendingDivSticker = null;
+
+  function openDivisionStickerModal(item) {
+    pendingDivSticker = { shopId: item.shop_id, cost: item.cost };
+    var modal = document.getElementById('div-sticker-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+    document.getElementById('div-sticker-step1').classList.remove('hidden');
+    document.getElementById('div-sticker-step2').classList.add('hidden');
+    document.getElementById('div-sticker-card-grid').innerHTML = '<div class="loading-msg">Loading\u2026</div>';
+
+    apiPost('/api/nfl_balatro/get_pool', { game_id: gameId }).then(function(data) {
+      if (data.error) { closeDivisionStickerModal(); showToast(data.error, 'error'); return; }
+      var grid = document.getElementById('div-sticker-card-grid');
+      grid.innerHTML = '';
+      (data.deck_pool || []).forEach(function(card) {
+        var divInfo = getNflDivInfo(card.team || '');
+        var btn = document.createElement('div');
+        btn.className = 'sticker-card-option card-pos-' + card.pos.toLowerCase();
+        btn.innerHTML =
+          '<div class="sticker-card-pos">' + card.pos + '</div>' +
+          '<div class="sticker-card-name">' + card.player + '</div>' +
+          '<div class="sticker-card-meta">' + card.team + ' \u00b7 ' + card.season + '</div>' +
+          (divInfo ? '<div class="card-div-badge ' + divInfo.cls + '">' + divInfo.label + '</div>' : '');
+        btn.addEventListener('click', function() {
+          pendingDivSticker.cardId = card.id;
+          pendingDivSticker.card = card;
+          document.getElementById('div-sticker-step1').classList.add('hidden');
+          document.getElementById('div-sticker-step2').classList.remove('hidden');
+          document.getElementById('div-sticker-chosen-card').textContent = card.player + ' (' + card.team + ')';
+        });
+        grid.appendChild(btn);
+      });
+    });
+
+    // Pre-populate division buttons for step 2
+    var divOpts = document.getElementById('sticker-div-options');
+    if (divOpts) {
+      divOpts.innerHTML = '';
+      NFL_DIVISIONS_LIST.forEach(function(div) {
+        var btn = document.createElement('button');
+        btn.className = 'sticker-div-btn ' + div.cls;
+        btn.textContent = div.id;
+        btn.addEventListener('click', function() {
+          applyDivisionSticker(div.id, div.cls, div.label);
+        });
+        divOpts.appendChild(btn);
+      });
+    }
+  }
+
+  function closeDivisionStickerModal() {
+    var modal = document.getElementById('div-sticker-modal');
+    if (modal) modal.classList.add('hidden');
+    pendingDivSticker = null;
+  }
+
+  function applyDivisionSticker(newDivision, newDivCls, newDivLabel) {
+    if (!pendingDivSticker || !pendingDivSticker.cardId) return;
+    var shopId = pendingDivSticker.shopId;
+    var cardId = pendingDivSticker.cardId;
+
+    apiPost('/api/nfl_balatro/buy_item', {
+      game_id: gameId,
+      shop_id: shopId,
+      item_type: 'division_sticker',
+      target_card_id: null,
+    }).then(function(data) {
+      if (data.error) { showToast(data.error, 'error'); closeDivisionStickerModal(); return; }
+      gs.coins = data.coins !== undefined ? data.coins : gs.coins;
+      gs.shopItems = data.shop_items || gs.shopItems;
+      if (els.shopCoinsCount) els.shopCoinsCount.textContent = gs.coins;
+      if (els.coinsCount) els.coinsCount.textContent = gs.coins;
+
+      return apiPost('/api/nfl_balatro/apply_division_sticker', {
+        game_id: gameId,
+        card_id: cardId,
+        new_division: newDivision,
+      });
+    }).then(function(data) {
+      if (!data || data.error) { closeDivisionStickerModal(); return; }
+      // Update deckPool card
+      if (gs.deckPool) {
+        gs.deckPool.forEach(function(c) {
+          if (c.id === cardId) {
+            c.division = newDivision;
+            c._stickerCls = newDivCls;
+            c._stickerLabel = newDivLabel;
+          }
+        });
+      }
+      // Update hand if card is there
+      gs.hand.forEach(function(c) {
+        if (c.id === cardId) {
+          c.division = newDivision;
+          c._stickerCls = newDivCls;
+          c._stickerLabel = newDivLabel;
+        }
+      });
+      closeDivisionStickerModal();
+      renderShop();
+      renderHand();
+      showToast('Division sticker applied!', 'success');
+    }).catch(function() { closeDivisionStickerModal(); });
   }
 
   function executeBuy(shopId, itemType, targetCardId, extraData) {
@@ -1117,13 +1239,26 @@
     season.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
     front.appendChild(season);
 
-    // Division badge
+    // Division badge (with sticker overlay if applied)
     var divInfo = getNflDivInfo(card.team || '');
-    if (divInfo) {
-      var divBadge = document.createElement('div');
-      divBadge.className = 'card-div-badge ' + divInfo.cls;
-      divBadge.textContent = divInfo.label;
-      front.appendChild(divBadge);
+    if (divInfo || card._stickerCls) {
+      if (divInfo && card._stickerCls) {
+        // Show original (faded) + sticker on top
+        var divBadge = document.createElement('div');
+        divBadge.className = 'card-div-badge ' + divInfo.cls + ' div-badge-faded';
+        divBadge.textContent = divInfo.label;
+        front.appendChild(divBadge);
+        var sticker = document.createElement('div');
+        sticker.className = 'card-div-badge card-div-sticker ' + card._stickerCls;
+        sticker.textContent = card._stickerLabel || card.division || '';
+        front.appendChild(sticker);
+      } else {
+        var badge = document.createElement('div');
+        var info = divInfo || { cls: card._stickerCls, label: card._stickerLabel };
+        badge.className = 'card-div-badge ' + (info.cls || '');
+        badge.textContent = info.label || '';
+        front.appendChild(badge);
+      }
     }
 
     // Score (fantasy PPR)
