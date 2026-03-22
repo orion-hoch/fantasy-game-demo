@@ -12,8 +12,8 @@ header {
     gap: 16px;
     background: var(--red);
     padding: 14px 24px;
-    border-bottom: 4px solid var(--border);
-    box-shadow: 0 4px 0 var(--border);
+    border-bottom: 4px solid var(--yellow);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.6);
 }
 
 header h1 {
@@ -196,9 +196,9 @@ header h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    background: var(--red);
-    border-bottom: 4px solid var(--border);
-    box-shadow: 0 4px 0 var(--border);
+    background: var(--red-dark);
+    border-bottom: 3px solid var(--border);
+    box-shadow: 0 3px 0 rgba(0,0,0,0.5);
     padding: 14px 24px;
     text-align: center;
 }
