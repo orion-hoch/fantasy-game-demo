@@ -883,15 +883,27 @@ html, body {
 .card-pos-te .card-front { border-color: var(--pos-te); }
 .card-pos-te .card-front::before { background: var(--pos-te); }
 
-/* ── Division borders ────────────────────────────────────────────────────── */
-.div-afc-east  { box-shadow: 0 0 0 3px #1e90ff, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-afc-north { box-shadow: 0 0 0 3px #9b59b6, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-afc-south { box-shadow: 0 0 0 3px #1abc9c, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-afc-west  { box-shadow: 0 0 0 3px #e67e22, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-nfc-east  { box-shadow: 0 0 0 3px #2980b9, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-nfc-north { box-shadow: 0 0 0 3px #27ae60, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-nfc-south { box-shadow: 0 0 0 3px #c0392b, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-nfc-west  { box-shadow: 0 0 0 3px #d4a017, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+/* ── Division badge (small corner label) ─────────────────────────────────── */
+.card-div-badge {
+    font-size: 0.42rem;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-family: 'Barlow Condensed', sans-serif;
+    padding: 1px 4px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-top: 3px;
+    color: #000;
+}
+.div-afc-east  { background: #1e90ff; }
+.div-afc-north { background: #9b59b6; }
+.div-afc-south { background: #1abc9c; }
+.div-afc-west  { background: #e67e22; }
+.div-nfc-east  { background: #2980b9; }
+.div-nfc-north { background: #27ae60; }
+.div-nfc-south { background: #c0392b; color: #fff; }
+.div-nfc-west  { background: #d4a017; }
 
 /* Royal Flush highlight in hand types list */
 .ht-royal { border-left: 4px solid #ffd700 !important; background: rgba(255,215,0,0.08) !important; }

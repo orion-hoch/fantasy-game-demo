@@ -12,13 +12,18 @@
     ATL:'NFC South',CAR:'NFC South',NO:'NFC South',NOR:'NFC South',TB:'NFC South',TAM:'NFC South',
     ARI:'NFC West',PHO:'NFC West',LAR:'NFC West',STL:'NFC West',SEA:'NFC West',SF:'NFC West',SFO:'NFC West',
   };
+  const NFL_DIV_LABEL = {
+    'AFC East':'AFC E','AFC North':'AFC N','AFC South':'AFC S','AFC West':'AFC W',
+    'NFC East':'NFC E','NFC North':'NFC N','NFC South':'NFC S','NFC West':'NFC W',
+  };
   const NFL_DIV_CLASS = {
     'AFC East':'div-afc-east','AFC North':'div-afc-north','AFC South':'div-afc-south','AFC West':'div-afc-west',
     'NFC East':'div-nfc-east','NFC North':'div-nfc-north','NFC South':'div-nfc-south','NFC West':'div-nfc-west',
   };
-  function getNflDivClass(team) {
+  function getNflDivInfo(team) {
     var div = team && NFL_DIV[team.toUpperCase()];
-    return div ? (NFL_DIV_CLASS[div] || '') : '';
+    if (!div) return null;
+    return { label: NFL_DIV_LABEL[div] || div, cls: NFL_DIV_CLASS[div] || '' };
   }
 
   // ── State ──────────────────────────────────────────────────────────
@@ -1028,8 +1033,6 @@
     var posClass = 'card-pos-' + card.pos.toLowerCase();
     var el = document.createElement('div');
     el.className = 'card ' + posClass;
-    var divClass = getNflDivClass(card.team || '');
-    if (divClass) el.classList.add(divClass);
     el.dataset.id = card.id;
     el.dataset.cardId = card.id;
 
@@ -1113,6 +1116,15 @@
     season.className = 'card-season';
     season.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
     front.appendChild(season);
+
+    // Division badge
+    var divInfo = getNflDivInfo(card.team || '');
+    if (divInfo) {
+      var divBadge = document.createElement('div');
+      divBadge.className = 'card-div-badge ' + divInfo.cls;
+      divBadge.textContent = divInfo.label;
+      front.appendChild(divBadge);
+    }
 
     // Score (fantasy PPR)
     var score = document.createElement('div');

@@ -10,13 +10,18 @@
     GSW:'Pacific',LAC:'Pacific',LAL:'Pacific',PHX:'Pacific',PHO:'Pacific',SAC:'Pacific',
     DAL:'Southwest',HOU:'Southwest',MEM:'Southwest',NOP:'Southwest',SAS:'Southwest',NOH:'Southwest',VAN:'Southwest',NOK:'Southwest',
   };
+  const NBA_DIV_LABEL = {
+    'Atlantic':'ATL','Central':'CEN','Southeast':'SE',
+    'Northwest':'NW','Pacific':'PAC','Southwest':'SW',
+  };
   const NBA_DIV_CLASS = {
     'Atlantic':'div-atlantic','Central':'div-central','Southeast':'div-southeast',
     'Northwest':'div-northwest','Pacific':'div-pacific','Southwest':'div-southwest',
   };
-  function getNbaDivClass(team) {
+  function getNbaDivInfo(team) {
     var div = team && NBA_DIV[team.toUpperCase()];
-    return div ? (NBA_DIV_CLASS[div] || '') : '';
+    if (!div) return null;
+    return { label: NBA_DIV_LABEL[div] || div, cls: NBA_DIV_CLASS[div] || '' };
   }
 
   // ── State ──────────────────────────────────────────────────────────
@@ -1021,8 +1026,6 @@
     var posClass = 'card-pos-' + card.pos.toLowerCase();
     var el = document.createElement('div');
     el.className = 'card ' + posClass;
-    var divClass = getNbaDivClass(card.team || '');
-    if (divClass) el.classList.add(divClass);
     el.dataset.id = card.id;
     el.dataset.cardId = card.id;
 
@@ -1105,6 +1108,15 @@
     season.className = 'card-season';
     season.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
     front.appendChild(season);
+
+    // Division badge
+    var divInfo = getNbaDivInfo(card.team || '');
+    if (divInfo) {
+      var divBadge = document.createElement('div');
+      divBadge.className = 'card-div-badge ' + divInfo.cls;
+      divBadge.textContent = divInfo.label;
+      front.appendChild(divBadge);
+    }
 
     // Score (fantasy pts)
     var score = document.createElement('div');

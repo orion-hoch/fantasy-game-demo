@@ -900,13 +900,25 @@ html, body {
 .card-pos-c .card-front { border-color: var(--pos-c); }
 .card-pos-c .card-front::before { background: var(--pos-c); }
 
-/* ── Division borders ────────────────────────────────────────────────────── */
-.div-atlantic  { box-shadow: 0 0 0 3px #1e90ff, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-central   { box-shadow: 0 0 0 3px #c0392b, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-southeast { box-shadow: 0 0 0 3px #e67e22, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-northwest { box-shadow: 0 0 0 3px #9b59b6, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-pacific   { box-shadow: 0 0 0 3px #1abc9c, 4px 4px 0 rgba(0,0,0,0.8) !important; }
-.div-southwest { box-shadow: 0 0 0 3px #d4a017, 4px 4px 0 rgba(0,0,0,0.8) !important; }
+/* ── Division badge (small corner label) ─────────────────────────────────── */
+.card-div-badge {
+    font-size: 0.42rem;
+    font-weight: 900;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-family: 'Barlow Condensed', sans-serif;
+    padding: 1px 4px;
+    border-radius: 2px;
+    display: inline-block;
+    margin-top: 3px;
+    color: #000;
+}
+.div-atlantic  { background: #1e90ff; }
+.div-central   { background: #c0392b; color: #fff; }
+.div-southeast { background: #e67e22; }
+.div-northwest { background: #9b59b6; }
+.div-pacific   { background: #1abc9c; }
+.div-southwest { background: #d4a017; }
 
 /* Royal Flush highlight in hand types list */
 .ht-royal { border-left: 4px solid #ffd700 !important; background: rgba(255,215,0,0.08) !important; }
