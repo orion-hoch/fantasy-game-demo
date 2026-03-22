@@ -31,7 +31,7 @@ def get_nba_conference(team):
     return _TEAM_TO_CONF.get(team.upper().strip())
 
 HAND_TYPES = {
-    "starting_lineup":  {"name": "Starting Lineup",   "mult": 6.0,  "desc": "G + F + C all present (5+ cards)"},
+    "starting_lineup":  {"name": "Starting Lineup",   "mult": 3.5,  "desc": "G + F + C all present (5+ cards)"},
     "six_man_rotation": {"name": "Six Man Rotation",  "mult": 5.5,  "desc": "6 of the same position"},
     "zone_press":       {"name": "Zone Press",         "mult": 5.0,  "desc": "5 of same position"},
     "twin_towers":      {"name": "Twin Towers",        "mult": 4.0,  "desc": "3 of one position + 3 of another"},
@@ -101,6 +101,24 @@ JOKERS = [
     {"id": "dynasty_mode",     "name": "Dynasty Mode",         "desc": "×1.2 MULT per other joker owned (multiplicative)",                     "rarity": "legendary"},
     {"id": "blueprint",        "name": "Blueprint",            "desc": "Copies the mult bonus of the next joker to the right",                  "rarity": "legendary"},
     {"id": "smash_factor",     "name": "Smash Factor",         "desc": "×1.5 final score (multiplicative, applied after all other mult)",       "rarity": "legendary"},
+    # New jokers
+    {"id": "flat_mult",       "name": "Lineup Anchor",          "desc": "+4 Mult. Every great team needs a foundation.",                                 "rarity": "common"},
+    {"id": "pair_bonus",      "name": "Paint Attack",           "desc": "+8 Mult if played hand is Catch & Shoot.",                                      "rarity": "common"},
+    {"id": "trips_bonus",     "name": "Break Away",             "desc": "+12 Mult if played hand is Pick & Roll.",                                       "rarity": "common"},
+    {"id": "pair_chips",      "name": "Hustle Points",          "desc": "+50 base pts if played hand is Catch & Shoot.",                                 "rarity": "common"},
+    {"id": "no_disc_mult",    "name": "Overtime",               "desc": "+15 Mult if you have 0 discards remaining when this hand is played.",           "rarity": "common"},
+    {"id": "small_hand_mult", "name": "Veteran Presence",       "desc": "+20 Mult if scoring hand has 3 or fewer cards.",                               "rarity": "common"},
+    {"id": "clockwork",       "name": "Pace Setter",            "desc": "Gains +1 Mult per hand played this fight, loses -1 per discard (min 0).",      "rarity": "common"},
+    {"id": "deck_pts",        "name": "Arena Advantage",        "desc": "+2 base pts per card remaining in deck.",                                       "rarity": "common"},
+    {"id": "loyalty_xmult",   "name": "Max Contract",           "desc": "×4 Mult every 6 hands played this run (multiplicative).",                      "rarity": "uncommon"},
+    {"id": "clutch_xmult",    "name": "Buzzer Winner",          "desc": "×3 Mult on the final hand of the fight (multiplicative).",                     "rarity": "uncommon"},
+    {"id": "padder_stacker",  "name": "Rebounder's Edge",       "desc": "Gains +2 Mult when you play Twin Towers. Stacks permanently.",                 "rarity": "uncommon"},
+    {"id": "restock_stacker", "name": "Player Option",          "desc": "Gains +2 Mult each time the shop is restocked. Stacks permanently.",           "rarity": "uncommon"},
+    {"id": "uncommon_xmult",  "name": "All-NBA Selection",      "desc": "×1.5 Mult per Uncommon Joker owned (multiplicative).",                         "rarity": "uncommon"},
+    {"id": "cavendish_mult",  "name": "Immortal Status",        "desc": "×3 Mult. 1 in 1000 chance destroyed at end of each hand.",                     "rarity": "common"},
+    {"id": "flush_xmult",     "name": "Finals MVP",             "desc": "×3 Mult if played hand is Zone Press (multiplicative).",                       "rarity": "rare"},
+    {"id": "four_xmult",      "name": "Hall of Fame",           "desc": "×4 Mult if played hand is Starting Four (multiplicative).",                    "rarity": "rare"},
+    {"id": "delayed_coins",   "name": "Injury Report",          "desc": "Earn $2 at end of fight if no discards were used that fight.",                  "rarity": "common"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
 
@@ -323,7 +341,8 @@ def evaluate_hand(cards):
 
 
 def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effects,
-                     joker_state=None, joker_enhancements=None, is_blueprint_call=False):
+                     joker_state=None, joker_enhancements=None, is_blueprint_call=False,
+                     deck_size=0, is_last_hand=False):
     if joker_state is None:
         joker_state = {}
     if joker_enhancements is None:
@@ -413,12 +432,37 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
                     bp_bonus, _, bp_pts, _ = _calc_joker_mult(
                         [next_jid], cards_played, hand_type, skill_levels, card_effects,
                         joker_state=joker_state, joker_enhancements=joker_enhancements,
-                        is_blueprint_call=True,
+                        is_blueprint_call=True, deck_size=deck_size, is_last_hand=is_last_hand,
                     )
                     jbonus = bp_bonus
                     jpts = bp_pts
             except ValueError:
                 pass
+
+        elif jid == "flat_mult":
+            jbonus = 4
+        elif jid == "pair_bonus":
+            if hand_type == "catch_shoot":
+                jbonus = 8
+        elif jid == "trips_bonus":
+            if hand_type == "pick_roll":
+                jbonus = 12
+        elif jid == "pair_chips":
+            if hand_type == "catch_shoot":
+                jpts = 50
+        elif jid == "no_disc_mult":
+            jbonus = 15 if joker_state.get("_discards_remaining", 0) == 0 else 0
+        elif jid == "small_hand_mult":
+            if len(cards_played) <= 3:
+                jbonus = 20
+        elif jid == "clockwork":
+            jbonus = joker_state.get("clockwork_stacks", 0)
+        elif jid == "deck_pts":
+            jpts = 2 * deck_size
+        elif jid == "padder_stacker":
+            jbonus = joker_state.get("padder_stacks", 0)
+        elif jid == "restock_stacker":
+            jbonus = joker_state.get("restock_stacks", 0)
 
         # Apply joker enhancements
         if jbonus != 0:
@@ -436,7 +480,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
     return bonus, [], pts_bonus, state_updates
 
 
-def _calc_joker_mult_factor(cards_played, joker_ids, joker_state=None, hand_type=None):
+def _calc_joker_mult_factor(cards_played, joker_ids, joker_state=None, hand_type=None, is_last_hand=False):
     joker_state = joker_state or {}
     factor = 1.0
 
@@ -472,6 +516,30 @@ def _calc_joker_mult_factor(cards_played, joker_ids, joker_state=None, hand_type
     if "smash_factor" in joker_ids:
         factor *= 1.5
 
+    if "loyalty_xmult" in joker_ids:
+        if joker_state.get("hands_played_run", 0) > 0 and joker_state.get("hands_played_run", 0) % 6 == 0:
+            factor *= 4.0
+
+    if "clutch_xmult" in joker_ids:
+        if is_last_hand:
+            factor *= 3.0
+
+    if "uncommon_xmult" in joker_ids:
+        uncommon_count = sum(1 for jid in joker_ids if JOKER_MAP.get(jid, {}).get("rarity") == "uncommon")
+        if uncommon_count > 0:
+            factor *= (1.5 ** uncommon_count)
+
+    if "cavendish_mult" in joker_ids:
+        factor *= 3.0
+
+    if "flush_xmult" in joker_ids:
+        if hand_type == "zone_press":
+            factor *= 3.0
+
+    if "four_xmult" in joker_ids:
+        if hand_type == "starting_four":
+            factor *= 4.0
+
     return round(factor, 4)
 
 
@@ -485,7 +553,7 @@ def _calc_coins_earned(hand_type, scoring_cards, all_played, joker_ids, coins, j
     return earned
 
 
-def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, card_effects=None, joker_state=None, floor=1, joker_enhancements=None):
+def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, card_effects=None, joker_state=None, floor=1, joker_enhancements=None, deck_size=0, is_last_hand=False):
     if skill_levels is None:
         skill_levels = {}
     if combo_boosts is None:
@@ -525,12 +593,13 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
 
     hand_mult = HAND_TYPES[hand_type]["mult"] + combo_boosts.get(hand_type, 0)
     joker_add, _jmult_list, joker_pts_bonus, _state_updates = _calc_joker_mult(
-        joker_ids, scoring_cards, hand_type, skill_levels, card_effects,
-        joker_state=joker_state, joker_enhancements=joker_enhancements
+        joker_ids, cards_played, hand_type, skill_levels, card_effects,
+        joker_state=joker_state, joker_enhancements=joker_enhancements,
+        deck_size=deck_size, is_last_hand=is_last_hand
     )
     total_mult = hand_mult + joker_add
 
-    mult_factor = _calc_joker_mult_factor(scoring_cards, joker_ids, joker_state=joker_state, hand_type=hand_type)
+    mult_factor = _calc_joker_mult_factor(cards_played, joker_ids, joker_state=joker_state, hand_type=hand_type, is_last_hand=is_last_hand)
 
     base_pts_total = base_pts + joker_pts_bonus
     score = round(base_pts_total * total_mult * mult_factor * glass_mult)
@@ -839,9 +908,17 @@ def play_hand(gid, card_ids):
     joker_state = g.get("joker_state", {})
     joker_enhancements = g.get("joker_enhancements", {})
 
+    # Pre-scoring state updates
+    is_last_hand = (g["hands_remaining"] == 1)
+    deck_size = len(g["deck"])
+    joker_state["_discards_remaining"] = g.get("discards_remaining", 0)
+    joker_state["hands_played_run"] = joker_state.get("hands_played_run", 0) + 1
+    joker_state["hands_played_fight"] = joker_state.get("hands_played_fight", 0) + 1
+    joker_state["clockwork_stacks"] = joker_state.get("clockwork_stacks", 0) + 1
+
     result = score_hand(played, g["jokers"], skill_levels, combo_boosts, card_effects,
                         joker_state=joker_state, floor=g.get("floor", 1),
-                        joker_enhancements=joker_enhancements)
+                        joker_enhancements=joker_enhancements, deck_size=deck_size, is_last_hand=is_last_hand)
 
     # Boss score factors
     boss_factor = 1.0
@@ -906,6 +983,14 @@ def play_hand(gid, card_ids):
         else:
             g["joker_state"]["hot_streak_count"] = 0
 
+    # padder_stacker: gains +2 when twin_towers is played
+    if "padder_stacker" in g["jokers"] and result["hand_type"] == "twin_towers":
+        g["joker_state"]["padder_stacks"] = g["joker_state"].get("padder_stacks", 0) + 2
+
+    # cavendish_mult: 1 in 1000 chance destroyed
+    if "cavendish_mult" in g["jokers"] and random.random() < 0.001:
+        g["jokers"].remove("cavendish_mult")
+
     result["joker_state"] = g["joker_state"]
     result["cumulative_score"] = g["current_score"]
     result["target_score"] = g["target_score"]
@@ -931,6 +1016,14 @@ def play_hand(gid, card_ids):
         result["status"] = "lost"
     else:
         result["status"] = "playing"
+
+    # delayed_coins: earn $2 at end of fight if no discards used
+    if result.get("status") in ("won_fight", "won_game", "lost"):
+        if "delayed_coins" in g["jokers"] and g["joker_state"].get("discards_used_fight", 0) == 0:
+            g["coins"] += 2
+            result["coins"] = g["coins"]
+            coins_earned += 2
+            result["coins_earned"] = coins_earned
 
     g["history"].append(result)
     return result, None
@@ -1007,6 +1100,8 @@ def discard_cards(gid, card_ids):
         return None, "No valid cards to discard"
 
     g["discards_remaining"] -= 1
+    g["joker_state"]["discards_used_fight"] = g["joker_state"].get("discards_used_fight", 0) + 1
+    g["joker_state"]["clockwork_stacks"] = max(0, g["joker_state"].get("clockwork_stacks", 0) - 1)
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
     draw_count = min(len(discarded), len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
@@ -1229,6 +1324,8 @@ def restock_shop(gid, conn):
         return None, f"Not enough coins (need {cost})"
     g["coins"] -= cost
     g["restock_count"] = g.get("restock_count", 0) + 1
+    if "restock_stacker" in g["jokers"]:
+        g["joker_state"]["restock_stacks"] = g["joker_state"].get("restock_stacks", 0) + 2
     g["shop_items"] = _generate_shop(conn, g)
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
@@ -1294,6 +1391,13 @@ def leave_shop(gid):
                 g["joker_state"] = {}
             g["joker_state"]["hot_streak_count"] = 0
 
+        # Reset per-fight joker state
+        if "joker_state" not in g:
+            g["joker_state"] = {}
+        g["joker_state"]["hands_played_fight"] = 0
+        g["joker_state"]["discards_used_fight"] = 0
+        g["joker_state"]["clockwork_stacks"] = 0
+
         _deal_for_level(g)
         if boss_effect:
             _apply_boss_hand_effect(g)
@@ -1344,6 +1448,9 @@ def leave_shop(gid):
     if "joker_state" not in g:
         g["joker_state"] = {}
     g["joker_state"]["hot_streak_count"] = 0
+    g["joker_state"]["hands_played_fight"] = 0
+    g["joker_state"]["discards_used_fight"] = 0
+    g["joker_state"]["clockwork_stacks"] = 0
 
     _deal_for_level(g)
 
