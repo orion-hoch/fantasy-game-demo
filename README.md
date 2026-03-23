@@ -70,6 +70,8 @@ This repo now includes a Vercel entrypoint at `api/index.py` and config in `verc
 
 Without Vercel KV, local development still works, but multi-request game state falls back to in-memory storage.
 
+The production deployment is intended to run from the `main` branch on Vercel.
+
 ### Data Source
 
 The canonical data source is a single SQLite database:
