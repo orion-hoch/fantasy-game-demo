@@ -59,6 +59,17 @@ python app.py
 
 The app uses the consolidated SQLite data source at `fantasy.db` and starts at `http://127.0.0.1:5000`.
 
+### Vercel Deployment
+
+This repo now includes a Vercel entrypoint at `api/index.py` and config in `vercel.json`.
+
+- Import the repo into Vercel as a Python project
+- Attach a Vercel KV database to the project
+- Make sure `KV_REST_API_URL` and `KV_REST_API_TOKEN` are available in the project environment
+- Deploy; all routes are served through the Flask app and game sessions are stored in KV
+
+Without Vercel KV, local development still works, but multi-request game state falls back to in-memory storage.
+
 ### Data Source
 
 The canonical data source is a single SQLite database:

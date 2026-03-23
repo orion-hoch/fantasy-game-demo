@@ -4,7 +4,9 @@ nba_ttb.py  —  NBA Ticking Time Bomb game logic
 import uuid
 import random
 
-_games: dict = {}
+from session_store import GameStore
+
+_games = GameStore("nba_ttb", ttl_seconds=43200)
 MAX_WRONG = 5
 
 
@@ -317,6 +319,7 @@ def check_guess(game_id, guess, skip=False):
 
     if not skip and guess.strip().lower() == game["player"].strip().lower():
         game["over"] = True
+        _games[game_id] = game
         return {"correct": True, "player": game["player"]}
 
     game["wrong"] += 1
@@ -324,12 +327,14 @@ def check_guess(game_id, guess, skip=False):
 
     if wrong >= MAX_WRONG:
         game["over"] = True
+        _games[game_id] = game
         return {"correct": False, "exploded": True, "player": game["player"],
                 "wrong": wrong, "skipped": skip}
 
     idx = game["revealed"]
     new_clue = game["clues"][idx] if idx < len(game["clues"]) else None
     game["revealed"] = min(idx + 1, len(game["clues"]))
+    _games[game_id] = game
     return {"correct": False, "new_clue": new_clue, "wrong": wrong, "skipped": skip}
 
 
@@ -338,10 +343,9 @@ def reveal_answer(game_id):
     if not game:
         return {"error": "Game not found"}
     game["over"] = True
+    _games[game_id] = game
     return {"player": game["player"]}
 
 
 def cleanup_old_games(max_size=2000):
-    if len(_games) > max_size:
-        for k in list(_games.keys())[: max_size // 2]:
-            del _games[k]
+    _games.cleanup_to_size(max_size)

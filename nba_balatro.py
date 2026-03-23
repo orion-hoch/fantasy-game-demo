@@ -4,8 +4,10 @@ import uuid
 import time
 from collections import Counter
 
-_GAMES = {}
+from session_store import GameStore
+
 _TTL = 3600 * 4
+_GAMES = GameStore("nba_balatro", ttl_seconds=_TTL)
 
 POS_MULT = {"G": 1.0, "F": 1.5, "C": 2.5}
 POS_ORDER = ["G", "F", "C"]
@@ -255,10 +257,7 @@ PACK_MAP = {p["id"]: p for p in PACKS}
 
 
 def cleanup_old_games():
-    now = time.time()
-    stale = [gid for gid, g in _GAMES.items() if now - g.get("created_at", 0) > _TTL]
-    for gid in stale:
-        del _GAMES[gid]
+    _GAMES.cleanup_expired()
 
 
 def _get_effective_pos_mult(pos, joker_ids, skill_levels, card_effects_for_card=None):
@@ -1176,6 +1175,7 @@ def play_hand(gid, card_ids):
             result["coins_earned"] = coins_earned
 
     g["history"].append(result)
+    _GAMES[gid] = g
     return result, None
 
 
@@ -1216,6 +1216,7 @@ def advance_fight(gid, conn=None):
     g["reward_joker_options"] = [j["id"] for j in reward_jokers]
     g["status"] = "choosing_reward"
 
+    _GAMES[gid] = g
     return {
         "status": "choosing_reward",
         "coins": g["coins"],
@@ -1257,6 +1258,7 @@ def claim_fight_reward(gid, choice, joker_id=None, conn=None):
         g["shop_items"] = []
         g["pending_shop_generation"] = True
 
+    _GAMES[gid] = g
     return {
         "status": "shopping",
         "coins": g["coins"],
@@ -1294,6 +1296,7 @@ def discard_cards(gid, card_ids):
     g["deck"] = g["deck"][draw_count:]
     g.setdefault("fight_discards", []).extend(discarded)
 
+    _GAMES[gid] = g
     return {
         "discards_remaining": g["discards_remaining"],
         "hand": g["hand"],
@@ -1325,6 +1328,7 @@ def select_joker(gid, joker_id):
 
     g["pending_shop_generation"] = True
 
+    _GAMES[gid] = g
     return {
         "status": "shopping",
         "coins": g["coins"],
@@ -1344,6 +1348,7 @@ def generate_shop_for_game(gid, conn):
         return None
     g["shop_items"] = _generate_shop(conn, g)
     g.pop("pending_shop_generation", None)
+    _GAMES[gid] = g
     return g["shop_items"]
 
 
@@ -1437,6 +1442,7 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
     if updated_card:
         result["updated_card"] = updated_card
 
+    _GAMES[gid] = g
     return result, None
 
 
@@ -1455,6 +1461,7 @@ def restock_shop(gid, conn):
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
     g["shop_packs"] = shop_packs[:4]
+    _GAMES[gid] = g
     return {
         "coins": g["coins"],
         "shop_items": g["shop_items"],
@@ -1473,6 +1480,7 @@ def sell_joker(gid, joker_id):
     sell_price = {"common": 2, "uncommon": 3, "rare": 4}.get(joker.get("rarity", "common"), 2)
     g["jokers"].remove(joker_id)
     g["coins"] += sell_price
+    _GAMES[gid] = g
     return {
         "coins": g["coins"],
         "jokers": [JOKER_MAP[j] for j in g["jokers"]],
@@ -1589,6 +1597,7 @@ def use_held_item(gid, held_id, target_card_id=None, target_year=None, conn=None
     # Remove from held_items
     g["held_items"] = [i for i in g["held_items"] if i.get("held_id") != held_id]
 
+    _GAMES[gid] = g
     return {
         "held_items": g["held_items"],
         "hand": g["hand"],
@@ -1647,6 +1656,7 @@ def leave_shop(gid):
         _deal_for_level(g)
         if boss_effect:
             _apply_boss_hand_effect(g)
+        _GAMES[gid] = g
         return {
             "floor": g["floor"],
             "round": new_round,
@@ -1703,6 +1713,7 @@ def leave_shop(gid):
 
     _deal_for_level(g)
 
+    _GAMES[gid] = g
     return {
         "floor": g["floor"],
         "round": g["round"],
@@ -1877,6 +1888,7 @@ def open_pack(gid, pack_id, conn):
             "picks_allowed": picks_allowed,
             "is_joker_pack": True,
         }
+        _GAMES[gid] = g
         return {
             "pack_name": pack["name"],
             "candidates": candidates,
@@ -1901,6 +1913,7 @@ def open_pack(gid, pack_id, conn):
     g["coins"] -= pack["cost"]
     g["pending_pack"] = {"candidates": candidates, "effects": effects, "picks_allowed": picks_allowed}
 
+    _GAMES[gid] = g
     return {
         "coins": g["coins"],
         "pack_name": pack["name"],
@@ -1932,6 +1945,7 @@ def confirm_pack_picks(gid, selected_ids):
             if jid not in owned_ids and len(g["jokers"]) < g.get("max_jokers", 5):
                 g["jokers"].append(jid)
         del g["pending_pack"]
+        _GAMES[gid] = g
         return {
             "added_jokers": valid_selected,
             "jokers": [JOKER_MAP[j if isinstance(j, str) else j["id"]] for j in g["jokers"]],
@@ -1958,6 +1972,7 @@ def confirm_pack_picks(gid, selected_ids):
 
     del g["pending_pack"]
 
+    _GAMES[gid] = g
     return {
         "coins": g["coins"],
         "deck_pool_size": len(g["deck_pool"]),
@@ -1974,5 +1989,6 @@ def apply_division_sticker(game_id, card_id, new_division):
     for card in state["deck_pool"]:
         if card["id"] == card_id:
             card["division"] = new_division
+            _GAMES[game_id] = state
             return {"ok": True, "card_id": card_id, "division": new_division}
     return {"error": "Card not found"}
