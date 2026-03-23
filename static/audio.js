@@ -23,7 +23,6 @@ window.SFX = (function () {
     card_play:   { freq: 330,  freq2: 500,  wave: 'triangle', dur: 0.14, vol: 0.14 },
     discard:     { freq: 280,  freq2: 170,  wave: 'square',   dur: 0.11, vol: 0.09 },
     score_tick:  { freq: 680,               wave: 'sine',     dur: 0.04, vol: 0.06 },
-    win:         { freq: 523,  freq2: 1046, wave: 'sine',     dur: 0.55, vol: 0.22 },
     lose:        { freq: 200,  freq2: 90,   wave: 'sawtooth', dur: 0.5,  vol: 0.18 },
     buy:         { freq: 600,  freq2: 820,  wave: 'sine',     dur: 0.18, vol: 0.14 },
     reward:      { freq: 740,  freq2: 988,  wave: 'sine',     dur: 0.32, vol: 0.18 },
@@ -36,9 +35,14 @@ window.SFX = (function () {
     draft_pick:  { freq: 440,  freq2: 660,  wave: 'sine',     dur: 0.18, vol: 0.14 },
     confetti:    { freq: 880,  freq2: 1760, wave: 'sine',     dur: 0.75, vol: 0.18 },
     bomb_tick:   { freq: 900,  freq2: 600,  wave: 'square',   dur: 0.05, vol: 0.10 },
-    // noise-based sounds (handled by _doPlayNoise)
-    card_sel:    { noise: true, bandpass: 2800, bandQ: 1.8, dur: 0.07, vol: 0.22 },
-    rustle:      { noise: true, bandpass: 700,  bandQ: 1.2, dur: 0.14, vol: 0.16 },
+  };
+
+  // Noise-based sounds: white noise filtered for texture
+  // card_sel = crunchy paper/backpack crinkle (highpass removes rumble, keeps crispy highs)
+  // rustle   = soft card shuffle (lowpass keeps warm swish, cuts harsh highs)
+  var NOISE_SOUNDS = {
+    card_sel: { highpass: 900, dur: 0.08, vol: 0.55 },
+    rustle:   { lowpass:  1800, dur: 0.18, vol: 0.35 },
   };
 
   function _doPlay(c, cfg) {
@@ -70,12 +74,18 @@ window.SFX = (function () {
       src.buffer = buf;
 
       var filter = c.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.value = cfg.bandpass || 2000;
-      filter.Q.value = cfg.bandQ || 1.5;
+      if (cfg.highpass !== undefined) {
+        filter.type = 'highpass';
+        filter.frequency.value = cfg.highpass;
+        filter.Q.value = 0.5;
+      } else {
+        filter.type = 'lowpass';
+        filter.frequency.value = cfg.lowpass || 1500;
+        filter.Q.value = 0.5;
+      }
 
       var gain = c.createGain();
-      gain.gain.setValueAtTime(cfg.vol || 0.15, c.currentTime);
+      gain.gain.setValueAtTime(cfg.vol || 0.3, c.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + cfg.dur);
 
       src.connect(filter);
@@ -86,9 +96,36 @@ window.SFX = (function () {
     } catch (e) { /* ignore */ }
   }
 
-  function _dispatch(c, cfg) {
-    if (cfg.noise) {
-      _doPlayNoise(c, cfg);
+  // Victory fanfare: ascending C major arpeggio with a final chord
+  function _playFanfare(c) {
+    try {
+      var t = c.currentTime;
+      // Notes: C4, E4, G4, C5, E5 — stagger by 0.12s each, last two overlap
+      var notes = [262, 330, 392, 523, 659];
+      var delays = [0, 0.12, 0.24, 0.36, 0.42];
+      var durs   = [0.22, 0.22, 0.22, 0.45, 0.55];
+      var vols   = [0.18, 0.18, 0.18, 0.22, 0.26];
+      notes.forEach(function (freq, i) {
+        var osc = c.createOscillator();
+        var gain = c.createGain();
+        osc.connect(gain);
+        gain.connect(c.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, t + delays[i]);
+        gain.gain.setValueAtTime(0.001, t + delays[i]);
+        gain.gain.linearRampToValueAtTime(vols[i], t + delays[i] + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + delays[i] + durs[i]);
+        osc.start(t + delays[i]);
+        osc.stop(t + delays[i] + durs[i] + 0.05);
+      });
+    } catch (e) { /* ignore */ }
+  }
+
+  function _dispatch(c, cfg, type) {
+    if (type === 'win') {
+      _playFanfare(c);
+    } else if (NOISE_SOUNDS[type]) {
+      _doPlayNoise(c, NOISE_SOUNDS[type]);
     } else {
       _doPlay(c, cfg);
     }
@@ -96,14 +133,14 @@ window.SFX = (function () {
 
   function play(type) {
     if (muted) return;
-    var cfg = SOUNDS[type];
-    if (!cfg) return;
+    var cfg = SOUNDS[type] || null;
+    if (!cfg && !NOISE_SOUNDS[type] && type !== 'win') return;
     try {
       var c = getCtx();
       if (c.state === 'suspended') {
-        c.resume().then(function () { _dispatch(c, cfg); });
+        c.resume().then(function () { _dispatch(c, cfg, type); });
       } else {
-        _dispatch(c, cfg);
+        _dispatch(c, cfg, type);
       }
     } catch (e) { /* ignore audio errors */ }
   }

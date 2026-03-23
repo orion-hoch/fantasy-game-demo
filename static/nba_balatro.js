@@ -1732,6 +1732,7 @@
   function toggleCardSelect(cardId) {
     if (gs.status !== 'playing') return;
     if (_animLock) return;
+    if (window.SFX) SFX.play('card_sel');
     if (gs.selectedIds.has(cardId)) {
       gs.selectedIds.delete(cardId);
     } else {
