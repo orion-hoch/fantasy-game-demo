@@ -34,12 +34,8 @@ window.SFX = (function () {
     confetti:    { freq: 880,  freq2: 1760, wave: 'sine',     dur: 0.75, vol: 0.18 },
   };
 
-  function play(type) {
-    if (muted) return;
-    var cfg = SOUNDS[type];
-    if (!cfg) return;
+  function _doPlay(c, cfg) {
     try {
-      var c = getCtx();
       var osc = c.createOscillator();
       var gain = c.createGain();
       osc.connect(gain);
@@ -51,6 +47,20 @@ window.SFX = (function () {
       gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + cfg.dur);
       osc.start(c.currentTime);
       osc.stop(c.currentTime + cfg.dur);
+    } catch (e) { /* ignore */ }
+  }
+
+  function play(type) {
+    if (muted) return;
+    var cfg = SOUNDS[type];
+    if (!cfg) return;
+    try {
+      var c = getCtx();
+      if (c.state === 'suspended') {
+        c.resume().then(function () { _doPlay(c, cfg); });
+      } else {
+        _doPlay(c, cfg);
+      }
     } catch (e) { /* ignore audio errors */ }
   }
 
