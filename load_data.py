@@ -564,11 +564,45 @@ def load_nba_stats(base_dir, db_path="fantasy.db"):
 
         out.to_sql("nba_stats", conn, if_exists="replace", index=False)
         print(f"nba_stats: {len(out)} rows loaded.")
+        _seed_missing_nba_players(conn)
     else:
         print("WARNING: No NBA season stat files found.")
 
     # ── NBA draft stats ───────────────────────────────────────────────────────
     draft_dir = os.path.join(base_dir, "NBA_stats", "Draft_NBA_stats")
+
+
+def _seed_missing_nba_players(conn):
+    """Insert historically significant players whose data is absent from source files.
+
+    Oscar Robertson's Cincinnati Royals seasons (1960-1969) are missing because
+    the source Excel files never included CIN data. CIN maps to SAC per NBA_TEAM_MAP.
+    Stats from Basketball-Reference; STL/BLK/TOV/3PM = 0 (not tracked pre-1973).
+    Fantasy score = PTS + FGM*2 - FGA + FTM - FTA + TRB + AST*2
+    """
+    robertson_cin = [
+        # (player, season, age, team, games, pts, trb, ast, threepm, fgm, fga, ftm, fta,
+        #  stl, blk, tov, pos, pts_pg, trb_pg, ast_pg, fantasy_score)
+        ('Oscar Robertson', 1960, 22, 'SAC', 71, 2165, 716, 690, 0, 756, 1600, 653, 794, 0, 0, 0, 'G', 30.49, 10.08, 9.72, 4032),
+        ('Oscar Robertson', 1961, 23, 'SAC', 79, 2432, 985, 899, 0, 866, 1810, 700, 872, 0, 0, 0, 'G', 30.78, 12.47, 11.38, 4965),
+        ('Oscar Robertson', 1962, 24, 'SAC', 80, 2264, 835, 758, 0, 825, 1593, 614, 758, 0, 0, 0, 'G', 28.30, 10.44, 9.48, 4528),
+        ('Oscar Robertson', 1963, 25, 'SAC', 79, 2480, 783, 868, 0, 840, 1740, 800, 938, 0, 0, 0, 'G', 31.39, 9.91, 10.99, 4801),
+        ('Oscar Robertson', 1964, 26, 'SAC', 75, 2279, 674, 861, 0, 807, 1681, 665, 793, 0, 0, 0, 'G', 30.39, 8.99, 11.48, 4480),
+        ('Oscar Robertson', 1965, 27, 'SAC', 76, 2378, 586, 847, 0, 818, 1723, 742, 881, 0, 0, 0, 'G', 31.29, 7.71, 11.14, 4432),
+        ('Oscar Robertson', 1966, 28, 'SAC', 79, 2412, 486, 845, 0, 838, 1699, 736, 843, 0, 0, 0, 'G', 30.53, 6.15, 10.70, 4458),
+        ('Oscar Robertson', 1967, 29, 'SAC', 65, 1896, 391, 633, 0, 660, 1381, 576, 694, 0, 0, 0, 'G', 29.17, 6.02, 9.74, 3374),
+        ('Oscar Robertson', 1968, 30, 'SAC', 79, 1955, 502, 772, 0, 656, 1351, 643, 767, 0, 0, 0, 'G', 24.75, 6.35, 9.77, 3838),
+        ('Oscar Robertson', 1969, 31, 'SAC', 69, 1748, 422, 558, 0, 647, 1267, 454, 560, 0, 0, 0, 'G', 25.33, 6.12, 8.09, 3207),
+    ]
+    conn.executemany(
+        """INSERT OR IGNORE INTO nba_stats
+           (player, season, age, team, games, pts, trb, ast, threepm, fgm, fga, ftm, fta,
+            stl, blk, tov, pos, pts_pg, trb_pg, ast_pg, fantasy_score)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        robertson_cin,
+    )
+    conn.commit()
+    print(f"Seeded {len(robertson_cin)} missing player rows.")
     draft_files = _glob.glob(os.path.join(draft_dir, "*.xls")) + \
                   _glob.glob(os.path.join(draft_dir, "*.xlsx"))
 
