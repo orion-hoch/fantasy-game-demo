@@ -83,7 +83,7 @@
     }
 
     function triggerExplosion() {
-        if (window.SFX) SFX.play('explosion');
+        if (window.SFX) { SFX.stopTicking(); SFX.play('explosion'); }
         clearTimeout(flashTimer);
         bombBody.className = "exploded";
         setBombDisplay("BOOM", "");
@@ -94,7 +94,7 @@
     }
 
     function triggerDefuse() {
-        if (window.SFX) SFX.play('defuse');
+        if (window.SFX) { SFX.stopTicking(); SFX.play('defuse'); }
         clearTimeout(flashTimer);
         bombBody.className = "defused";
         setBombDisplay("WIN", "defused!");
@@ -288,6 +288,7 @@
                 gameId     = data.game_id;
                 gameActive = true;
                 wrongCount = 0;
+                if (window.SFX) SFX.startTicking(1000);
                 allHints   = data.hints || [];
 
                 chainSpark.classList.remove("hidden");

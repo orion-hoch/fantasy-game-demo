@@ -853,6 +853,7 @@
   }
 
   function sortHand(mode) {
+    if (window.SFX) SFX.play('rustle');
     if (currentSort === mode) {
       currentSort = null; // deselect
     } else {
