@@ -172,6 +172,10 @@
             line-height: 1.5;
         }
 
+        .blog-post p + p {
+            margin-top: 8px;
+        }
+
         /* ── Tab banner ───────────────────────────────────────────── */
         .tab-banner {
             width: 100%;
@@ -212,20 +216,40 @@
     <div id="tab-about" class="tab-panel active">
         <div class="about-intro">
             <h2>Welcome</h2>
-            <p>A collection of fantasy sports trivia games built around NFL and NBA players. Test your knowledge across different game formats — from chain puzzles and ticking time bombs to roguelike dungeon runs and Balatro-style card drafts.</p>
+            <p>Hey, my name is Orion, I am a student at Cornell and I make sports trivia games in my free time. I like to store them here so random people can get a chance to play them! I hope to add a wide catalogue of a lot of fun stuff. A big thank you to all my friends at WVBR 93.5 for giving me the motivation to finally commit to storing some of these games. If it wasn't for them theres zero chance I would have had as much fun making these.</p>
         </div>
 
-        <div class="blog-label">Updates</div>
+        <div class="blog-label">Game Guide</div>
         <div class="blog-list">
             <div class="blog-post">
-                <div class="blog-post-date">March 2026</div>
-                <div class="blog-post-title">NBA Balatro Added</div>
-                <p>Draft hands of NBA player-season cards, build scoring combos, and beat the shot clock across multiple rounds. Features Guards, Forwards, and Centers with unique joker bonuses.</p>
+                <div class="blog-post-date">NFL + NBA</div>
+                <div class="blog-post-title">Chain Game</div>
+                <p>Each round builds a live chain of filters, and every answer has to satisfy every clue currently on the board. A correct answer extends the chain, removes itself from future use, and keeps the run going until the valid player pool runs dry or you miss.</p>
+                <p>Under the hood, Chain Game works like an intersection puzzle. The game samples team, era, division, conference, college, award, and franchise relationships from the database, then checks each guess against the entire active ruleset before scoring the chain length.</p>
             </div>
             <div class="blog-post">
-                <div class="blog-post-date">February 2026</div>
-                <div class="blog-post-title">Dungeon Adventure Expanded</div>
-                <p>Added NBA mode to Dungeon Adventure. Pick a class, collect relics that filter your player pool, and work through 6 dungeon floors of trivia combat.</p>
+                <div class="blog-post-date">NFL + NBA</div>
+                <div class="blog-post-title">Ticking Time Bomb</div>
+                <p>You get a mystery player and a bomb fuse. Every wrong guess or skip reveals another teammate clue, and you only get a handful of mistakes before the round explodes. Different toggles like vintage, defense, and hard mode change the eligible pool and clue style.</p>
+                <p>The implementation is a shrinking search problem. The server picks a player, assembles ordered teammate hints from the stats tables, and the client reveals one clue at a time while tracking wrong guesses, skips, and end-state explosions.</p>
+            </div>
+            <div class="blog-post">
+                <div class="blog-post-date">NFL + NBA</div>
+                <div class="blog-post-title">Fantasy Duel / Starting 6 / Starting 5</div>
+                <p>These are local multiplayer draft games. A random franchise appears, players search for someone who played there, then lock in a season to draft that version of the player. NFL uses a full fantasy-style lineup with QB, RB, WR, TE, and UTIL spots, while NBA uses guards, forwards, center, and a utility slot.</p>
+                <p>Implementation-wise, each pick is a two-step lookup: first validate the player-team relationship, then load the valid seasons for that player on that franchise. Once a season is chosen, the app drops the card into the correct roster slot and blocks duplicates across every player in the room.</p>
+            </div>
+            <div class="blog-post">
+                <div class="blog-post-date">NFL + NBA</div>
+                <div class="blog-post-title">Dungeon Adventure</div>
+                <p>Dungeon Adventure is a roguelike trivia crawl. You choose a class, enter a run, and fight through themed encounters by naming players that satisfy the current room prompt plus every relic filter you have collected. Correct answers deal damage, bad answers cost health, and bosses cap each floor.</p>
+                <p>The game is built like a stateful run generator. The backend stores your class, health, relics, floor progression, and current encounter, while the frontend renders the run map, combat log, and reward screens like a lightweight sports-trivia RPG.</p>
+            </div>
+            <div class="blog-post">
+                <div class="blog-post-date">NFL + NBA</div>
+                <div class="blog-post-title">Balatro</div>
+                <p>Balatro turns player seasons into a deckbuilder. You start each run with a pool of player cards, draw hands, and score combinations based on position patterns and special hand types. Winning fights earns coins, reward choices, jokers, upgrades, packs, and shop access before the next round or boss fight.</p>
+                <p>The implementation mixes card-game logic with sports data. The backend builds deck pools from the database, scores hands, applies joker modifiers, boss effects, and item upgrades, then persists run state between requests. The frontend handles hand selection, reward flow, shop UI, overlays, and deck viewing like a full roguelike card game.</p>
             </div>
         </div>
     </div>
