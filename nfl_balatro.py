@@ -112,10 +112,12 @@ def get_conference(college):
 
 
 JOKERS = [
-    {"id": "te_monster", "name": "TE Monster", "desc": "+2 mult per TE card played", "rarity": "common"},
-    {"id": "air_raid", "name": "Air Raid", "desc": "+1.5 mult per WR card played", "rarity": "common"},
-    {"id": "ground_pound", "name": "Ground & Pound", "desc": "+2 mult per RB card played", "rarity": "common"},
-    {"id": "field_general", "name": "Field General", "desc": "+4 mult per QB card played", "rarity": "uncommon"},
+    {"id": "te_monster", "name": "TE Monster", "desc": "×1.3 Mult per scored TE (multiplicative, per card)", "rarity": "common"},
+    {"id": "air_raid", "name": "Air Raid", "desc": "×1.5 Mult per scored WR (multiplicative, per card)", "rarity": "common"},
+    {"id": "ground_pound", "name": "Ground & Pound", "desc": "×1.3 Mult per scored RB (multiplicative, per card)", "rarity": "common"},
+    {"id": "field_general", "name": "Field General", "desc": "×1.5 Mult per scored QB (multiplicative, per card)", "rarity": "uncommon"},
+    {"id": "first_round_impact", "name": "First Round Impact", "desc": "×1.3 Mult per scored 1st-round pick (multiplicative, per card)", "rarity": "uncommon"},
+    {"id": "pro_bowl_power", "name": "Pro Bowl Power", "desc": "×1.5 Mult per scored player with 3+ Pro Bowls (multiplicative, per card)", "rarity": "rare"},
     {"id": "pro_bowl_pedigree", "name": "Pro Bowl Pedigree", "desc": "+1 mult per Pro Bowl appearance in scoring hand", "rarity": "uncommon"},
     {"id": "star_power", "name": "Star Power", "desc": "+3 mult per player with 3+ Pro Bowls in scoring hand", "rarity": "rare"},
     {"id": "first_rounder", "name": "First Round Value", "desc": "+2 mult per 1st round pick in scoring hand", "rarity": "common"},
@@ -165,7 +167,7 @@ JOKERS = [
     {"id": "flat_mult",       "name": "Fantasy Manager",       "desc": "+4 Mult. The foundation of every great roster.",                                "rarity": "common"},
     {"id": "pair_bonus",      "name": "Red Zone Strike",        "desc": "+8 Mult if played hand is Dynamic Duo.",                                        "rarity": "common"},
     {"id": "trips_bonus",     "name": "Blitz Package",          "desc": "+12 Mult if played hand is Triple Threat.",                                     "rarity": "common"},
-    {"id": "pair_chips",      "name": "Cap Space Boost",        "desc": "+50 base pts if played hand is Dynamic Duo.",                                   "rarity": "common"},
+    {"id": "pair_chips",      "name": "Cap Space Boost",        "desc": "+300 base pts if played hand is Dynamic Duo.",                                  "rarity": "common"},
     {"id": "no_disc_mult",    "name": "Overtime",               "desc": "+15 Mult if you have 0 discards remaining when this hand is played.",           "rarity": "common"},
     {"id": "small_hand_mult", "name": "Veteran Minimum",        "desc": "+20 Mult if scoring hand has 3 or fewer cards.",                               "rarity": "common"},
     {"id": "clockwork",       "name": "Two-Minute Drill",       "desc": "Gains +1 Mult per hand played this fight, loses -1 per discard (min 0).",      "rarity": "common"},
@@ -180,20 +182,20 @@ JOKERS = [
     {"id": "four_xmult",      "name": "Hall of Fame",           "desc": "×4 Mult if played hand is Quad Set (multiplicative).",                         "rarity": "rare"},
     {"id": "delayed_coins",   "name": "Injury Report",          "desc": "Earn $2 at end of fight if no discards were used that fight.",                  "rarity": "common"},
     # ── On-scored per-card attribute jokers ──────────────────────────────────────
-    {"id": "high_scorer_chip", "name": "Elite Stat Line",       "desc": "Each scored card with 200+ PPR adds +25 base pts.",                              "rarity": "common"},
-    {"id": "pro_bowl_chip",    "name": "All-Pro Bonus",         "desc": "Each scored card with 3+ Pro Bowls adds +20 base pts.",                          "rarity": "uncommon"},
-    {"id": "veteran_chip",     "name": "Grizzled Vet",          "desc": "Each scored card drafted before 2015 adds +10 base pts.",                        "rarity": "common"},
-    {"id": "youth_chip",       "name": "Rookie Deal",           "desc": "Each scored card drafted 2020+ adds +20 base pts.",                              "rarity": "common"},
-    {"id": "late_pick_chip",   "name": "Hidden Gem",            "desc": "Each scored card from draft rounds 3–7 adds +15 base pts.",                      "rarity": "common"},
-    {"id": "top_pick_chip",    "name": "Franchise Cornerstone", "desc": "Each scored top-5 overall pick adds +25 base pts.",                              "rarity": "uncommon"},
-    {"id": "teammate_chip",    "name": "Locker Room Culture",   "desc": "Each scored card sharing a team with another scored card adds +15 base pts.",    "rarity": "uncommon"},
-    {"id": "sec_chip",         "name": "SEC Hotbed",            "desc": "Each scored card from an SEC school adds +12 base pts.",                         "rarity": "uncommon"},
+    {"id": "high_scorer_chip", "name": "Elite Stat Line",       "desc": "Each scored card with 200+ PPR adds +300 base pts.",                             "rarity": "common"},
+    {"id": "pro_bowl_chip",    "name": "All-Pro Bonus",         "desc": "Each scored card with 3+ Pro Bowls adds +300 base pts.",                         "rarity": "uncommon"},
+    {"id": "veteran_chip",     "name": "Grizzled Vet",          "desc": "Each scored card drafted before 2015 adds +300 base pts.",                       "rarity": "common"},
+    {"id": "youth_chip",       "name": "Rookie Deal",           "desc": "Each scored card drafted 2020+ adds +300 base pts.",                             "rarity": "common"},
+    {"id": "late_pick_chip",   "name": "Hidden Gem",            "desc": "Each scored card from draft rounds 3–7 adds +300 base pts.",                     "rarity": "common"},
+    {"id": "top_pick_chip",    "name": "Franchise Cornerstone", "desc": "Each scored top-5 overall pick adds +300 base pts.",                             "rarity": "uncommon"},
+    {"id": "teammate_chip",    "name": "Locker Room Culture",   "desc": "Each scored card sharing a team with another scored card adds +300 base pts.",   "rarity": "uncommon"},
+    {"id": "sec_chip",         "name": "SEC Hotbed",            "desc": "Each scored card from an SEC school adds +300 base pts.",                        "rarity": "uncommon"},
     # Division jokers
     {"id": "div_scout",     "name": "Division Scout",      "desc": "4 same-division cards score as Division Straight (5×).",          "rarity": "uncommon"},
     {"id": "div_dynasty",   "name": "Division Dynasty",    "desc": "5 same-division cards score as Division Six (6×).",               "rarity": "rare"},
     {"id": "div_dominance", "name": "Division Dominance",  "desc": "4 cards same position & division score as Royal Flush (20×).",    "rarity": "rare"},
     {"id": "homefield",     "name": "Home Field Advantage","desc": "Division hands (Straight/Six/Royal Flush) get +4 mult.",          "rarity": "uncommon"},
-    {"id": "div_stacker",   "name": "Division Stacker",    "desc": "Each scored card in a division hand adds +20 base pts.",          "rarity": "common"},
+    {"id": "div_stacker",   "name": "Division Stacker",    "desc": "Each scored card in a division hand adds +300 base pts.",         "rarity": "common"},
     {"id": "div_escalator", "name": "Conference Escalator","desc": "Each division hand played this run permanently adds +0.5 mult.",  "rarity": "rare"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
@@ -340,7 +342,9 @@ def _build_deck_pool(conn):
     cards = []
     for i, r in enumerate(pool_rows):
         card_id = f"{r[0]}_{r[1]}_{r[2]}_{i}"
-        college = r[6]
+        draft_pick = r[9]
+        raw_college = r[6]
+        college = raw_college if (raw_college and raw_college != "Unknown") else ("No college" if draft_pick is not None else None)
         cards.append({
             "id": card_id,
             "player": r[0],
@@ -352,9 +356,9 @@ def _build_deck_pool(conn):
             "college": college,
             "draft_year": r[7],
             "draft_round": r[8],
-            "draft_pick": r[9],
-            "undrafted": not college or college == "Unknown",
-            "conference": get_conference(college),
+            "draft_pick": draft_pick,
+            "undrafted": draft_pick is None,
+            "conference": get_conference(raw_college),
             "division": get_nfl_division(r[3]),
         })
     return cards
@@ -380,7 +384,9 @@ def _build_deck(conn):
         if card_id in seen_ids:
             card_id = f"{r[0]}_{r[1]}_{r[2]}"
         seen_ids.add(card_id)
-        college = r[6]
+        draft_pick = r[9]
+        raw_college = r[6]
+        college = raw_college if (raw_college and raw_college != "Unknown") else ("No college" if draft_pick is not None else None)
         cards.append({
             "id": card_id,
             "player": r[0],
@@ -392,8 +398,9 @@ def _build_deck(conn):
             "college": college,
             "draft_year": r[7],
             "draft_round": r[8],
-            "draft_pick": r[9],
-            "conference": get_conference(college),
+            "draft_pick": draft_pick,
+            "undrafted": draft_pick is None,
+            "conference": get_conference(raw_college),
             "division": get_nfl_division(r[3]),
         })
     return cards
@@ -495,15 +502,7 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
     for jid in joker_ids:
         jbonus = 0.0
         jpts = 0.0
-        if jid == "te_monster":
-            jbonus = 2 * sum(1 for c in scoring_cards if c["pos"] == "TE")
-        elif jid == "air_raid":
-            jbonus = 1.5 * sum(1 for c in scoring_cards if c["pos"] == "WR")
-        elif jid == "ground_pound":
-            jbonus = 2 * sum(1 for c in scoring_cards if c["pos"] == "RB")
-        elif jid == "field_general":
-            jbonus = 4 * sum(1 for c in scoring_cards if c["pos"] == "QB")
-        elif jid == "pro_bowl_pedigree":
+        if jid == "pro_bowl_pedigree":
             jbonus = sum(c.get("pro_bowls", 0) or 0 for c in scoring_cards)
         elif jid == "star_power":
             jbonus = 3 * sum(1 for c in scoring_cards if (c.get("pro_bowls", 0) or 0) >= 3)
@@ -572,7 +571,7 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
         elif jid == "championship_run":
             jbonus = (floor - 1)
         elif jid == "undrafted_diamond":
-            jbonus = 5 * sum(1 for c in scoring_cards if c.get("undrafted") or not c.get("college") or c.get("college") == "Unknown")
+            jbonus = 5 * sum(1 for c in scoring_cards if c.get("undrafted"))
         elif jid == "flat_mult":
             jbonus = 4
         elif jid == "pair_bonus":
@@ -583,7 +582,7 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
                 jbonus = 12
         elif jid == "pair_chips":
             if hand_type == "double":
-                jpts = 50
+                jpts = 300
         elif jid == "no_disc_mult":
             jbonus = 15 if joker_state.get("_discards_remaining", 0) == 0 else 0
         elif jid == "small_hand_mult":
@@ -599,28 +598,28 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
             jbonus = joker_state.get("restock_stacks", 0)
         # ── On-scored per-card attribute jokers ──────────────────────────────
         elif jid == "high_scorer_chip":
-            jpts = sum(25 for c in scoring_cards if c.get("fantasy_ppr", 0) >= 200)
+            jpts = sum(300 for c in scoring_cards if c.get("fantasy_ppr", 0) >= 200)
         elif jid == "pro_bowl_chip":
-            jpts = sum(20 for c in scoring_cards if (c.get("pro_bowls") or 0) >= 3)
+            jpts = sum(300 for c in scoring_cards if (c.get("pro_bowls") or 0) >= 3)
         elif jid == "veteran_chip":
-            jpts = sum(10 for c in scoring_cards if (c.get("draft_year") or 9999) < 2015)
+            jpts = sum(300 for c in scoring_cards if (c.get("draft_year") or 9999) < 2015)
         elif jid == "youth_chip":
-            jpts = sum(20 for c in scoring_cards if (c.get("draft_year") or 0) >= 2020)
+            jpts = sum(300 for c in scoring_cards if (c.get("draft_year") or 0) >= 2020)
         elif jid == "late_pick_chip":
-            jpts = sum(15 for c in scoring_cards if (c.get("draft_round") or 0) >= 3)
+            jpts = sum(300 for c in scoring_cards if (c.get("draft_round") or 0) >= 3)
         elif jid == "top_pick_chip":
-            jpts = sum(25 for c in scoring_cards if c.get("draft_pick") is not None and c["draft_pick"] <= 5)
+            jpts = sum(300 for c in scoring_cards if c.get("draft_pick") is not None and c["draft_pick"] <= 5)
         elif jid == "teammate_chip":
             _team_counts = Counter(c.get("team") for c in scoring_cards if c.get("team"))
-            jpts = sum(15 for c in scoring_cards if _team_counts.get(c.get("team"), 0) >= 2)
+            jpts = sum(300 for c in scoring_cards if _team_counts.get(c.get("team"), 0) >= 2)
         elif jid == "sec_chip":
-            jpts = sum(12 for c in scoring_cards if get_conference(c.get("college", "")) == "SEC")
+            jpts = sum(300 for c in scoring_cards if get_conference(c.get("college", "")) == "SEC")
         elif jid == "homefield":
             if hand_type in ("division_five", "division_six", "royal_flush"):
                 jbonus = 4
         elif jid == "div_stacker":
             if hand_type in ("division_five", "division_six", "royal_flush"):
-                jpts = sum(20 for _ in scoring_cards)
+                jpts = sum(300 for _ in scoring_cards)
         elif jid == "div_escalator":
             jbonus = joker_state.get("div_escalator_stacks", 0) * 0.5
         # Apply joker enhancements to per-joker contribution
@@ -637,6 +636,38 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
         bonus += jbonus
         pts_bonus += jpts
     return bonus, pts_bonus, contributing_ids
+
+
+_PER_CARD_XMULT_JOKERS = {
+    "air_raid":          {"pos": "WR",  "factor": 1.5},
+    "te_monster":        {"pos": "TE",  "factor": 1.3},
+    "ground_pound":      {"pos": "RB",  "factor": 1.3},
+    "field_general":     {"pos": "QB",  "factor": 1.5},
+}
+
+
+def _calc_per_card_xmult(scoring_cards, joker_ids):
+    """Per-card multiplicative jokers. Returns (factor, events).
+    events = [{"joker_id": ..., "card_id": ..., "factor": ...}, ...]
+    ordered by card, so the frontend can animate one event at a time.
+    """
+    events = []
+    for c in scoring_cards:
+        for jid in joker_ids:
+            if jid in _PER_CARD_XMULT_JOKERS:
+                cfg = _PER_CARD_XMULT_JOKERS[jid]
+                if c["pos"] == cfg["pos"]:
+                    events.append({"joker_id": jid, "card_id": c["id"], "factor": cfg["factor"]})
+            elif jid == "first_round_impact":
+                if c.get("draft_round") == 1:
+                    events.append({"joker_id": jid, "card_id": c["id"], "factor": 1.3})
+            elif jid == "pro_bowl_power":
+                if (c.get("pro_bowls") or 0) >= 3:
+                    events.append({"joker_id": jid, "card_id": c["id"], "factor": 1.5})
+    factor = 1.0
+    for e in events:
+        factor *= e["factor"]
+    return round(factor, 4), events
 
 
 def _calc_joker_mult_factor(hand_type, scoring_cards, all_played, joker_ids, joker_state=None, floor=1, is_last_hand=False):
@@ -791,7 +822,9 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
     # Also add glass mult bonus to joker mult display
     hand_mult = HAND_TYPES[hand_type]["mult"] + combo_boosts.get(hand_type, 0)
     joker_mult, joker_pts_bonus, joker_add_ids = _calc_joker_mult(hand_type, scoring_cards, cards_played, joker_ids, joker_state=joker_state, floor=floor, joker_enhancements=joker_enhancements, deck_size=deck_size, is_last_hand=is_last_hand)
-    total_mult = hand_mult + joker_mult
+    # Per-card multiplicative jokers (×mult per qualifying card, animated one at a time)
+    per_card_factor, per_card_mult_events = _calc_per_card_xmult(scoring_cards, joker_ids)
+    total_mult = (hand_mult * per_card_factor) + joker_mult
     # Multiplicative factor from special jokers
     mult_factor, xmult_joker_ids = _calc_joker_mult_factor(hand_type, scoring_cards, cards_played, joker_ids, joker_state=joker_state, floor=floor, is_last_hand=is_last_hand)
     base_pts_total = base_pts + joker_pts_bonus
@@ -812,6 +845,8 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
         "hand_mult": hand_mult,
         "joker_mult": round(joker_mult, 1),
         "joker_add_ids": joker_add_ids,
+        "per_card_mult_events": per_card_mult_events,
+        "per_card_factor": per_card_factor,
         "total_mult": round(total_mult, 1),
         "mult_factor": mult_factor,
         "xmult_joker_ids": xmult_joker_ids,
@@ -1880,15 +1915,17 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
     for i, r in enumerate(rows):
         if (r[0], r[1]) in existing_ids:
             continue
-        college = r[6]
+        draft_pick = r[9]
+        raw_college = r[6]
+        college = raw_college if (raw_college and raw_college != "Unknown") else ("No college" if draft_pick is not None else None)
         card = {
             "id": f"{r[0]}_{r[1]}_{r[2]}_pack{idx_start + i}",
             "player": r[0], "season": r[1], "pos": r[2], "team": r[3],
             "fantasy_ppr": round(r[4], 1),
             "pro_bowls": int(r[5]) if r[5] else 0,
-            "college": college, "draft_year": r[7], "draft_round": r[8], "draft_pick": r[9],
-            "undrafted": not college or college == "Unknown",
-            "conference": get_conference(college),
+            "college": college, "draft_year": r[7], "draft_round": r[8], "draft_pick": draft_pick,
+            "undrafted": draft_pick is None,
+            "conference": get_conference(raw_college),
         }
         cards.append(card)
         if len(cards) >= candidate_count:

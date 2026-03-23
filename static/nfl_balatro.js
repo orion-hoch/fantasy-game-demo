@@ -210,7 +210,7 @@
     // Reset
     htLabel.textContent   = (data.hand_name || '').toUpperCase();
     chipsEl.textContent   = '0';
-    multEl.textContent    = '—';
+    multEl.textContent    = data.hand_mult || '—';
     xmultEl.textContent   = '1';
     scoreEl.textContent   = '0';
     multBox.classList.remove('mult-popping');
@@ -231,9 +231,17 @@
       }
     });
 
-    var runningChips = 0;
+    // Build per-card mult event map: card_id -> [{joker_id, factor}, ...]
+    var perCardEvents = {};
+    (data.per_card_mult_events || []).forEach(function(e) {
+      if (!perCardEvents[e.card_id]) perCardEvents[e.card_id] = [];
+      perCardEvents[e.card_id].push(e);
+    });
 
-    // Phase 1 — card by card chips
+    var runningChips = 0;
+    var runningMult = data.hand_mult || 1;
+
+    // Phase 1 — card by card chips + per-card mult animations
     for (var i = 0; i < data.card_contributions.length; i++) {
       var contrib = data.card_contributions[i];
       var cardEl = document.querySelector('[data-card-id="' + contrib.id + '"]');
@@ -249,6 +257,20 @@
       await animateCounterTo(chipsEl, Math.round(runningChips), 160);
       setTimeout(function() { chipsEl.classList.remove('bumping'); }, 200);
 
+      // Per-card mult events for this card
+      var cardMults = perCardEvents[contrib.id] || [];
+      for (var j = 0; j < cardMults.length; j++) {
+        var ev = cardMults[j];
+        await sleep(120);
+        runningMult = Math.round(runningMult * ev.factor * 100) / 100;
+        multBox.classList.add('mult-popping');
+        await animateCounterTo(multEl, runningMult, 220);
+        showMultFloat(multBox, '×' + ev.factor);
+        wiggleSpecificJokers([ev.joker_id]);
+        await sleep(300);
+        multBox.classList.remove('mult-popping');
+      }
+
       if (cardEl) {
         cardEl.classList.remove('scoring-active');
         cardEl.classList.add('scoring-done');
@@ -258,11 +280,10 @@
 
     await sleep(220);
 
-    // Phase 2 — multiplier reveal + joker wiggle
+    // Phase 2 — additive joker mult reveal
     multBox.classList.add('mult-popping');
     await animateCounterTo(multEl, data.total_mult, 350);
     showChipFloat(document.getElementById('anim-mult-box'), '×' + data.total_mult);
-    // Wiggle specific additive mult jokers and show float over them
     if (data.joker_mult && data.joker_mult > 0) {
       wiggleSpecificJokers(data.joker_add_ids || []);
       showMultFloat(document.getElementById('jokers-container'), '+' + data.joker_mult.toFixed(1) + ' FAN');
@@ -1276,7 +1297,7 @@
     var header = document.createElement('div');
     header.className = 'shop-section-header';
     header.style.cssText = 'margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.12);';
-    header.innerHTML = '<span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span><span style="font-size:0.6rem;color:var(--nb-dim);margin-left:auto;font-family:Arial,sans-serif;">hover to sell</span>';
+    header.innerHTML = '<span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span><span style="font-size:0.6rem;color:var(--nb-dim);margin-left:auto;font-family:Arial,sans-serif;">click SELL to sell</span>';
     els.shopJokersSect.appendChild(header);
 
     var row = document.createElement('div');
@@ -1328,17 +1349,38 @@
     }
 
     // Sell button - available in shopping and playing
+    var sellPrice = ({common: 2, uncommon: 3, rare: 4})[j.rarity] || 2;
+    var jokerId = j.id;
+
     var sellBtn = document.createElement('button');
     sellBtn.className = 'joker-sell-btn';
     sellBtn.textContent = 'SELL';
-    var jokerId = j.id;
     sellBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      if (confirm('Sell ' + j.name + '?')) {
-        sellJoker(jokerId);
-      }
+      slot.classList.add('sell-confirming');
     });
     slot.appendChild(sellBtn);
+
+    var confirmOverlay = document.createElement('div');
+    confirmOverlay.className = 'joker-sell-confirm';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'joker-sell-cancel';
+    cancelBtn.textContent = '✕';
+    cancelBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      slot.classList.remove('sell-confirming');
+    });
+    var okBtn = document.createElement('button');
+    okBtn.className = 'joker-sell-ok';
+    okBtn.textContent = '$' + sellPrice;
+    okBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      slot.classList.remove('sell-confirming');
+      sellJoker(jokerId);
+    });
+    confirmOverlay.appendChild(cancelBtn);
+    confirmOverlay.appendChild(okBtn);
+    slot.appendChild(confirmOverlay);
   }
 
   function renderHand() {
@@ -1810,7 +1852,7 @@
     var iconArea = document.createElement('div');
     iconArea.className = 'shop-item-icon-area';
     if (isPack) {
-      iconArea.style.background = 'linear-gradient(135deg, #1a0a2e, #2e1a00)';
+      iconArea.style.background = 'linear-gradient(135deg, #1a0a2e, #0a1a3e)';
     } else {
       var pos = item.card_data ? item.card_data.pos : null;
       var bg = pos ? (POS_BG[pos] || ITEM_BG[item.type] || '#1a1a3e') : (ITEM_BG[item.type] || '#1a1a3e');

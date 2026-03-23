@@ -101,14 +101,14 @@ JOKERS = [
     {"id": "rim_protector",    "name": "Rim Protector",        "desc": "+2 mult per C card in scoring hand",                                    "rarity": "common"},
     {"id": "floor_general",    "name": "Floor General",        "desc": "+2 mult per G card in scoring hand",                                    "rarity": "common"},
     {"id": "power_forward",    "name": "Power Forward",        "desc": "+2 mult per F card in scoring hand",                                    "rarity": "common"},
-    {"id": "fast_break",       "name": "Fast Break",           "desc": "+5 pts per card played",                                                "rarity": "common"},
+    {"id": "fast_break",       "name": "Fast Break",           "desc": "+300 pts per card played",                                              "rarity": "common"},
     {"id": "depth_chart",      "name": "Depth Chart",          "desc": "+2 mult per unique position in scoring hand",                           "rarity": "common"},
     {"id": "lottery_pick",     "name": "Lottery Pick",         "desc": "+3 mult per top-10 draft pick in scoring hand",                         "rarity": "common"},
     {"id": "volume_scorer",    "name": "Volume Scorer",        "desc": "+1.5 mult per card played beyond 3",                                    "rarity": "common"},
     # ── Uncommon ────────────────────────────────────────────────────────────────
     {"id": "undrafted_hero",   "name": "Undrafted Hero",       "desc": "+5 mult per undrafted player in scoring hand",                          "rarity": "uncommon"},
     {"id": "sixth_man",        "name": "Sixth Man",            "desc": "+50 pts for the highest-scoring card played",                           "rarity": "uncommon"},
-    {"id": "bench_mob",        "name": "Bench Mob",            "desc": "+5 pts per card played beyond 3",                                       "rarity": "uncommon"},
+    {"id": "bench_mob",        "name": "Bench Mob",            "desc": "+300 pts per card played beyond 3",                                     "rarity": "uncommon"},
     {"id": "triple_double",    "name": "Triple Double",        "desc": "+5 mult when playing Pick & Roll or better",                            "rarity": "uncommon"},
     {"id": "old_school",       "name": "Old School",           "desc": "+5 mult if all played cards from seasons before 1990",                  "rarity": "uncommon"},
     {"id": "modern_era",       "name": "Modern Era",           "desc": "+5 mult if all played cards from seasons 2010+",                        "rarity": "uncommon"},
@@ -143,7 +143,7 @@ JOKERS = [
     {"id": "flat_mult",       "name": "Lineup Anchor",          "desc": "+4 Mult. Every great team needs a foundation.",                                 "rarity": "common"},
     {"id": "pair_bonus",      "name": "Paint Attack",           "desc": "+8 Mult if played hand is Catch & Shoot.",                                      "rarity": "common"},
     {"id": "trips_bonus",     "name": "Break Away",             "desc": "+12 Mult if played hand is Pick & Roll.",                                       "rarity": "common"},
-    {"id": "pair_chips",      "name": "Hustle Points",          "desc": "+50 base pts if played hand is Catch & Shoot.",                                 "rarity": "common"},
+    {"id": "pair_chips",      "name": "Hustle Points",          "desc": "+300 base pts if played hand is Catch & Shoot.",                                "rarity": "common"},
     {"id": "no_disc_mult",    "name": "Overtime",               "desc": "+15 Mult if you have 0 discards remaining when this hand is played.",           "rarity": "common"},
     {"id": "small_hand_mult", "name": "Veteran Presence",       "desc": "+20 Mult if scoring hand has 3 or fewer cards.",                               "rarity": "common"},
     {"id": "clockwork",       "name": "Pace Setter",            "desc": "Gains +1 Mult per hand played this fight, loses -1 per discard (min 0).",      "rarity": "common"},
@@ -158,25 +158,25 @@ JOKERS = [
     {"id": "four_xmult",      "name": "Hall of Fame",           "desc": "×4 Mult if played hand is Starting Four (multiplicative).",                    "rarity": "rare"},
     {"id": "delayed_coins",   "name": "Injury Report",          "desc": "Earn $2 at end of fight if no discards were used that fight.",                  "rarity": "common"},
     # ── On-scored per-card attribute jokers ──────────────────────────────────────
-    {"id": "high_scorer_chip", "name": "Big Game Player",       "desc": "Each scored card with 40+ fantasy pts adds +25 base pts.",                      "rarity": "common"},
-    {"id": "big_man_chip",     "name": "Post Presence",         "desc": "Each scored C card adds +30 base pts.",                                          "rarity": "common"},
-    {"id": "veteran_chip",     "name": "Veteran IQ",            "desc": "Each scored card from seasons before 2000 adds +15 base pts.",                   "rarity": "common"},
-    {"id": "youth_chip",       "name": "Young Gun",             "desc": "Each scored card from seasons 2015+ adds +15 base pts.",                         "rarity": "common"},
-    {"id": "late_pick_chip",   "name": "Undrafted Upside",      "desc": "Each scored undrafted player or pick 31+ adds +20 base pts.",                    "rarity": "common"},
-    {"id": "top_pick_chip",    "name": "Lottery Selection",     "desc": "Each scored top-5 draft pick adds +25 base pts.",                               "rarity": "uncommon"},
-    {"id": "teammate_chip",    "name": "Team Chemistry",        "desc": "Each scored card sharing a team with another scored card adds +20 base pts.",    "rarity": "uncommon"},
-    {"id": "west_chip",        "name": "West Coast Game",       "desc": "Each scored Western Conference card adds +10 base pts.",                         "rarity": "uncommon"},
+    {"id": "high_scorer_chip", "name": "Big Game Player",       "desc": "Each scored card with 40+ fantasy pts adds +300 base pts.",                     "rarity": "common"},
+    {"id": "big_man_chip",     "name": "Post Presence",         "desc": "Each scored C card adds +300 base pts.",                                         "rarity": "common"},
+    {"id": "veteran_chip",     "name": "Veteran IQ",            "desc": "Each scored card from seasons before 2000 adds +300 base pts.",                  "rarity": "common"},
+    {"id": "youth_chip",       "name": "Young Gun",             "desc": "Each scored card from seasons 2015+ adds +300 base pts.",                        "rarity": "common"},
+    {"id": "late_pick_chip",   "name": "Undrafted Upside",      "desc": "Each scored undrafted player or pick 31+ adds +300 base pts.",                   "rarity": "common"},
+    {"id": "top_pick_chip",    "name": "Lottery Selection",     "desc": "Each scored top-5 draft pick adds +300 base pts.",                              "rarity": "uncommon"},
+    {"id": "teammate_chip",    "name": "Team Chemistry",        "desc": "Each scored card sharing a team with another scored card adds +300 base pts.",   "rarity": "uncommon"},
+    {"id": "west_chip",        "name": "West Coast Game",       "desc": "Each scored Western Conference card adds +300 base pts.",                        "rarity": "uncommon"},
     # Division jokers
     {"id": "div_scout",     "name": "Conference Scout",     "desc": "4 same-division cards score as Division Straight (5×).",          "rarity": "uncommon"},
     {"id": "div_dynasty",   "name": "Conference Dynasty",   "desc": "5 same-division cards score as Division Six (6×).",               "rarity": "rare"},
     {"id": "div_dominance", "name": "Conference Dominance", "desc": "4 cards same position & division score as Royal Flush (20×).",    "rarity": "rare"},
     {"id": "homefield",     "name": "Home Court Advantage", "desc": "Division hands (Straight/Six/Royal Flush) get +4 mult.",          "rarity": "uncommon"},
-    {"id": "div_stacker",   "name": "Conference Stacker",   "desc": "Each scored card in a division hand adds +20 base pts.",          "rarity": "common"},
+    {"id": "div_stacker",   "name": "Conference Stacker",   "desc": "Each scored card in a division hand adds +300 base pts.",         "rarity": "common"},
     {"id": "div_escalator", "name": "Conference Escalator", "desc": "Each division hand played this run permanently adds +0.5 mult.",  "rarity": "rare"},
     # All-Star jokers
-    {"id": "all_star_chips",  "name": "All-Star Weekend",   "desc": "Each scored card with any All-Star selection adds +15 base pts.",           "rarity": "common"},
+    {"id": "all_star_chips",  "name": "All-Star Weekend",   "desc": "Each scored card with any All-Star selection adds +300 base pts.",          "rarity": "common"},
     {"id": "star_power",      "name": "Star Power",          "desc": "+5 Mult per All-Star in the scored hand.",                                    "rarity": "uncommon"},
-    {"id": "legend_status",   "name": "Legend Status",       "desc": "Each scored card with 10+ All-Star selections adds +40 base pts.",            "rarity": "rare"},
+    {"id": "legend_status",   "name": "Legend Status",       "desc": "Each scored card with 10+ All-Star selections adds +300 base pts.",           "rarity": "rare"},
     {"id": "franchise_icon",  "name": "Franchise Icon",      "desc": "×2 Mult if every scored card has at least 1 All-Star selection (multiplicative).", "rarity": "rare"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
@@ -315,7 +315,8 @@ def _build_deck_pool(conn):
     cards = []
     for i, r in enumerate(pool_rows):
         card_id = f"{r[0]}_{r[1]}_{r[2]}_{i}"
-        college = r[6]
+        draft_pick = r[5]
+        college = r[6] if r[6] else ("No college" if draft_pick is not None else None)
         cards.append({
             "id": card_id,
             "player": r[0],
@@ -323,9 +324,9 @@ def _build_deck_pool(conn):
             "pos": r[2],
             "team": r[3],
             "fantasy_pts": round(r[4] / 10, 1),
-            "draft_pick": r[5],
+            "draft_pick": draft_pick,
             "college": college,
-            "undrafted": r[5] is None,
+            "undrafted": draft_pick is None,
             "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
             "division": get_nba_division(r[3]),
@@ -439,7 +440,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
         elif jid == "power_forward":
             jbonus = 2 * sum(1 for c in cards_played if c["pos"] == "F")
         elif jid == "fast_break":
-            jpts = 5 * len(cards_played)
+            jpts = 300 * len(cards_played)
         elif jid == "depth_chart":
             jbonus = 2 * len(set(c["pos"] for c in cards_played))
         elif jid == "lottery_pick":
@@ -452,7 +453,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
         elif jid == "bench_mob":
             extra = len(cards_played) - 3
             if extra > 0:
-                jpts = 5 * extra
+                jpts = 300 * extra
         elif jid == "triple_double":
             if hand_type in ("pick_roll", "catch_shoot", "zone_press", "twin_towers", "starting_four", "six_man_rotation", "starting_lineup"):
                 jbonus = 5
@@ -525,7 +526,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
                 jbonus = 12
         elif jid == "pair_chips":
             if hand_type == "catch_shoot":
-                jpts = 50
+                jpts = 300
         elif jid == "no_disc_mult":
             jbonus = 15 if joker_state.get("_discards_remaining", 0) == 0 else 0
         elif jid == "small_hand_mult":
@@ -541,37 +542,37 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
             jbonus = joker_state.get("restock_stacks", 0)
         # ── On-scored per-card attribute jokers ──────────────────────────────
         elif jid == "high_scorer_chip":
-            jpts = sum(25 for c in cards_played if c.get("fantasy_pts", 0) >= 40)
+            jpts = sum(300 for c in cards_played if c.get("fantasy_pts", 0) >= 40)
         elif jid == "big_man_chip":
-            jpts = sum(30 for c in cards_played if c.get("pos") == "C")
+            jpts = sum(300 for c in cards_played if c.get("pos") == "C")
         elif jid == "veteran_chip":
-            jpts = sum(15 for c in cards_played if (c.get("season") or 9999) < 2000)
+            jpts = sum(300 for c in cards_played if (c.get("season") or 9999) < 2000)
         elif jid == "youth_chip":
-            jpts = sum(15 for c in cards_played if (c.get("season") or 0) >= 2015)
+            jpts = sum(300 for c in cards_played if (c.get("season") or 0) >= 2015)
         elif jid == "late_pick_chip":
-            jpts = sum(20 for c in cards_played if c.get("undrafted") or (c.get("draft_pick") or 0) > 30)
+            jpts = sum(300 for c in cards_played if c.get("undrafted") or (c.get("draft_pick") or 0) > 30)
         elif jid == "top_pick_chip":
-            jpts = sum(25 for c in cards_played if c.get("draft_pick") is not None and c["draft_pick"] <= 5)
+            jpts = sum(300 for c in cards_played if c.get("draft_pick") is not None and c["draft_pick"] <= 5)
         elif jid == "teammate_chip":
             _team_counts = Counter(c.get("team") for c in cards_played if c.get("team"))
-            jpts = sum(20 for c in cards_played if _team_counts.get(c.get("team"), 0) >= 2)
+            jpts = sum(300 for c in cards_played if _team_counts.get(c.get("team"), 0) >= 2)
         elif jid == "west_chip":
-            jpts = sum(10 for c in cards_played if get_nba_conference(c.get("team")) == "West")
+            jpts = sum(300 for c in cards_played if get_nba_conference(c.get("team")) == "West")
         elif jid == "homefield":
             if hand_type in ("division_five", "division_six", "royal_flush"):
                 jbonus = 4
         elif jid == "div_stacker":
             if hand_type in ("division_five", "division_six", "royal_flush"):
-                jpts = sum(20 for _ in cards_played)
+                jpts = sum(300 for _ in cards_played)
         elif jid == "div_escalator":
             jbonus = joker_state.get("div_escalator_stacks", 0) * 0.5
         # ── All-Star jokers ──────────────────────────────────────────────────
         elif jid == "all_star_chips":
-            jpts = sum(15 for c in cards_played if (c.get("allstar_count") or 0) >= 1)
+            jpts = sum(300 for c in cards_played if (c.get("allstar_count") or 0) >= 1)
         elif jid == "star_power":
             jbonus = 5 * sum(1 for c in cards_played if (c.get("allstar_count") or 0) >= 1)
         elif jid == "legend_status":
-            jpts = sum(40 for c in cards_played if (c.get("allstar_count") or 0) >= 10)
+            jpts = sum(300 for c in cards_played if (c.get("allstar_count") or 0) >= 10)
         elif jid == "franchise_icon":
             pass  # handled in _calc_xmult_factor
 

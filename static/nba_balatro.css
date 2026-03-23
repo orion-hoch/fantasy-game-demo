@@ -2496,6 +2496,60 @@ body.scoring {
   background: rgba(220,40,40,0.95);
 }
 
+/* Hide sell btn and tooltip when confirming */
+.joker-slot.sell-confirming .joker-sell-btn,
+.joker-slot.sell-confirming .joker-desc-tooltip {
+  display: none !important;
+}
+
+.joker-sell-confirm {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(10,10,20,0.88);
+  border-radius: 4px;
+  z-index: 30;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.joker-slot.sell-confirming .joker-sell-confirm {
+  display: flex;
+}
+
+.joker-sell-cancel,
+.joker-sell-ok {
+  border: none;
+  cursor: pointer;
+  border-radius: 3px;
+  font-family: 'Oswald', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 7px;
+  font-size: 0.65rem;
+  line-height: 1.3;
+}
+
+.joker-sell-cancel {
+  background: #444;
+  color: #ccc;
+}
+
+.joker-sell-cancel:hover {
+  background: #666;
+  color: #fff;
+}
+
+.joker-sell-ok {
+  background: #2a9d2a;
+  color: #fff;
+}
+
+.joker-sell-ok:hover {
+  background: #33c133;
+}
+
 /* ── Year Select Modal ──────────────────────────────────────────── */
 .year-panel {
   width: min(420px, 96vw);

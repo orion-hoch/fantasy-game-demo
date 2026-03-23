@@ -8,7 +8,11 @@
       "Bash(grep -c '\"\"rarity\"\": \"\"common\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
       "Bash(grep -c '\"\"rarity\"\": \"\"uncommon\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
       "Bash(grep -c '\"\"rarity\"\": \"\"rare\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
-      "Bash(grep -c '\"\"rarity\"\": \"\"legendary\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)"
+      "Bash(grep -c '\"\"rarity\"\": \"\"legendary\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
+      "Bash(sqlite3 /Users/orionhoch/fantasy_game_demo/fantasy.db \".schema nba_stats\")",
+      "Bash(sqlite3 /Users/orionhoch/fantasy_game_demo/fantasy.db \"SELECT player, draft_pick, undrafted FROM nba_stats WHERE player LIKE ''%Kobe%'' LIMIT 5;\")",
+      "Bash(sqlite3:*)",
+      "Bash(sqlite3 /Users/orionhoch/fantasy_game_demo/fantasy.db \"SELECT * FROM draft WHERE college IS NULL OR college = ''Unknown'' OR college = '''' LIMIT 10;\")"
     ]
   }
 }
