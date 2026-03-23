@@ -1,16 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "templates/** static/** fantasy.db NBA_AllStars.csv"
     }
-  ],
+  },
   "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
-    },
     {
       "src": "/(.*)",
       "dest": "api/index.py"
