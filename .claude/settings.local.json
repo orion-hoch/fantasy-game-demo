@@ -4,7 +4,11 @@
       "Bash(python3:*)",
       "Bash(find:*)",
       "Bash(git add:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(grep -c '\"\"rarity\"\": \"\"common\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
+      "Bash(grep -c '\"\"rarity\"\": \"\"uncommon\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
+      "Bash(grep -c '\"\"rarity\"\": \"\"rare\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)",
+      "Bash(grep -c '\"\"rarity\"\": \"\"legendary\"\"' /Users/orionhoch/fantasy_game_demo/nba_balatro.py)"
     ]
   }
 }

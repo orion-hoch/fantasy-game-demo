@@ -426,6 +426,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
     bonus = 0.0
     pts_bonus = 0.0
     state_updates = {}
+    contributing_ids = []
 
     for jid in joker_ids:
         jbonus = 0.0
@@ -584,77 +585,94 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
             if "echo_sticker" in enhs:
                 jbonus *= 2
 
+        if jbonus != 0:
+            contributing_ids.append(jid)
         bonus += jbonus
         pts_bonus += jpts
 
-    return bonus, [], pts_bonus, state_updates
+    return bonus, contributing_ids, pts_bonus, state_updates
 
 
 def _calc_joker_mult_factor(cards_played, joker_ids, joker_state=None, hand_type=None, is_last_hand=False):
     joker_state = joker_state or {}
     factor = 1.0
+    xmult_ids = []
 
     if "goat_status" in joker_ids:
         base = 2.0 + joker_state.get("goat_bonus", 0.0)
         factor *= base
+        xmult_ids.append("goat_status")
 
     if "dynasty_mode" in joker_ids:
         other_count = len(joker_ids) - 1
         if other_count > 0:
             factor *= (1.2 ** other_count)
+            xmult_ids.append("dynasty_mode")
 
     if "west_dynasty" in joker_ids:
         west_count = sum(1 for c in cards_played if get_nba_conference(c.get("team")) == "West")
         if west_count > 0:
             factor *= (1.35 ** west_count)
+            xmult_ids.append("west_dynasty")
 
     if "dynasty_team" in joker_ids:
         teams = [c.get("team") for c in cards_played if c.get("team")]
         if teams and len(set(teams)) == 1:
             factor *= 2.0
+            xmult_ids.append("dynasty_team")
 
     if "scoring_machine" in joker_ids:
         if cards_played and max(c["fantasy_pts"] for c in cards_played) >= 35:
             factor *= 1.3
+            xmult_ids.append("scoring_machine")
 
     if "snowball" in joker_ids:
         streak = joker_state.get("hot_streak_count", 0)
         if streak > 0:
             stacks = min(streak, 5)
             factor *= (1.12 ** stacks)
+            xmult_ids.append("snowball")
 
     if "smash_factor" in joker_ids:
         factor *= 1.5
+        xmult_ids.append("smash_factor")
 
     if "loyalty_xmult" in joker_ids:
         if joker_state.get("hands_played_run", 0) > 0 and joker_state.get("hands_played_run", 0) % 6 == 0:
             factor *= 4.0
+            xmult_ids.append("loyalty_xmult")
 
     if "clutch_xmult" in joker_ids:
         if is_last_hand:
             factor *= 3.0
+            xmult_ids.append("clutch_xmult")
 
     if "uncommon_xmult" in joker_ids:
         uncommon_count = sum(1 for jid in joker_ids if JOKER_MAP.get(jid, {}).get("rarity") == "uncommon")
         if uncommon_count > 0:
             factor *= (1.5 ** uncommon_count)
+            xmult_ids.append("uncommon_xmult")
 
     if "cavendish_mult" in joker_ids:
         factor *= 3.0
+        xmult_ids.append("cavendish_mult")
 
     if "flush_xmult" in joker_ids:
         if hand_type == "zone_press":
             factor *= 3.0
+            xmult_ids.append("flush_xmult")
 
     if "four_xmult" in joker_ids:
         if hand_type == "starting_four":
             factor *= 4.0
+            xmult_ids.append("four_xmult")
 
     if "franchise_icon" in joker_ids:
         if cards_played and all((c.get("allstar_count") or 0) >= 1 for c in cards_played):
             factor *= 2.0
+            xmult_ids.append("franchise_icon")
 
-    return round(factor, 4)
+    return round(factor, 4), xmult_ids
 
 
 def _calc_coins_earned(hand_type, scoring_cards, all_played, joker_ids, coins, joker_enhancements=None):
@@ -732,14 +750,14 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
     glass_mult = 2.0 if glass_in_scoring else 1.0
 
     hand_mult = HAND_TYPES[hand_type]["mult"] + combo_boosts.get(hand_type, 0)
-    joker_add, _jmult_list, joker_pts_bonus, _state_updates = _calc_joker_mult(
+    joker_add, joker_add_ids, joker_pts_bonus, _state_updates = _calc_joker_mult(
         joker_ids, cards_played, hand_type, skill_levels, card_effects,
         joker_state=joker_state, joker_enhancements=joker_enhancements,
         deck_size=deck_size, is_last_hand=is_last_hand
     )
     total_mult = hand_mult + joker_add
 
-    mult_factor = _calc_joker_mult_factor(cards_played, joker_ids, joker_state=joker_state, hand_type=hand_type, is_last_hand=is_last_hand)
+    mult_factor, xmult_joker_ids = _calc_joker_mult_factor(cards_played, joker_ids, joker_state=joker_state, hand_type=hand_type, is_last_hand=is_last_hand)
 
     base_pts_total = base_pts + joker_pts_bonus
     score = round(base_pts_total * total_mult * mult_factor * glass_mult)
@@ -752,8 +770,10 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
         "base_pts": round(base_pts_total, 1),
         "hand_mult": hand_mult,
         "joker_mult": round(joker_add, 1),
+        "joker_add_ids": joker_add_ids,
         "total_mult": round(total_mult, 1),
         "mult_factor": mult_factor,
+        "xmult_joker_ids": xmult_joker_ids,
         "glass_mult": glass_mult,
         "scoring_cards": scoring_cards,
         "card_contributions": card_contributions,

@@ -2779,7 +2779,7 @@ body.scoring {
   gap: 8px;
   transition: opacity 0.3s;
   min-width: 320px;
-  max-width: 500px;
+  max-width: 620px;
   pointer-events: none;
 }
 #score-anim-panel.hidden { display: none; }
@@ -2827,6 +2827,9 @@ body.scoring {
 }
 .anim-counter-val.bumping { color: var(--accent-yellow); }
 .anim-score-val { color: var(--accent-yellow); font-size: 2rem; }
+#anim-xmult-box { border-color: #f97316; }
+#anim-xmult-box .anim-counter-label { color: #f97316; }
+#anim-xmult-box .anim-counter-val { color: #f97316; }
 
 .anim-op {
   font-family: 'Bebas Neue', Impact, sans-serif;

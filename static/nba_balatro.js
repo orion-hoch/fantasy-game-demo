@@ -197,6 +197,9 @@
     var chipsEl     = document.getElementById('anim-chips-val');
     var multBox     = document.getElementById('anim-mult-box');
     var multEl      = document.getElementById('anim-mult-val');
+    var xmultTimesOp = document.getElementById('anim-xmult-times-op');
+    var xmultBox    = document.getElementById('anim-xmult-box');
+    var xmultEl     = document.getElementById('anim-xmult-val');
     var equalsOp    = document.getElementById('anim-equals-op');
     var scoreBox    = document.getElementById('anim-score-box');
     var scoreEl     = document.getElementById('anim-score-val');
@@ -205,8 +208,11 @@
     htLabel.textContent   = (data.hand_name || '').toUpperCase();
     chipsEl.textContent   = '0';
     multEl.textContent    = '—';
+    xmultEl.textContent   = '1';
     scoreEl.textContent   = '0';
     multBox.classList.remove('mult-popping');
+    if (xmultBox) { xmultBox.classList.add('hidden'); xmultBox.classList.remove('mult-popping'); }
+    if (xmultTimesOp) xmultTimesOp.classList.add('hidden');
     equalsOp.classList.add('hidden');
     scoreBox.classList.add('hidden');
     scoreBox.classList.remove('score-banging');
@@ -253,12 +259,26 @@
     multBox.classList.add('mult-popping');
     await animateCounterTo(multEl, data.total_mult, 350);
     showChipFloat(document.getElementById('anim-mult-box'), '×' + data.total_mult);
-    // Wiggle jokers and show mult float over them if joker mult > 0
+    // Wiggle specific additive mult jokers and show float over them
     if (data.joker_mult && data.joker_mult > 0) {
-      wiggleJokers();
+      wiggleSpecificJokers(data.joker_add_ids || []);
       showMultFloat(document.getElementById('jokers-container'), '+' + data.joker_mult.toFixed(1) + ' FAN');
     }
     await sleep(420);
+
+    // Phase 2b — xmult reveal (multiplicative jokers)
+    if (data.mult_factor && data.mult_factor > 1.0) {
+      if (xmultTimesOp) xmultTimesOp.classList.remove('hidden');
+      if (xmultBox) {
+        xmultBox.classList.remove('hidden');
+        xmultBox.classList.add('mult-popping');
+      }
+      await animateCounterTo(xmultEl, data.mult_factor, 350);
+      showChipFloat(xmultBox, '×' + data.mult_factor);
+      wiggleSpecificJokers(data.xmult_joker_ids || []);
+      showMultFloat(document.getElementById('jokers-container'), '×' + data.mult_factor + ' FAN');
+      await sleep(420);
+    }
 
     // Phase 3 — score bang
     equalsOp.classList.remove('hidden');
@@ -277,6 +297,8 @@
     scoreBox.classList.add('hidden');
     scoreBox.classList.remove('score-banging');
     multBox.classList.remove('mult-popping');
+    if (xmultBox) { xmultBox.classList.add('hidden'); xmultBox.classList.remove('mult-popping'); }
+    if (xmultTimesOp) xmultTimesOp.classList.add('hidden');
 
     // Cleanup card states
     document.querySelectorAll('.scoring-dim, .scoring-done, .scoring-active').forEach(function(el) {
@@ -294,6 +316,19 @@
       void slot.offsetWidth; // reflow
       slot.classList.add('joker-wiggle');
       setTimeout(function() { slot.classList.remove('joker-wiggle'); }, 500);
+    });
+  }
+
+  function wiggleSpecificJokers(jokerIds) {
+    if (!jokerIds || jokerIds.length === 0) return;
+    var idSet = new Set(jokerIds);
+    document.querySelectorAll('.joker-slot.filled[data-joker-id]').forEach(function(slot) {
+      if (idSet.has(slot.getAttribute('data-joker-id'))) {
+        slot.classList.remove('joker-wiggle');
+        void slot.offsetWidth;
+        slot.classList.add('joker-wiggle');
+        setTimeout(function() { slot.classList.remove('joker-wiggle'); }, 500);
+      }
     });
   }
 
@@ -974,6 +1009,7 @@
       if (i < gs.jokers.length) {
         var j = gs.jokers[i];
         slot.classList.add('filled');
+        slot.setAttribute('data-joker-id', j.id);
         _buildJokerSlotContent(slot, j, gs.status);
         // Drag-and-drop for filled slots
         slot.setAttribute('draggable', 'true');

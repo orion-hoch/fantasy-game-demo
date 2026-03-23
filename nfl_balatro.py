@@ -491,6 +491,7 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
         joker_enhancements = {}
     bonus = 0.0
     pts_bonus = 0.0
+    contributing_ids = []
     for jid in joker_ids:
         jbonus = 0.0
         jpts = 0.0
@@ -547,7 +548,7 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
                 if next_idx < len(joker_ids):
                     next_jid = list(joker_ids)[next_idx]
                     # Calculate that joker's individual bonus (one-joker list, blueprint call)
-                    bp_bonus, bp_pts = _calc_joker_mult(
+                    bp_bonus, bp_pts, _ = _calc_joker_mult(
                         hand_type, scoring_cards, all_played, [next_jid],
                         joker_state=joker_state, floor=floor, is_blueprint_call=True,
                         joker_enhancements=joker_enhancements, deck_size=deck_size, is_last_hand=is_last_hand
@@ -631,17 +632,21 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
                 jbonus *= 1.5
             if "echo_sticker" in enhs:
                 jbonus *= 2
+        if jbonus != 0:
+            contributing_ids.append(jid)
         bonus += jbonus
         pts_bonus += jpts
-    return bonus, pts_bonus
+    return bonus, pts_bonus, contributing_ids
 
 
 def _calc_joker_mult_factor(hand_type, scoring_cards, all_played, joker_ids, joker_state=None, floor=1, is_last_hand=False):
     """Returns a multiplicative factor (default 1.0) applied to total mult."""
     joker_state = joker_state or {}
     factor = 1.0
+    xmult_ids = []
     p5 = {"SEC", "Big Ten", "ACC", "Big 12", "Pac-12"}
     for jid in joker_ids:
+        prev_factor = factor
         if jid == "sec_speed":
             sec_count = sum(1 for c in scoring_cards if get_conference(c.get("college", "")) == "SEC")
             if sec_count > 0:
@@ -658,32 +663,40 @@ def _calc_joker_mult_factor(hand_type, scoring_cards, all_played, joker_ids, jok
                 factor *= 2.0
         elif jid == "chain_reaction":
             factor *= max(1.0, 1.0 + 0.2 * (len(joker_ids) - 1))
+        if factor != prev_factor:
+            xmult_ids.append(jid)
 
     if "loyalty_xmult" in joker_ids:
         if joker_state.get("hands_played_run", 0) > 0 and joker_state.get("hands_played_run", 0) % 6 == 0:
             factor *= 4.0
+            xmult_ids.append("loyalty_xmult")
 
     if "clutch_xmult" in joker_ids:
         if is_last_hand:
             factor *= 3.0
+            xmult_ids.append("clutch_xmult")
 
     if "uncommon_xmult" in joker_ids:
         uncommon_count = sum(1 for jid in joker_ids if JOKER_MAP.get(jid, {}).get("rarity") == "uncommon")
         if uncommon_count > 0:
             factor *= (1.5 ** uncommon_count)
+            xmult_ids.append("uncommon_xmult")
 
     if "cavendish_mult" in joker_ids:
         factor *= 3.0
+        xmult_ids.append("cavendish_mult")
 
     if "flush_xmult" in joker_ids:
         if hand_type == "flush":
             factor *= 3.0
+            xmult_ids.append("flush_xmult")
 
     if "four_xmult" in joker_ids:
         if hand_type == "quad":
             factor *= 4.0
+            xmult_ids.append("four_xmult")
 
-    return round(factor, 3)
+    return round(factor, 3), xmult_ids
 
 
 def _calc_coins_earned(hand_type, scoring_cards, all_played, joker_ids, coins, joker_enhancements=None):
@@ -777,16 +790,18 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
 
     # Also add glass mult bonus to joker mult display
     hand_mult = HAND_TYPES[hand_type]["mult"] + combo_boosts.get(hand_type, 0)
-    joker_mult, joker_pts_bonus = _calc_joker_mult(hand_type, scoring_cards, cards_played, joker_ids, joker_state=joker_state, floor=floor, joker_enhancements=joker_enhancements, deck_size=deck_size, is_last_hand=is_last_hand)
+    joker_mult, joker_pts_bonus, joker_add_ids = _calc_joker_mult(hand_type, scoring_cards, cards_played, joker_ids, joker_state=joker_state, floor=floor, joker_enhancements=joker_enhancements, deck_size=deck_size, is_last_hand=is_last_hand)
     total_mult = hand_mult + joker_mult
     # Multiplicative factor from special jokers
-    mult_factor = _calc_joker_mult_factor(hand_type, scoring_cards, cards_played, joker_ids, joker_state=joker_state, floor=floor, is_last_hand=is_last_hand)
+    mult_factor, xmult_joker_ids = _calc_joker_mult_factor(hand_type, scoring_cards, cards_played, joker_ids, joker_state=joker_state, floor=floor, is_last_hand=is_last_hand)
     base_pts_total = base_pts + joker_pts_bonus
     score = round(base_pts_total * total_mult * mult_factor * glass_mult)
 
     # smash_factor: x1.5 multiplicative after all other scoring
     if "smash_factor" in joker_ids:
         score = round(score * 1.5)
+        if "smash_factor" not in xmult_joker_ids:
+            xmult_joker_ids.append("smash_factor")
 
     return {
         "score": score,
@@ -796,8 +811,10 @@ def score_hand(cards_played, joker_ids, skill_levels=None, combo_boosts=None, ca
         "base_pts": round(base_pts_total, 1),
         "hand_mult": hand_mult,
         "joker_mult": round(joker_mult, 1),
+        "joker_add_ids": joker_add_ids,
         "total_mult": round(total_mult, 1),
         "mult_factor": mult_factor,
+        "xmult_joker_ids": xmult_joker_ids,
         "glass_mult": glass_mult,
         "scoring_cards": scoring_cards,
         "card_contributions": card_contributions,
