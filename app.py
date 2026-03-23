@@ -18,6 +18,27 @@ DB_PATH = os.path.join(BASE_DIR, "fantasy.db")
 def get_db():
     return sqlite3.connect(DB_PATH)
 
+# Historical NBA team code → modern franchise code
+_NBA_HIST_TO_MODERN = {
+    "NJN": "BRK", "SEA": "OKC", "NOH": "NOP", "NOK": "NOP",
+    "CHH": "CHA", "CHO": "CHA", "VAN": "MEM", "WSB": "WAS",
+    "NOJ": "UTA", "KCK": "SAC", "KCO": "SAC", "FTW": "DET",
+    "SDC": "LAC", "SDR": "HOU", "PHW": "GSW", "SFW": "GSW",
+    "MLH": "ATL", "STL": "ATL", "CAP": "WAS", "INO": "IND",
+    "WSC": "WAS", "MNL": "LAL", "ROC": "SAC", "CIN": "SAC",
+    "TRI": "ATL", "SYR": "PHI", "BUF": "LAC", "BAL": "WAS",
+    "CHP": "WAS", "CHZ": "WAS",
+}
+# Build reverse: modern code → all equivalent codes (modern + historical)
+_NBA_TEAM_EQUIV: dict[str, list[str]] = {}
+for _hist, _mod in _NBA_HIST_TO_MODERN.items():
+    _NBA_TEAM_EQUIV.setdefault(_mod, [_mod]).append(_hist)
+
+def _nba_teams_in(team: str):
+    """Return (sql_in_clause, params) expanding a team code to all historical equivalents."""
+    codes = _NBA_TEAM_EQUIV.get(team, [team])
+    return f"({','.join('?' * len(codes))})", codes
+
 
 def _table_exists(conn, name):
     row = conn.execute(
@@ -587,9 +608,10 @@ def nba_starting5_years():
     player = request.args.get("player", "").strip()
     team = request.args.get("team", "").strip()
     conn = get_db()
+    team_in, team_codes = _nba_teams_in(team)
     rows = conn.execute(
-        "SELECT DISTINCT season FROM nba_stats WHERE player = ? AND team = ? AND fantasy_score IS NOT NULL ORDER BY season DESC",
-        (player, team),
+        f"SELECT DISTINCT season FROM nba_stats WHERE player = ? AND team IN {team_in} AND fantasy_score IS NOT NULL ORDER BY season DESC",
+        [player] + team_codes,
     ).fetchall()
     conn.close()
     return jsonify({"years": [r[0] for r in rows]})
@@ -601,17 +623,18 @@ def nba_starting5_validate():
     team = request.args.get("team", "").strip()
     season = request.args.get("season", "").strip()
     conn = get_db()
+    team_in, team_codes = _nba_teams_in(team)
     if season:
         row = conn.execute(
-            "SELECT player, pos, fantasy_score, season, team FROM nba_stats WHERE player = ? AND team = ? AND season = ?",
-            (player, team, int(season)),
+            f"SELECT player, pos, fantasy_score, season, team FROM nba_stats WHERE player = ? AND team IN {team_in} AND season = ?",
+            [player] + team_codes + [int(season)],
         ).fetchone()
     else:
         row = conn.execute(
-            """SELECT player, pos, fantasy_score, season, team FROM nba_stats
-               WHERE player = ? AND team = ? AND fantasy_score IS NOT NULL
+            f"""SELECT player, pos, fantasy_score, season, team FROM nba_stats
+               WHERE player = ? AND team IN {team_in} AND fantasy_score IS NOT NULL
                ORDER BY fantasy_score DESC LIMIT 1""",
-            (player, team),
+            [player] + team_codes,
         ).fetchone()
     conn.close()
     if row:
@@ -624,21 +647,22 @@ def nba_get_team_players():
     team = request.args.get("team", "")
     positions = request.args.getlist("pos")
     conn = get_db()
+    team_in, team_codes = _nba_teams_in(team)
     if positions:
-        placeholders = ",".join("?" * len(positions))
+        pos_placeholders = ",".join("?" * len(positions))
         rows = conn.execute(
             f"""SELECT player, season, pos, fantasy_score, team
                 FROM nba_stats
-                WHERE team = ? AND pos IN ({placeholders}) AND fantasy_score IS NOT NULL
+                WHERE team IN {team_in} AND pos IN ({pos_placeholders}) AND fantasy_score IS NOT NULL
                 ORDER BY fantasy_score DESC""",
-            [team] + positions,
+            team_codes + positions,
         ).fetchall()
     else:
         rows = conn.execute(
-            """SELECT player, season, pos, fantasy_score, team
-               FROM nba_stats WHERE team = ? AND fantasy_score IS NOT NULL
+            f"""SELECT player, season, pos, fantasy_score, team
+               FROM nba_stats WHERE team IN {team_in} AND fantasy_score IS NOT NULL
                ORDER BY fantasy_score DESC""",
-            (team,),
+            team_codes,
         ).fetchall()
     conn.close()
     return jsonify({"players": [
