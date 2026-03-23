@@ -774,6 +774,7 @@
     apiPost('/api/nfl_balatro/buy_item', payload).then(function (data) {
       if (data.error) { alert(data.error); return; }
       if (window.SFX) SFX.play('buy');
+      if (itemType === 'buy_card') showToast('Card added to your deck!', 'success');
       gs.coins = data.coins !== undefined ? data.coins : gs.coins;
       gs.shopItems = data.shop_items || [];
       gs.jokers = data.jokers || gs.jokers;

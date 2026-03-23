@@ -1420,15 +1420,10 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
         card_data = item.get("card_data")
         if not card_data:
             return None, "No card data in item"
-        if "held_items" not in g:
-            g["held_items"] = []
-        if len(g["held_items"]) >= 3:
-            return None, "Held item limit reached (max 3)"
         import copy as _copy
-        card_entry = _copy.deepcopy(card_data)
-        card_entry["kind"] = "card"
-        card_entry["held_id"] = str(uuid.uuid4())[:8]
-        g["held_items"].append(card_entry)
+        new_card = _copy.deepcopy(card_data)
+        g.setdefault("deck_pool", []).append(new_card)
+        g.setdefault("deck", []).append(new_card)
 
     elif item["type"] == "joker_enhancement":
         target_joker_id = target_card_id
