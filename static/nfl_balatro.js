@@ -1793,7 +1793,6 @@
       }
       iconArea.appendChild(iconEmoji);
     }
-    iconArea.appendChild(iconEmoji);
 
     // Rarity bar
     if (item.rarity) {
