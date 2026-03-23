@@ -15,7 +15,7 @@
     <div class="start-inner">
       <a href="/?tab=nba" class="back-link">&#8592; Back</a>
       <div class="start-logo">
-        <div class="start-ball">🏀</div>
+        <img src="/static/img/basketball_logo_nobg.png" alt="NBA Balatro" class="start-logo-img">
         <h1 class="start-title">NBA BALATRO</h1>
         <h2 class="start-sub">Fantasy Draft Edition</h2>
       </div>
@@ -29,12 +29,10 @@
           <div class="ht-row"><span class="ht-name">Pick &amp; Roll</span><span class="ht-mult">2x</span><span class="ht-desc">3 of same position</span></div>
           <div class="ht-row"><span class="ht-name">Starting Four</span><span class="ht-mult">3x</span><span class="ht-desc">4 of same position</span></div>
           <div class="ht-row"><span class="ht-name">Starting Lineup</span><span class="ht-mult">3.5x</span><span class="ht-desc">G + F + C all present (5+ cards)</span></div>
-          <div class="ht-row"><span class="ht-name">Twin Towers</span><span class="ht-mult">4x</span><span class="ht-desc">3 of one position + 3 of another</span></div>
-          <div class="ht-row"><span class="ht-name">Division Straight</span><span class="ht-mult">5x</span><span class="ht-desc">5 cards from same division</span></div>
-          <div class="ht-row"><span class="ht-name">Zone Press</span><span class="ht-mult">5x</span><span class="ht-desc">5 of same position</span></div>
-          <div class="ht-row"><span class="ht-name">Six Man Rotation</span><span class="ht-mult">5.5x</span><span class="ht-desc">6 of the same position</span></div>
-          <div class="ht-row"><span class="ht-name">Division Six</span><span class="ht-mult">6x</span><span class="ht-desc">6 cards from same division</span></div>
-          <div class="ht-row ht-royal"><span class="ht-name">Royal Flush</span><span class="ht-mult">20x</span><span class="ht-desc">5-6 cards same position &amp; same division</span></div>
+          <div class="ht-row"><span class="ht-name">Twin Towers</span><span class="ht-mult">4x</span><span class="ht-desc">3 of one position + 2 of another</span></div>
+          <div class="ht-row"><span class="ht-name">Zone Press</span><span class="ht-mult">5.5x</span><span class="ht-desc">5 of same position</span></div>
+          <div class="ht-row"><span class="ht-name">Division Court</span><span class="ht-mult">6x</span><span class="ht-desc">5+ cards from same division</span></div>
+          <div class="ht-row ht-royal"><span class="ht-name">Division Starting Lineup</span><span class="ht-mult">25x</span><span class="ht-desc">G + F + C all present (5+ cards) same division</span></div>
         </div>
       </div>
     </div>
@@ -57,22 +55,22 @@
       </div>
       <div id="actions-info">
         <div id="coins-display" class="action-badge">
-          <span class="action-icon">💰</span>
+          <span class="action-icon action-icon-coin">$</span>
           <span id="coins-count">4</span>
           <span class="action-label">Coins</span>
         </div>
         <div class="action-badge" id="hands-badge">
-          <span class="action-icon">🃏</span>
+          <span class="action-icon action-icon-hands">H</span>
           <span id="hands-count">4</span>
           <span class="action-label">Hands</span>
         </div>
         <div class="action-badge" id="discards-badge">
-          <span class="action-icon">♻️</span>
+          <span class="action-icon action-icon-discards">D</span>
           <span id="discards-count">3</span>
           <span class="action-label">Discards</span>
         </div>
-        <button id="deck-viewer-btn" class="btn-stats" onclick="toggleDeckViewer()">🗂</button>
-        <button id="stats-btn" class="btn-stats" onclick="toggleStatsOverlay()">📊</button>
+        <button id="deck-viewer-btn" class="btn-stats" onclick="toggleDeckViewer()">DECK</button>
+        <button id="stats-btn" class="btn-stats" onclick="toggleStatsOverlay()">STATS</button>
       </div>
     </div>
 
@@ -98,7 +96,7 @@
     <!-- Joker Display -->
     <div id="jokers-section">
       <div id="jokers-left">
-        <div id="jokers-label">JOKERS</div>
+        <div id="jokers-label">FANS</div>
         <div id="jokers-container">
           <div class="joker-slot empty" id="joker-slot-0"></div>
           <div class="joker-slot empty" id="joker-slot-1"></div>
@@ -122,7 +120,7 @@
 
     <!-- Hand Preview / Score Indicator -->
     <div id="hand-preview">
-      <div id="preview-hand-type">Select up to 6 cards to see hand type</div>
+      <div id="preview-hand-type">Select up to 5 cards to see hand type</div>
       <div id="preview-score-details"></div>
     </div>
 
@@ -168,19 +166,53 @@
     <div id="action-buttons">
       <button id="play-btn" class="btn-play" disabled>PLAY HAND</button>
       <button id="discard-btn" class="btn-discard" disabled>DISCARD</button>
+      <div id="deck-discard-widget">
+        <div id="discard-pile-widget" onclick="openDiscardViewer()" title="Click to view discarded cards">
+          <div class="pile-visual" id="discard-pile-visual"></div>
+          <div class="pile-label">DISCARDED <span id="discard-pile-count">0</span></div>
+        </div>
+        <div id="deck-pile-widget" onclick="openDeckViewer()" title="Click to view drawable deck">
+          <div class="pile-visual" id="deck-pile-visual"></div>
+          <div class="pile-label">DECK <span id="deck-pile-count">0</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Reward Screen (between levels) -->
+  <!-- Discard Viewer Overlay -->
+  <div id="discard-viewer-overlay" class="full-overlay hidden">
+    <div class="deck-viewer-header">
+      <h2 class="deck-viewer-title">DISCARDED THIS FIGHT</h2>
+      <button class="overlay-close" onclick="closeDiscardViewer()">✕</button>
+    </div>
+    <div id="discard-viewer-content"></div>
+  </div>
+
+  <!-- Reward Screen (between fights) -->
   <div id="reward-screen" class="screen">
     <div class="reward-inner">
       <div class="reward-header">
-        <div class="reward-trophy">🏆</div>
-        <h2 class="reward-title" id="reward-title">ROUND COMPLETE!</h2>
-        <p class="reward-sub" id="reward-earnings-msg">Collecting your earnings...</p>
+        <h2 class="reward-title" id="reward-title">FIGHT COMPLETE!</h2>
+        <p class="reward-sub" id="reward-sub-msg">Choose your reward</p>
       </div>
-      <div id="joker-options"></div>
-      <button id="skip-joker-btn" class="btn-primary">Claim Earnings &amp; Shop →</button>
+      <div id="reward-choice-area" class="reward-choice-area">
+        <!-- Coins option -->
+        <div class="reward-choice-card" id="reward-choice-coins">
+          <div class="reward-choice-icon reward-icon-coins">$</div>
+          <div class="reward-choice-label">TAKE THE MONEY</div>
+          <div class="reward-choice-value" id="reward-coins-value">$0</div>
+          <div class="reward-choice-desc">Cold hard cash for the shop</div>
+        </div>
+        <!-- Joker pack option -->
+        <div class="reward-choice-card reward-choice-joker-card" id="reward-choice-joker">
+          <div class="reward-choice-icon reward-icon-joker">FAN</div>
+          <div class="reward-choice-label">FREE FAN PACK</div>
+          <div class="reward-choice-desc reward-joker-subdesc">Pick 1 of 3 — keep it forever</div>
+          <div id="reward-joker-options" class="reward-joker-grid"></div>
+        </div>
+      </div>
+      <!-- next boss warning shown below choices -->
+      <div id="reward-boss-warning" class="reward-boss-warning hidden"></div>
     </div>
   </div>
 
@@ -190,33 +222,49 @@
 
       <!-- Store Banner -->
       <div class="store-banner">
-        <div class="store-marquee">🏟 OFFICIAL TEAM STORE &nbsp;·&nbsp; ALL SALES FINAL &nbsp;·&nbsp; TIP-OFF SPECIALS &nbsp;·&nbsp; 🏟</div>
+        <div class="store-marquee">OFFICIAL TEAM STORE &nbsp;·&nbsp; ALL SALES FINAL &nbsp;·&nbsp; TIP-OFF SPECIALS</div>
         <div class="store-main-header">
-          <div class="store-vendor-area">
-            <div class="vendor-emoji">🧢</div>
-            <div class="vendor-bubble" id="vendor-bubble">Stock up before tip-off!</div>
-          </div>
           <div class="store-title-area">
             <div class="store-title-main">TEAM STORE</div>
             <div class="store-title-sub">Official Game Day Merchandise</div>
           </div>
           <div class="store-controls">
-            <div id="shop-coins-display" class="shop-coins">💰 <span id="shop-coins-count">0</span></div>
-            <button class="btn-stats" onclick="toggleDeckViewer()">🗂 Deck</button>
+            <div id="shop-coins-display" class="shop-coins">$ <span id="shop-coins-count">0</span></div>
+            <button class="btn-stats" onclick="toggleDeckViewer()">DECK</button>
           </div>
         </div>
       </div>
 
-      <!-- Your Locker (owned jokers with sell buttons) -->
-      <div id="shop-jokers-section" class="your-locker-section"></div>
+      <!-- Quadrant grid -->
+      <div class="shop-grid">
 
-      <!-- Shop Item Sections -->
-      <div id="shop-items-container"></div>
+        <!-- Top-left: items for sale -->
+        <div class="shop-q shop-q-items">
+          <div id="shop-items-container"></div>
+        </div>
 
-      <!-- Bottom Actions -->
-      <div class="shop-actions">
-        <button id="restock-btn" class="btn-secondary">🔄 Restock (<span id="restock-cost">$2</span>)</button>
-        <button id="leave-shop-btn" class="btn-primary">CONTINUE →</button>
+        <!-- Top-right: your locker -->
+        <div class="shop-q shop-q-locker">
+          <div id="shop-jokers-section" class="your-locker-section"></div>
+        </div>
+
+        <!-- Bottom-left: actions -->
+        <div class="shop-q shop-q-actions">
+          <button id="restock-btn" class="btn-secondary">Restock (<span id="restock-cost">$2</span>)</button>
+          <button id="leave-shop-btn" class="btn-primary">CONTINUE →</button>
+        </div>
+
+        <!-- Bottom-right: NPC vendor -->
+        <div class="shop-q shop-q-npc">
+          <div class="npc-panel">
+            <div class="npc-nameplate">Vendor Vic</div>
+            <div class="npc-char">
+              <div class="npc-avatar">VIC</div>
+            </div>
+            <div class="vendor-bubble" id="vendor-bubble">Stock up before tip-off!</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -240,6 +288,9 @@
 
   <!-- Score Popup (animated) -->
   <div id="score-popup" class="hidden"></div>
+
+  <!-- Held Item Popup -->
+  <div id="held-item-popup" class="held-item-popup hidden"></div>
 
   <!-- Stats Overlay -->
   <div id="stats-overlay" class="overlay hidden">
@@ -282,7 +333,7 @@
   <!-- Deck Viewer Overlay -->
   <div id="deck-viewer-overlay" class="full-overlay hidden">
     <div class="deck-viewer-header">
-      <h2 class="deck-viewer-title">🗂 YOUR DECK</h2>
+      <h2 class="deck-viewer-title">YOUR DECK</h2>
       <button class="overlay-close" onclick="toggleDeckViewer()">✕</button>
     </div>
     <div id="deck-viewer-content"></div>
@@ -292,7 +343,7 @@
   <div id="div-sticker-modal" class="overlay hidden">
     <div class="overlay-backdrop" onclick="closeDivisionStickerModal()"></div>
     <div class="overlay-panel sticker-modal-panel">
-      <h3 class="sticker-modal-title">🏷️ Division Sticker</h3>
+      <h3 class="sticker-modal-title">Division Sticker</h3>
 
       <!-- Step 1: Pick a card -->
       <div id="div-sticker-step1">

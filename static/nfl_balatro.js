@@ -72,6 +72,9 @@
     shopPacks: [],
     jokerEnhancements: {},
     heldCards: [],
+    deckCards: [],
+    fightDiscards: [],
+    fightPlayed: [],
   };
 
   // ── Drag state ──────────────────────────────────────────────────────
@@ -119,7 +122,7 @@
     previewType:    document.getElementById('preview-hand-type'),
     previewDets:    document.getElementById('preview-score-details'),
     playLog:        document.getElementById('play-log'),
-    jokerOptions:   document.getElementById('joker-options'),
+    jokerOptions:   null, // removed — reward screen now uses reward-joker-options
     gameoverContent:document.getElementById('gameover-content'),
     scorePopup:     document.getElementById('score-popup'),
     shopItemsCont:  document.getElementById('shop-items-container'),
@@ -188,6 +191,7 @@
   async function animateHandScore(data, playedIds) {
     if (!data.card_contributions || data.card_contributions.length === 0) return;
     _animLock = true;
+    document.body.classList.add('scoring');
 
     var panel       = document.getElementById('score-anim-panel');
     var htLabel     = document.getElementById('anim-hand-type-label');
@@ -253,7 +257,7 @@
     // Wiggle jokers and show mult float over them if joker mult > 0
     if (data.joker_mult && data.joker_mult > 0) {
       wiggleJokers();
-      showMultFloat(document.getElementById('jokers-container'), '+' + data.joker_mult.toFixed(1) + ' JOKER');
+      showMultFloat(document.getElementById('jokers-container'), '+' + data.joker_mult.toFixed(1) + ' FAN');
     }
     await sleep(420);
 
@@ -280,6 +284,7 @@
       el.classList.remove('scoring-dim', 'scoring-done', 'scoring-active');
     });
 
+    document.body.classList.remove('scoring');
     _animLock = false;
   }
 
@@ -348,11 +353,15 @@
       gs.shopPacks = [];
       gs.jokerEnhancements = data.joker_enhancements || {};
       gs.heldCards = data.held_cards || [];
+      gs.deckCards = data.deck_cards || [];
+      gs.fightDiscards = data.fight_discards || [];
+      gs.fightPlayed = data.fight_played || [];
       currentSort = null;
       cardStatsCache = {};
 
       showScreen('game');
       renderAll();
+      setTimeout(triggerDealAnimation, 60);
       els.startBtn.disabled = false;
       els.startBtn.textContent = 'KICKOFF!';
     }).catch(function (e) {
@@ -365,6 +374,7 @@
   function playHand() {
     if (gs.selectedIds.size === 0) return;
     var ids = Array.from(gs.selectedIds);
+    var oldHandIds = new Set(gs.hand.map(function(c) { return c.id; }));
     els.playBtn.disabled = true;
     els.discardBtn.disabled = true;
 
@@ -392,6 +402,8 @@
 
       if (data.coins !== undefined) gs.coins = data.coins;
       if (data.joker_state !== undefined) gs.jokerState = data.joker_state;
+      if (data.deck_cards !== undefined) gs.deckCards = data.deck_cards;
+      if (data.fight_played !== undefined) gs.fightPlayed = data.fight_played;
 
       // Update card effects for broken cards
       if (data.broken_cards && data.broken_cards.length > 0) {
@@ -409,11 +421,12 @@
           logMsg += ' | +$' + data.coins_earned;
         }
         if (data.broken_cards && data.broken_cards.length > 0) {
-          logMsg += ' | 💥 ' + data.broken_cards.length + ' card(s) broke';
+          logMsg += ' | ' + data.broken_cards.length + ' card(s) broke';
         }
         addLogEntry(logMsg, data.score, data.coins_earned > 0);
         showScorePopup(data.score, data.hand_name, data.base_pts, data.total_mult);
         renderAll();
+        if (data.status === 'playing') setTimeout(function() { triggerNewCardsAnimation(oldHandIds); }, 60);
 
         if (data.status === 'won_fight' || data.status === 'won_level') {
           gs.fight = data.fight || gs.fight;
@@ -434,6 +447,7 @@
   function discardCards() {
     if (gs.selectedIds.size === 0) return;
     var ids = Array.from(gs.selectedIds);
+    var oldHandIds = new Set(gs.hand.map(function(c) { return c.id; }));
     els.discardBtn.disabled = true;
     els.playBtn.disabled = true;
 
@@ -444,9 +458,12 @@
       if (data.error) { alert(data.error); renderActionButtons(); return; }
       gs.hand = data.hand || gs.hand;
       gs.discardsRemaining = data.discards_remaining;
+      if (data.deck_cards !== undefined) gs.deckCards = data.deck_cards;
+      if (data.fight_discards !== undefined) gs.fightDiscards = data.fight_discards;
       gs.selectedIds = new Set();
       flippedCardIds.clear();
       renderAll();
+      setTimeout(function() { triggerNewCardsAnimation(oldHandIds); }, 60);
     }).catch(function (e) {
       alert('Error: ' + e);
       renderActionButtons();
@@ -502,6 +519,9 @@
       gs.jokerState = data.joker_state || gs.jokerState;
       gs.jokerEnhancements = data.joker_enhancements || gs.jokerEnhancements;
       if (data.held_cards !== undefined) gs.heldCards = data.held_cards;
+      if (data.deck_cards !== undefined) gs.deckCards = data.deck_cards;
+      if (data.fight_discards !== undefined) gs.fightDiscards = data.fight_discards;
+      if (data.fight_played !== undefined) gs.fightPlayed = data.fight_played;
       gs.selectedIds = new Set();
       gs.history = [];
       currentSort = null;
@@ -511,50 +531,49 @@
       renderBossEffectBanner();
       showScreen('game');
       renderAll();
+      setTimeout(triggerDealAnimation, 60);
     }).catch(function (e) { alert('Error: ' + e); });
   }
 
   function advanceFight() {
     apiPost('/api/nfl_balatro/advance_fight', { game_id: gameId }).then(function (data) {
       if (data.error) { alert(data.error); return; }
-      // advance_fight returns shopping state
-      if (data.status !== 'shopping') {
-        // Server returned unexpected state — server may be out of date, handle gracefully
-        gs.floor = data.floor || gs.floor;
-        gs.round = data.round || gs.round;
-        gs.fight = data.fight || gs.fight;
-        gs.bossEffect = data.boss_effect || null;
-        gs.levelName = data.level_name || gs.levelName;
-        gs.targetScore = data.target_score || gs.targetScore;
-        gs.currentScore = 0;
-        gs.handsRemaining = data.hands_remaining || gs.handsRemaining;
-        gs.discardsRemaining = data.discards_remaining || gs.discardsRemaining;
-        gs.status = data.status;
-        gs.hand = data.hand || gs.hand;
-        gs.coins = data.coins !== undefined ? data.coins : gs.coins;
-        gs.selectedIds = new Set();
-        flippedCardIds.clear();
-        clearLog();
-        renderBossEffectBanner();
-        showScreen('game');
-        renderAll();
-        return;
-      }
-      gs.status = 'shopping';
       gs.coins = data.coins !== undefined ? data.coins : gs.coins;
-      gs.jokers = data.jokers || gs.jokers;
-      gs.shopItems = data.shop_items || [];
-      gs.restockCount = 0;
-      gs.maxJokers = data.max_jokers || gs.maxJokers;
-      gs.shopPacks = data.shop_packs || [];
-      gs.jokerEnhancements = data.joker_enhancements || gs.jokerEnhancements;
-      if (data.held_cards !== undefined) gs.heldCards = data.held_cards;
-      gs.fightCoinsEarned = data.fight_coins_earned || 0;
       gs.nextFight = data.next_fight || (gs.fight + 1);
-      gs.nextBossEffect = data.next_boss_effect || null;
-
+      gs.nextBossEffect = data.next_boss_effect !== undefined ? data.next_boss_effect : null;
+      gs.status = data.status;
       showFightRewardScreen(data);
     }).catch(function (e) { alert('Error: ' + e); });
+  }
+
+  function claimRewardCoins() {
+    apiPost('/api/nfl_balatro/claim_reward', { game_id: gameId, choice: 'coins' }).then(function (data) {
+      if (data.error) { alert(data.error); return; }
+      _applyShoppingData(data);
+      showShopScreen();
+    }).catch(function (e) { alert('Error: ' + e); });
+  }
+
+  function claimRewardJoker(jokerId) {
+    apiPost('/api/nfl_balatro/claim_reward', { game_id: gameId, choice: 'joker', joker_id: jokerId }).then(function (data) {
+      if (data.error) { alert(data.error); return; }
+      _applyShoppingData(data);
+      showShopScreen();
+    }).catch(function (e) { alert('Error: ' + e); });
+  }
+
+  function _applyShoppingData(data) {
+    gs.status = 'shopping';
+    gs.coins = data.coins !== undefined ? data.coins : gs.coins;
+    gs.jokers = data.jokers || gs.jokers;
+    gs.shopItems = data.shop_items || [];
+    gs.restockCount = 0;
+    gs.maxJokers = data.max_jokers || gs.maxJokers;
+    gs.shopPacks = data.shop_packs || [];
+    gs.jokerEnhancements = data.joker_enhancements || gs.jokerEnhancements;
+    if (data.held_cards !== undefined) gs.heldCards = data.held_cards;
+    if (data.next_fight !== undefined) gs.nextFight = data.next_fight;
+    if (data.next_boss_effect !== undefined) gs.nextBossEffect = data.next_boss_effect;
   }
 
   function buyShopItem(shopId, itemType, needsTarget, item) {
@@ -732,7 +751,7 @@
       if (data.error) { alert(data.error); return; }
       gs.coins = data.coins !== undefined ? data.coins : gs.coins;
       gs.jokers = data.jokers || gs.jokers;
-      showToast('💸 Sold ' + data.sold + ' for $' + data.earned);
+      showToast('Sold ' + data.sold + ' for $' + data.earned);
       // Render jokers for whatever screen we're on
       renderJokers();
       if (els.shopJokersSect) renderShopJokers();
@@ -855,7 +874,7 @@
     if (gs.bossEffect) {
       banner.classList.remove('hidden');
       banner.innerHTML =
-        '<span class="boss-banner-icon">⚠️</span>' +
+        '<span class="boss-banner-icon">!</span>' +
         '<span class="boss-banner-name">BOSS: ' + escHtml(gs.bossEffect.name || '') + '</span>' +
         '<span class="boss-banner-desc">' + escHtml(gs.bossEffect.desc || '') + '</span>';
     } else {
@@ -912,6 +931,7 @@
     renderHand();
     renderActionButtons();
     renderBossEffectBanner();
+    renderDeckWidget();
   }
 
   function renderTopBar() {
@@ -1039,6 +1059,172 @@
     }
   }
 
+  // ── Deck & Discard Widget ────────────────────────────────────────────
+  function renderDeckWidget() {
+    var deckCountEl = document.getElementById('deck-pile-count');
+    var discardCountEl = document.getElementById('discard-pile-count');
+    var deckVisualEl = document.getElementById('deck-pile-visual');
+    var discardVisualEl = document.getElementById('discard-pile-visual');
+    if (!deckCountEl) return;
+
+    var deckCount = gs.deckCards ? gs.deckCards.length : 0;
+    var discardTotal = (gs.fightDiscards ? gs.fightDiscards.length : 0) + (gs.fightPlayed ? gs.fightPlayed.length : 0);
+
+    deckCountEl.textContent = deckCount;
+    discardCountEl.textContent = discardTotal;
+
+    function buildPileVisual(el, count, isDiscard) {
+      el.innerHTML = '';
+      var layers = Math.min(4, Math.max(count > 0 ? 1 : 0, Math.ceil(count / 4)));
+      for (var i = 0; i < layers; i++) {
+        var card = document.createElement('div');
+        card.className = 'pile-card' + (isDiscard ? ' pile-card-discard' : '');
+        card.style.bottom = (i * 2) + 'px';
+        card.style.left = (i * 1) + 'px';
+        el.appendChild(card);
+      }
+    }
+    buildPileVisual(deckVisualEl, deckCount, false);
+    buildPileVisual(discardVisualEl, discardTotal, true);
+
+    var deckWidget = document.getElementById('deck-pile-widget');
+    if (deckWidget) {
+      deckWidget.style.cursor = deckCount > 0 ? 'pointer' : 'default';
+      deckWidget.style.opacity = deckCount > 0 ? '1' : '0.5';
+    }
+    var discardWidget = document.getElementById('discard-pile-widget');
+    if (discardWidget) {
+      discardWidget.style.cursor = discardTotal > 0 ? 'pointer' : 'default';
+      discardWidget.style.opacity = discardTotal > 0 ? '1' : '0.4';
+    }
+  }
+
+  function _buildCardViewerItem(card, labelTag) {
+    var el = document.createElement('div');
+    el.className = 'deck-card-item card-pos-' + (card.pos || '').toLowerCase();
+    var divInfo = getNflDivInfo(card.team || '');
+    el.innerHTML =
+      (labelTag ? '<div class="dci-tag ' + labelTag.cls + '">' + labelTag.text + '</div>' : '') +
+      '<div class="dci-pos">' + card.pos + '</div>' +
+      '<div class="dci-name">' + card.player + '</div>' +
+      '<div class="dci-season">\'' + String(card.season).slice(-2) + ' · ' + (card.team || '') + '</div>' +
+      '<div class="dci-pts">' + Math.round(card.fantasy_ppr || card.fantasy_pts || 0) + ' FP</div>' +
+      (divInfo ? '<div class="card-div-badge ' + divInfo.cls + '">' + divInfo.label + '</div>' : '');
+    return el;
+  }
+
+  function openDeckViewer() {
+    var cards = gs.deckCards || [];
+    if (cards.length === 0) return;
+    var overlay = document.getElementById('discard-viewer-overlay');
+    var content = document.getElementById('discard-viewer-content');
+    var title = overlay && overlay.querySelector('.deck-viewer-title');
+    if (!overlay || !content) return;
+    if (title) title.textContent = 'DRAWABLE DECK (' + cards.length + ')';
+    content.innerHTML = '';
+    cards.forEach(function(card) { content.appendChild(_buildCardViewerItem(card, null)); });
+    overlay.classList.remove('hidden');
+  }
+
+  function openDiscardViewer() {
+    var played = gs.fightPlayed || [];
+    var discarded = gs.fightDiscards || [];
+    var total = played.length + discarded.length;
+    if (total === 0) return;
+    var overlay = document.getElementById('discard-viewer-overlay');
+    var content = document.getElementById('discard-viewer-content');
+    var title = overlay && overlay.querySelector('.deck-viewer-title');
+    if (!overlay || !content) return;
+    if (title) title.textContent = '\u267B\uFE0F PLAYED & DISCARDED (' + total + ')';
+    content.innerHTML = '';
+    played.forEach(function(card) {
+      content.appendChild(_buildCardViewerItem(card, { text: 'PLAYED', cls: 'dci-tag-played' }));
+    });
+    discarded.forEach(function(card) {
+      content.appendChild(_buildCardViewerItem(card, { text: 'DISCARDED', cls: 'dci-tag-discarded' }));
+    });
+    overlay.classList.remove('hidden');
+  }
+
+  function closeDiscardViewer() {
+    var overlay = document.getElementById('discard-viewer-overlay');
+    if (overlay) overlay.classList.add('hidden');
+  }
+
+  // ── Fight-start deal animation ────────────────────────────────────────
+  function triggerDealAnimation() {
+    var deckEl = document.getElementById('deck-pile-widget');
+    if (!deckEl) return;
+    var deckRect = deckEl.getBoundingClientRect();
+    var deckCX = deckRect.left + deckRect.width / 2;
+    var deckCY = deckRect.top + deckRect.height / 2;
+
+    deckEl.classList.add('pile-ruffling');
+    setTimeout(function() { deckEl.classList.remove('pile-ruffling'); }, 700);
+
+    var cards = document.querySelectorAll('#hand-cards > .card');
+    cards.forEach(function(card, i) {
+      var rect = card.getBoundingClientRect();
+      var cardCX = rect.left + rect.width / 2;
+      var cardCY = rect.top + rect.height / 2;
+      var dx = deckCX - cardCX;
+      var dy = deckCY - cardCY;
+      var angle = (Math.random() * 30 - 15);
+
+      card.style.transition = 'none';
+      card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) rotate(' + angle + 'deg) scale(0.45)';
+      card.style.opacity = '0';
+      card.style.zIndex = '50';
+
+      var delay = 120 + i * 90;
+      setTimeout((function(c) {
+        return function() {
+          c.style.transition = 'transform 0.42s cubic-bezier(0.22, 0.68, 0, 1.2), opacity 0.28s ease-out';
+          c.style.transform = '';
+          c.style.opacity = '';
+          setTimeout(function() { c.style.transition = ''; c.style.zIndex = ''; }, 500);
+        };
+      })(card), delay);
+    });
+  }
+
+  function triggerNewCardsAnimation(oldIds) {
+    var deckEl = document.getElementById('deck-pile-widget');
+    if (!deckEl) return;
+    var deckRect = deckEl.getBoundingClientRect();
+    var deckCX = deckRect.left + deckRect.width / 2;
+    var deckCY = deckRect.top + deckRect.height / 2;
+
+    var newCards = [];
+    document.querySelectorAll('#hand-cards > .card').forEach(function(card) {
+      if (!oldIds.has(card.dataset.id)) newCards.push(card);
+    });
+
+    newCards.forEach(function(card, i) {
+      var rect = card.getBoundingClientRect();
+      var cardCX = rect.left + rect.width / 2;
+      var cardCY = rect.top + rect.height / 2;
+      var dx = deckCX - cardCX;
+      var dy = deckCY - cardCY;
+      var angle = (Math.random() * 30 - 15);
+
+      card.style.transition = 'none';
+      card.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) rotate(' + angle + 'deg) scale(0.45)';
+      card.style.opacity = '0';
+      card.style.zIndex = '50';
+
+      var delay = i * 90;
+      setTimeout((function(c) {
+        return function() {
+          c.style.transition = 'transform 0.42s cubic-bezier(0.22, 0.68, 0, 1.2), opacity 0.28s ease-out';
+          c.style.transform = '';
+          c.style.opacity = '';
+          setTimeout(function() { c.style.transition = ''; c.style.zIndex = ''; }, 500);
+        };
+      })(card), delay);
+    });
+  }
+
   function renderShopJokers() {
     if (!els.shopJokersSect) return;
     els.shopJokersSect.innerHTML = '';
@@ -1047,7 +1233,7 @@
     var header = document.createElement('div');
     header.className = 'shop-section-header';
     header.style.cssText = 'margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.12);';
-    header.innerHTML = '<span class="shop-section-icon">🔒</span><span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span><span style="font-size:0.6rem;color:var(--nb-dim);margin-left:auto;font-family:Arial,sans-serif;">hover to sell</span>';
+    header.innerHTML = '<span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span><span style="font-size:0.6rem;color:var(--nb-dim);margin-left:auto;font-family:Arial,sans-serif;">hover to sell</span>';
     els.shopJokersSect.appendChild(header);
 
     var row = document.createElement('div');
@@ -1062,6 +1248,12 @@
   }
 
   function _buildJokerSlotContent(slot, j, screenStatus) {
+    var img = document.createElement('img');
+    img.className = 'joker-fan-img';
+    img.src = '/static/img/football_fan.png';
+    img.alt = 'Fan';
+    slot.appendChild(img);
+
     var dot = document.createElement('div');
     dot.className = 'joker-rarity-dot dot-' + (j.rarity || 'common');
     slot.appendChild(dot);
@@ -1081,7 +1273,7 @@
     if (enhs.length > 0) {
       var enhDiv = document.createElement('div');
       enhDiv.className = 'joker-enhancements';
-      var enhLabels = { 'boost_sticker': '🔵', 'multiplier_sticker': '🟡', 'echo_sticker': '✖️', 'gold_wire': '💰' };
+      var enhLabels = { 'boost_sticker': 'BOOST', 'multiplier_sticker': 'MULT', 'echo_sticker': 'ECHO', 'gold_wire': 'GOLD' };
       enhs.forEach(function(enh) {
         var span = document.createElement('span');
         span.className = 'joker-enh-badge';
@@ -1095,7 +1287,7 @@
     // Sell button - available in shopping and playing
     var sellBtn = document.createElement('button');
     sellBtn.className = 'joker-sell-btn';
-    sellBtn.textContent = '💸 SELL';
+    sellBtn.textContent = 'SELL';
     var jokerId = j.id;
     sellBtn.addEventListener('click', function (e) {
       e.stopPropagation();
@@ -1199,7 +1391,7 @@
       effects.forEach(function (eff) {
         var b = document.createElement('span');
         b.className = 'effect-badge effect-' + eff;
-        b.textContent = eff === 'gold' ? '💰' : eff === 'glass' ? '🔮' : eff === 'trained' ? '💪' : '✨';
+        b.textContent = eff === 'gold' ? 'GD' : eff === 'glass' ? 'GL' : eff === 'trained' ? 'TR' : 'FO';
         badgesDiv.appendChild(b);
       });
       front.appendChild(badgesDiv);
@@ -1276,13 +1468,13 @@
     var flipBtn = document.createElement('button');
     flipBtn.className = 'card-flip-btn';
     flipBtn.title = 'View stats';
-    flipBtn.textContent = '🔍';
+    flipBtn.textContent = '?';
     front.appendChild(flipBtn);
 
     // ── Card Back ───────────────────────────────────────────────────
     var back = document.createElement('div');
     back.className = 'card-back';
-    back.innerHTML = '<div class="card-back-loading">🔍</div>';
+    back.innerHTML = '<div class="card-back-loading">...</div>';
 
     // Assemble
     inner.appendChild(front);
@@ -1435,36 +1627,70 @@
     setTimeout(function () { t.remove(); }, 2500);
   }
 
-  // ── Reward Screen ──────────────────────────────────────────────────
+  // ── Reward Screen (level/boss win) ─────────────────────────────────
   function showRewardScreen() {
     var titleEl = document.getElementById('reward-title');
     if (titleEl) titleEl.textContent = 'ROUND COMPLETE!';
+    var subMsg = document.getElementById('reward-sub-msg');
+    if (subMsg) subMsg.textContent = '';
     showScreen('reward');
-    els.jokerOptions.innerHTML = '';
-    var earnMsg = document.getElementById('reward-earnings-msg');
-    if (earnMsg) {
-      var floorCoins = gs.floor || 1;
-      var interest = Math.min(5, Math.floor((gs.coins + floorCoins) / 5));
-      earnMsg.textContent = '+$' + floorCoins + ' floor bonus' + (interest > 0 ? ' + $' + interest + ' interest' : '');
-    }
   }
 
   function showFightRewardScreen(data) {
-    var titleEl = document.getElementById('reward-title');
     var isBossWin = (gs.fight === 3);
-    if (titleEl) titleEl.textContent = isBossWin ? 'ROUND COMPLETE! 🏆' : 'FIGHT COMPLETE!';
-    showScreen('reward');
-    els.jokerOptions.innerHTML = '';
-    var earnMsg = document.getElementById('reward-earnings-msg');
-    if (earnMsg) {
-      var msg = '+$' + (data.fight_coins_earned || 0) + ' fight bonus';
-      if (data.next_boss_effect) {
-        msg += ' — Next: ⚠️ BOSS (' + escHtml(data.next_boss_effect.name) + ')';
-      } else if (isBossWin) {
-        msg += ' — Advancing to next round!';
+    var titleEl = document.getElementById('reward-title');
+    if (titleEl) titleEl.textContent = isBossWin ? 'ROUND COMPLETE!' : 'FIGHT COMPLETE!';
+
+    var subMsg = document.getElementById('reward-sub-msg');
+    if (subMsg) subMsg.textContent = 'Choose your reward';
+
+    // Coins option
+    var coinsVal = document.getElementById('reward-coins-value');
+    if (coinsVal) coinsVal.textContent = '$' + (data.reward_coins_amount || 0);
+
+    // Joker options
+    var jokerGrid = document.getElementById('reward-joker-options');
+    if (jokerGrid) {
+      jokerGrid.innerHTML = '';
+      var jokerOpts = data.reward_joker_options || [];
+      jokerOpts.forEach(function(j) {
+        var btn = document.createElement('div');
+        btn.className = 'reward-joker-option';
+        var rarityClass = 'rarity-' + (j.rarity || 'common');
+        btn.innerHTML = '<div class="rjo-name ' + rarityClass + '">' + escHtml(j.name) + '</div>' +
+                        '<div class="rjo-desc">' + escHtml(j.desc) + '</div>';
+        btn.onclick = (function(jid) { return function() { claimRewardJoker(jid); }; })(j.id);
+        jokerGrid.appendChild(btn);
+      });
+      // Disable joker option if full
+      var jokerCard = document.getElementById('reward-choice-joker');
+      if (jokerCard) {
+        var isFull = gs.jokers.length >= gs.maxJokers;
+        jokerCard.classList.toggle('reward-choice-disabled', isFull);
+        if (isFull) {
+          var fullNote = document.createElement('div');
+          fullNote.className = 'reward-full-note';
+          fullNote.textContent = 'Fan slots full!';
+          jokerGrid.appendChild(fullNote);
+        }
       }
-      earnMsg.textContent = msg;
     }
+
+    // Boss warning
+    var bossWarn = document.getElementById('reward-boss-warning');
+    if (bossWarn) {
+      if (data.next_boss_effect) {
+        bossWarn.textContent = '! NEXT: BOSS — ' + escHtml(data.next_boss_effect.name);
+        bossWarn.classList.remove('hidden');
+      } else if (isBossWin) {
+        bossWarn.textContent = 'Advancing to next round!';
+        bossWarn.classList.remove('hidden');
+      } else {
+        bossWarn.classList.add('hidden');
+      }
+    }
+
+    showScreen('reward');
   }
 
   // ── Shop Screen ────────────────────────────────────────────────────
@@ -1475,11 +1701,11 @@
 
   // ── Shop item icon/bg config ────────────────────────────────────
   var ITEM_ICON = {
-    joker: '🎭', skill_card: '📋', combo_card: '🔗', effect_card: '✨',
-    year_card: '📅', cut_card: '✂️', upgrade: '⬆️', mod_card: '🔧',
-    joker_enhancement: '💫', buy_card: '🏈',
+    joker: 'Fan', skill_card: 'Skill', combo_card: 'CMB', effect_card: 'Effect',
+    year_card: 'YR', cut_card: 'CUT', upgrade: 'UP', mod_card: 'MOD',
+    joker_enhancement: 'ENH', buy_card: 'PLR',
   };
-  var POS_ICON = { QB: '🏈', RB: '⚡', WR: '🎯', TE: '🛡️' };
+  var POS_ICON = { QB: 'QB', RB: 'RB', WR: 'WR', TE: 'TE' };
   var ITEM_BG = {
     joker: '#1e0a40', skill_card: '#0a1e3c', combo_card: '#0a1e3c',
     effect_card: '#0a1e3c', year_card: '#0a1e3c', cut_card: '#2e0a10',
@@ -1488,7 +1714,7 @@
   };
   var POS_BG = { QB: '#3a0808', RB: '#0a2e12', WR: '#2e1500', TE: '#1a0a3e' };
   var ITEM_TYPE_LABEL = {
-    joker: 'JOKER', skill_card: 'SKILL', combo_card: 'COMBO',
+    joker: 'FAN', skill_card: 'SKILL', combo_card: 'COMBO',
     effect_card: 'EFFECT', year_card: 'SEASON', cut_card: 'RELEASE',
     upgrade: 'UPGRADE', mod_card: 'MOD', joker_enhancement: 'ENHANCE',
     buy_card: 'PLAYER CARD',
@@ -1501,6 +1727,16 @@
     'Playoffs gear is here!',
     'Limited stock — act fast!',
     'Today\'s deals won\'t last!',
+    'That last drive was CLEAN!',
+    'Running low on coins? Choose wisely!',
+    'A new fan could change everything!',
+    'Trust the process. Buy the pack.',
+    'Your opponents are upgrading — are you?',
+    'Every great offense needs a playmaker!',
+    'Stack your fans before the boss round!',
+    'You\'re one pack away from greatness.',
+    'The best time to restock is NOW!',
+    'I\'ve seen your hand. You need this.',
   ];
 
   function buildShopItemEl(item, isPack) {
@@ -1519,6 +1755,12 @@
     var canAfford = gs.coins >= item.cost;
     if (!canAfford) el.classList.add('cant-afford');
 
+    // Price badge floating above card
+    var priceBadge = document.createElement('div');
+    priceBadge.className = 'shop-price-badge' + (canAfford ? '' : ' cant-afford');
+    priceBadge.textContent = '$' + item.cost;
+    el.appendChild(priceBadge);
+
     // Icon area
     var iconArea = document.createElement('div');
     iconArea.className = 'shop-item-icon-area';
@@ -1530,12 +1772,26 @@
       iconArea.style.background = 'linear-gradient(135deg, ' + bg + ', #1a1a3e)';
     }
 
-    var iconEmoji = document.createElement('span');
-    if (isPack) {
-      iconEmoji.textContent = '📦';
+    if (!isPack && item.type === 'joker') {
+      var fanImg = document.createElement('img');
+      fanImg.src = '/static/img/football_fan.png';
+      fanImg.alt = 'Fan';
+      fanImg.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:50%;border:2px solid rgba(0,0,0,0.3);';
+      iconArea.appendChild(fanImg);
     } else {
-      var pos2 = item.card_data ? item.card_data.pos : null;
-      iconEmoji.textContent = (pos2 && POS_ICON[pos2]) ? POS_ICON[pos2] : (ITEM_ICON[item.type] || '🎁');
+      var iconEmoji = document.createElement('span');
+      if (isPack) {
+        iconEmoji.textContent = 'Pack';
+      } else if (item.type === 'buy_card' && item.card_data && item.card_data.fantasy_pts != null) {
+        iconEmoji.textContent = item.card_data.fantasy_pts;
+        iconEmoji.style.fontSize = '1.1rem';
+        iconEmoji.style.fontFamily = 'Impact, sans-serif';
+        iconEmoji.style.fontWeight = '900';
+      } else {
+        var pos2 = item.card_data ? item.card_data.pos : null;
+        iconEmoji.textContent = (pos2 && POS_ICON[pos2]) ? POS_ICON[pos2] : (ITEM_ICON[item.type] || 'ITM');
+      }
+      iconArea.appendChild(iconEmoji);
     }
     iconArea.appendChild(iconEmoji);
 
@@ -1577,11 +1833,6 @@
     var footer = document.createElement('div');
     footer.className = 'shop-item-footer';
 
-    var costEl = document.createElement('span');
-    costEl.className = 'shop-item-cost';
-    costEl.textContent = '💰 ' + item.cost;
-    footer.appendChild(costEl);
-
     var buyBtn = document.createElement('button');
     buyBtn.className = 'btn-buy';
     buyBtn.textContent = canAfford ? (isPack ? 'OPEN' : 'BUY') : 'NO $';
@@ -1611,9 +1862,9 @@
 
     // Bucket items into sections using item.section field
     var sections = [
-      { key: 'roster',   label: 'JOKERS & PLAYERS',  icon: '🃏', color: '#9b59b6', items: [] },
-      { key: 'training', label: 'SKILLS & UPGRADES',  icon: '⬆️', color: '#27ae60', items: [] },
-      { key: 'packs',    label: 'PACKS',              icon: '📦', color: '#e74c3c', items: [] },
+      { key: 'roster',   label: 'FANS & PLAYERS',  icon: '', color: '#9b59b6', items: [] },
+      { key: 'training', label: 'SKILLS & UPGRADES',  icon: '', color: '#27ae60', items: [] },
+      { key: 'packs',    label: 'PACKS',              icon: '', color: '#e74c3c', items: [] },
     ];
     var sectionMap = {};
     sections.forEach(function(s) { sectionMap[s.key] = s; });
@@ -1946,21 +2197,21 @@
     showScreen('gameover');
     var html = '';
     if (won) {
-      html += '<div class="go-icon">🏆</div>';
+      html += '';
       html += '<div class="go-title win">CHAMPION!</div>';
       html += '<div class="go-sub">You defeated all 8 rounds!</div>';
     } else {
-      html += '<div class="go-icon">💀</div>';
+      html += '';
       html += '<div class="go-title lose">GAME OVER</div>';
       html += '<div class="go-sub">The blitz got you at level ' + gs.floor + '</div>';
     }
 
     html += '<div class="go-stats">';
     html += '<div class="go-stat"><div class="go-stat-label">Level Reached</div><div class="go-stat-val">' + gs.floor + ' / 8</div></div>';
-    html += '<div class="go-stat"><div class="go-stat-label">Jokers</div><div class="go-stat-val">' + gs.jokers.length + ' / 5</div></div>';
+    html += '<div class="go-stat"><div class="go-stat-label">Fans</div><div class="go-stat-val">' + gs.jokers.length + ' / 5</div></div>';
     html += '<div class="go-stat"><div class="go-stat-label">Final Score</div><div class="go-stat-val">' + formatNum(gs.currentScore) + '</div></div>';
     html += '<div class="go-stat"><div class="go-stat-label">Target</div><div class="go-stat-val">' + formatNum(gs.targetScore) + '</div></div>';
-    html += '<div class="go-stat"><div class="go-stat-label">Coins</div><div class="go-stat-val">💰 ' + gs.coins + '</div></div>';
+    html += '<div class="go-stat"><div class="go-stat-label">Coins</div><div class="go-stat-val">$' + gs.coins + '</div></div>';
     html += '</div>';
 
     els.gameoverContent.innerHTML = html;
@@ -1977,6 +2228,9 @@
   }
 
   // ── Event listeners ────────────────────────────────────────────────
+  var rewardCoinsBtn = document.getElementById('reward-choice-coins');
+  if (rewardCoinsBtn) rewardCoinsBtn.addEventListener('click', claimRewardCoins);
+
   els.startBtn.addEventListener('click', startGame);
 
   els.playBtn.addEventListener('click', function () {
@@ -1987,14 +2241,11 @@
     if (!els.discardBtn.disabled) discardCards();
   });
 
-  els.skipJokerBtn.addEventListener('click', function () {
-    if (gs.status === 'shopping') {
-      // Already in shopping state (from fight win) — go directly to shop
-      showShopScreen();
-    } else {
+  if (els.skipJokerBtn) {
+    els.skipJokerBtn.addEventListener('click', function () {
       selectJoker('skip');
-    }
-  });
+    });
+  }
 
   els.restartBtn.addEventListener('click', function () {
     showScreen('start');
@@ -2148,7 +2399,7 @@
       if (modal) modal.classList.add('hidden');
       if (data.added_jokers) {
         gs.jokers = data.jokers || gs.jokers;
-        showToast(data.added_jokers.length + ' joker(s) added!');
+        showToast(data.added_jokers.length + ' fan(s) added!');
         renderShopJokers();
       } else {
         showToast((data.added_cards || []).length + ' player(s) added to deck!');
@@ -2160,7 +2411,7 @@
   // ── Joker Enhancement System ───────────────────────────────────────
   function buyShopItemWithJokerTarget(shopId, itemType, item) {
     if (gs.jokers.length === 0) {
-      showToast('No jokers to enhance', 'error');
+      showToast('No fans to enhance', 'error');
       return;
     }
     openJokerPickerModal(shopId, itemType, item);
@@ -2169,7 +2420,7 @@
   function openJokerPickerModal(shopId, itemType, item) {
     // Reuse target modal with joker slots instead of player cards
     if (els.targetModalDesc) {
-      els.targetModalDesc.textContent = (item && item.desc) ? item.desc + ' — Select a joker to enhance:' : 'Select a joker to enhance:';
+      els.targetModalDesc.textContent = (item && item.desc) ? item.desc + ' — Select a fan to enhance:' : 'Select a fan to enhance:';
     }
     if (els.targetCardsCont) {
       els.targetCardsCont.innerHTML = '';

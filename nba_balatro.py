@@ -65,12 +65,11 @@ def get_nba_division(team):
     return _TEAM_TO_DIV.get(team.upper().strip())
 
 HAND_TYPES = {
-    "royal_flush":      {"name": "Royal Flush",       "mult": 20.0, "desc": "5-6 cards all same position & same division"},
-    "division_six":     {"name": "Division Six",      "mult": 6.0,  "desc": "6 cards all from same division"},
-    "six_man_rotation": {"name": "Six Man Rotation",  "mult": 5.5,  "desc": "6 of the same position"},
-    "zone_press":       {"name": "Zone Press",         "mult": 5.0,  "desc": "5 of same position"},
-    "division_five":    {"name": "Division Straight", "mult": 5.0,  "desc": "5 cards all from same division"},
-    "twin_towers":      {"name": "Twin Towers",        "mult": 4.0,  "desc": "3 of one position + 3 of another"},
+    "division_lineup":  {"name": "Division Starting Lineup", "mult": 25.0, "desc": "G + F + C all present (5+ cards) all from same division"},
+    "royal_flush":      {"name": "Royal Flush",       "mult": 20.0, "desc": "5+ cards same position & same division"},
+    "division_six":     {"name": "Division Court",    "mult": 6.0,  "desc": "5+ cards all from same division"},
+    "six_man_rotation": {"name": "Zone Press",        "mult": 5.5,  "desc": "5 of the same position"},
+    "twin_towers":      {"name": "Twin Towers",        "mult": 4.0,  "desc": "3 of one position + 2 of another"},
     "starting_lineup":  {"name": "Starting Lineup",   "mult": 3.5,  "desc": "G + F + C all present (5+ cards)"},
     "starting_four":    {"name": "Starting Four",      "mult": 3.0,  "desc": "4 of same position"},
     "pick_roll":        {"name": "Pick & Roll",        "mult": 2.0,  "desc": "3 of same position"},
@@ -172,6 +171,11 @@ JOKERS = [
     {"id": "homefield",     "name": "Home Court Advantage", "desc": "Division hands (Straight/Six/Royal Flush) get +4 mult.",          "rarity": "uncommon"},
     {"id": "div_stacker",   "name": "Conference Stacker",   "desc": "Each scored card in a division hand adds +20 base pts.",          "rarity": "common"},
     {"id": "div_escalator", "name": "Conference Escalator", "desc": "Each division hand played this run permanently adds +0.5 mult.",  "rarity": "rare"},
+    # All-Star jokers
+    {"id": "all_star_chips",  "name": "All-Star Weekend",   "desc": "Each scored card with any All-Star selection adds +15 base pts.",           "rarity": "common"},
+    {"id": "star_power",      "name": "Star Power",          "desc": "+5 Mult per All-Star in the scored hand.",                                    "rarity": "uncommon"},
+    {"id": "legend_status",   "name": "Legend Status",       "desc": "Each scored card with 10+ All-Star selections adds +40 base pts.",            "rarity": "rare"},
+    {"id": "franchise_icon",  "name": "Franchise Icon",      "desc": "×2 Mult if every scored card has at least 1 All-Star selection (multiplicative).", "rarity": "rare"},
 ]
 JOKER_MAP = {j["id"]: j for j in JOKERS}
 
@@ -244,7 +248,8 @@ PACKS = [
     {"id": "dynasty_pack",   "name": "Dynasty Pack",          "desc": "5 players from 1 NBA team, pick 2",                  "cost": 10, "count": 5, "tier": "uncommon"},
     {"id": "big_man_pack",   "name": "Big Man Pack",          "desc": "5 Centers, pick 2",                                  "cost": 9,  "count": 5, "tier": "common"},
     {"id": "joker_pack",     "name": "Joker Pack",            "desc": "Choose 1 of 3 jokers",                               "cost": 10, "count": 3, "tier": "uncommon", "is_joker_pack": True},
-    {"id": "big_joker_pack", "name": "All-Star Joker Pack",   "desc": "Choose 2 of 5 jokers",                               "cost": 18, "count": 5, "tier": "rare",     "is_joker_pack": True},
+    {"id": "big_joker_pack",      "name": "All-Star Joker Pack",  "desc": "Choose 2 of 5 jokers",                               "cost": 18, "count": 5, "tier": "rare",     "is_joker_pack": True},
+    {"id": "allstar_draft_pack",  "name": "All-Star Draft",        "desc": "5 NBA All-Stars, pick 2 — ranked by career selections", "cost": 14, "count": 5, "tier": "uncommon"},
 ]
 PACK_MAP = {p["id"]: p for p in PACKS}
 
@@ -290,9 +295,10 @@ def _build_deck_pool(conn):
     for pos, count in exact_counts.items():
         rows = conn.execute("""
             SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-                   nd.draft_pick, nd.college
+                   nd.draft_pick, nd.college, na.selections
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
+            LEFT JOIN nba_allstars na ON ns.player = na.player
             WHERE ns.pos = ? AND ns.fantasy_score >= 600
             ORDER BY RANDOM()
         """, (pos,)).fetchall()
@@ -321,6 +327,7 @@ def _build_deck_pool(conn):
             "draft_pick": r[5],
             "college": college,
             "undrafted": r[5] is None,
+            "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
             "division": get_nba_division(r[3]),
         })
@@ -330,9 +337,11 @@ def _build_deck_pool(conn):
 def _deal_for_level(state):
     pool = list(state["deck_pool"])
     random.shuffle(pool)
-    hand_size = state.get("max_hand_size", 7)
+    hand_size = state.get("max_hand_size", 6)
     state["hand"] = pool[:hand_size]
     state["deck"] = pool[hand_size:]
+    state["fight_discards"] = []
+    state["fight_played"] = []
 
 
 def evaluate_hand(cards):
@@ -343,50 +352,45 @@ def evaluate_hand(cards):
     pos_counts = Counter(c["pos"] for c in cards)
     max_count = max(pos_counts.values()) if pos_counts else 0
 
+    # Division Starting Lineup: G + F + C all present (5+ cards) all same division (25x)
+    if n >= 5 and all(p in pos_counts for p in ["G", "F", "C"]):
+        divs = [c.get("division") or get_nba_division(c.get("team", "")) for c in cards]
+        if divs[0] and all(d == divs[0] for d in divs):
+            return "division_lineup", cards
+
     # Royal Flush: 5-6 cards all same position AND all same division (20x)
     if n >= 5:
         divs = [c.get("division") or get_nba_division(c.get("team", "")) for c in cards]
         if divs[0] and all(d == divs[0] for d in divs) and len(pos_counts) == 1:
             return "royal_flush", cards
 
-    # Division Six: 6 cards all from same division (6x)
-    if n == 6:
+    # Division Court: 5+ cards all from same division (6x)
+    if n >= 5:
         divs = [c.get("division") or get_nba_division(c.get("team", "")) for c in cards]
         if divs[0] and all(d == divs[0] for d in divs):
             return "division_six", cards
 
-    # six_man_rotation: 6 of same position
-    if max_count >= 6:
-        best_pos = max(pos_counts, key=lambda p: (pos_counts[p], sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p)))
-        six_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:6]
-        return "six_man_rotation", six_cards
-
-    # Division Five: 5 cards all from same division (5x)
-    if n == 5:
-        divs = [c.get("division") or get_nba_division(c.get("team", "")) for c in cards]
-        if divs[0] and all(d == divs[0] for d in divs):
-            return "division_five", cards
-
-    # zone_press: 5 of same position
+    # Zone Press (six_man_rotation key): 5 of same position (5.5x)
     if max_count >= 5:
         best_pos = max(pos_counts, key=lambda p: (pos_counts[p], sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p)))
         five_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:5]
-        return "zone_press", five_cards
+        return "six_man_rotation", five_cards
 
     # starting_lineup: all 3 positions present AND n >= 5
     if n >= 5 and len(pos_counts) == 3 and all(p in pos_counts for p in ["G", "F", "C"]):
         return "starting_lineup", cards
 
-    # twin_towers: 2 positions each with count >= 3
+    # twin_towers: one position with 3+, another with 2+ (3+2 = 5 cards)
     trio_positions = [p for p, cnt in pos_counts.items() if cnt >= 3]
-    if len(trio_positions) >= 2:
-        # pick top 2 by total score
-        best_two = sorted(trio_positions, key=lambda p: sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p), reverse=True)[:2]
-        twin_cards = []
-        for p in best_two:
-            p_cards = sorted([c for c in cards if c["pos"] == p], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:3]
-            twin_cards.extend(p_cards)
-        return "twin_towers", twin_cards
+    pair_positions = [p for p, cnt in pos_counts.items() if cnt >= 2]
+    if trio_positions and len(pair_positions) >= 2:
+        best_trio = max(trio_positions, key=lambda p: sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p))
+        remaining_pairs = [p for p in pair_positions if p != best_trio]
+        if remaining_pairs:
+            best_pair = max(remaining_pairs, key=lambda p: sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p))
+            twin_cards = sorted([c for c in cards if c["pos"] == best_trio], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:3]
+            twin_cards += sorted([c for c in cards if c["pos"] == best_pair], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:2]
+            return "twin_towers", twin_cards
 
     # starting_four: 4 of same position
     if max_count >= 4:
@@ -561,6 +565,15 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
                 jpts = sum(20 for _ in cards_played)
         elif jid == "div_escalator":
             jbonus = joker_state.get("div_escalator_stacks", 0) * 0.5
+        # ── All-Star jokers ──────────────────────────────────────────────────
+        elif jid == "all_star_chips":
+            jpts = sum(15 for c in cards_played if (c.get("allstar_count") or 0) >= 1)
+        elif jid == "star_power":
+            jbonus = 5 * sum(1 for c in cards_played if (c.get("allstar_count") or 0) >= 1)
+        elif jid == "legend_status":
+            jpts = sum(40 for c in cards_played if (c.get("allstar_count") or 0) >= 10)
+        elif jid == "franchise_icon":
+            pass  # handled in _calc_xmult_factor
 
         # Apply joker enhancements
         if jbonus != 0:
@@ -637,6 +650,10 @@ def _calc_joker_mult_factor(cards_played, joker_ids, joker_state=None, hand_type
     if "four_xmult" in joker_ids:
         if hand_type == "starting_four":
             factor *= 4.0
+
+    if "franchise_icon" in joker_ids:
+        if cards_played and all((c.get("allstar_count") or 0) >= 1 for c in cards_played):
+            factor *= 2.0
 
     return round(factor, 4)
 
@@ -752,33 +769,48 @@ def _get_joker_options(current_jokers, n=3):
     return available[:n]
 
 
+def _weighted_joker_sample(pool, weights_by_rarity, n):
+    """Sample n unique jokers from pool using per-rarity weights."""
+    if not pool:
+        return []
+    remaining = list(pool)
+    remaining_w = [weights_by_rarity.get(j["rarity"], 1) for j in remaining]
+    selected = []
+    for _ in range(min(n, len(remaining))):
+        chosen = random.choices(remaining, weights=remaining_w, k=1)[0]
+        idx = remaining.index(chosen)
+        selected.append(chosen)
+        remaining.pop(idx)
+        remaining_w.pop(idx)
+    return selected
+
+
 def _generate_shop(conn, state):
     floor = state.get("floor", 1)
     if floor <= 3:
         tier_name = "Common"
         tier_mult = 1.0
-        allowed_rarities = ("common",)
+        shop_weights = {"common": 60, "uncommon": 28, "rare": 10, "legendary": 2}
     elif floor <= 6:
         tier_name = "Veteran"
         tier_mult = 1.5
-        allowed_rarities = ("common", "uncommon")
+        shop_weights = {"common": 40, "uncommon": 35, "rare": 20, "legendary": 5}
     else:
         tier_name = "Elite"
         tier_mult = 2.0
-        allowed_rarities = ("common", "uncommon", "rare", "legendary")
+        shop_weights = {"common": 20, "uncommon": 35, "rare": 35, "legendary": 10}
 
     def scale_cost(base):
         return max(1, round(base * tier_mult))
 
     owned_joker_ids = set(state["jokers"])
-    available_jokers = [j for j in JOKERS if j["id"] not in owned_joker_ids and j["rarity"] in allowed_rarities]
-    random.shuffle(available_jokers)
+    available_jokers = [j for j in JOKERS if j["id"] not in owned_joker_ids]
+    available_jokers = _weighted_joker_sample(available_jokers, shop_weights, 4)
 
     items = []
     slot_idx = 0
 
-    joker_count = min(2, len(available_jokers))
-    for j in available_jokers[:joker_count]:
+    for j in available_jokers:
         base_cost = {"common": 5, "uncommon": 6, "rare": 8, "legendary": 10}.get(j["rarity"], 5)
         cost = scale_cost(base_cost)
         items.append({
@@ -796,20 +828,22 @@ def _generate_shop(conn, state):
         })
         slot_idx += 1
 
-    roster_player_count = 3 - joker_count
+    # Player cards — always 3
+    roster_player_count = 3
     try:
         fp_min = 80 if floor <= 3 else (120 if floor <= 6 else 180)
         # Scale to raw fantasy_score (multiply by 10)
         score_min = fp_min * 10
         buy_rows = conn.execute("""
             SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-                   nd.draft_pick, nd.college
+                   nd.draft_pick, nd.college, na.selections
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
+            LEFT JOIN nba_allstars na ON ns.player = na.player
             WHERE ns.fantasy_score >= ?
               AND ns.pos IN ('G','F','C')
             ORDER BY RANDOM()
-            LIMIT 10
+            LIMIT 20
         """, (score_min,)).fetchall()
         existing_ids = {(c["player"], c["season"]) for c in state.get("deck_pool", [])}
         buy_candidates = [r for r in buy_rows if (r[0], r[1]) not in existing_ids]
@@ -825,6 +859,7 @@ def _generate_shop(conn, state):
                 "draft_pick": row[5],
                 "college": college,
                 "undrafted": row[5] is None,
+                "allstar_count": int(row[7]) if row[7] is not None else 0,
             }
             base_card_cost = random.randint(4, 8)
             items.append({
@@ -845,42 +880,44 @@ def _generate_shop(conn, state):
 
     training_pool = []
 
+    # 2 skill cards (different positions)
     skill_options = list(SHOP_SKILL_CARDS)
     random.shuffle(skill_options)
-    sk = skill_options[0]
-    level = state["skill_levels"].get(sk["pos"], 0)
-    training_pool.append({
-        "shop_id": str(uuid.uuid4())[:8],
-        "section": "training",
-        "type": "skill_card",
-        "pos": sk["pos"],
-        "name": sk["name"],
-        "desc": f"{sk['desc']} (Level {level} → {level + 1})",
-        "cost": scale_cost(sk["cost"]),
-        "tier_name": tier_name,
-        "sold": False,
-    })
+    for sk in skill_options[:2]:
+        level = state["skill_levels"].get(sk["pos"], 0)
+        training_pool.append({
+            "shop_id": str(uuid.uuid4())[:8],
+            "section": "training",
+            "type": "skill_card",
+            "pos": sk["pos"],
+            "name": sk["name"],
+            "desc": f"{sk['desc']} (Level {level} → {level + 1})",
+            "cost": scale_cost(sk["cost"]),
+            "tier_name": tier_name,
+            "sold": False,
+        })
 
-    effect_year_cut_mod = list(SHOP_EFFECT_CARDS) + [SHOP_YEAR_CARD, SHOP_CUT_CARD] + list(SHOP_MOD_CARDS)
-    random.shuffle(effect_year_cut_mod)
-    ey = effect_year_cut_mod[0]
-    eitem = {
-        "shop_id": str(uuid.uuid4())[:8],
-        "section": "training",
-        "needs_target": ey.get("needs_target", False),
-        "cost": scale_cost(ey["cost"]),
-        "tier_name": tier_name,
-        "sold": False,
-    }
-    eitem.update({k: v for k, v in ey.items() if k != "id"})
-    if "effect" in ey:
-        eitem["effect"] = ey["effect"]
-    training_pool.append(eitem)
+    # 2 effect/mod cards
+    effect_pool = list(SHOP_EFFECT_CARDS) + [SHOP_YEAR_CARD, SHOP_CUT_CARD] + list(SHOP_MOD_CARDS)
+    random.shuffle(effect_pool)
+    for ey in effect_pool[:2]:
+        eitem = {
+            "shop_id": str(uuid.uuid4())[:8],
+            "section": "training",
+            "needs_target": ey.get("needs_target", False),
+            "cost": scale_cost(ey["cost"]),
+            "tier_name": tier_name,
+            "sold": False,
+        }
+        eitem.update({k: v for k, v in ey.items() if k != "id"})
+        if "effect" in ey:
+            eitem["effect"] = ey["effect"]
+        training_pool.append(eitem)
 
-    if random.random() < 0.33:
-        upgrade_options = list(SHOP_UPGRADES)
-        random.shuffle(upgrade_options)
-        ug = upgrade_options[0]
+    # 2 upgrades
+    upgrade_options = list(SHOP_UPGRADES)
+    random.shuffle(upgrade_options)
+    for ug in upgrade_options[:2]:
         training_pool.append({
             "shop_id": str(uuid.uuid4())[:8],
             "section": "training",
@@ -893,38 +930,6 @@ def _generate_shop(conn, state):
             "tier_name": tier_name,
             "sold": False,
         })
-
-    enh_options = list(JOKER_ENHANCEMENT_ITEMS)
-    random.shuffle(enh_options)
-    eh = enh_options[0]
-    training_pool.append({
-        "shop_id": str(uuid.uuid4())[:8],
-        "section": "training",
-        "type": "joker_enhancement",
-        "enhancement_id": eh["enhancement_id"],
-        "name": eh["name"],
-        "desc": eh["desc"],
-        "cost": scale_cost(eh["cost"]),
-        "tier_name": tier_name,
-        "needs_joker_target": True,
-        "sold": False,
-    })
-
-    effect_year_cut_mod2 = list(SHOP_EFFECT_CARDS) + [SHOP_YEAR_CARD, SHOP_CUT_CARD] + list(SHOP_MOD_CARDS)
-    random.shuffle(effect_year_cut_mod2)
-    ey2 = effect_year_cut_mod2[0]
-    eitem2 = {
-        "shop_id": str(uuid.uuid4())[:8],
-        "section": "training",
-        "needs_target": ey2.get("needs_target", False),
-        "cost": scale_cost(ey2["cost"]),
-        "tier_name": tier_name,
-        "sold": False,
-    }
-    eitem2.update({k: v for k, v in ey2.items() if k != "id"})
-    if "effect" in ey2:
-        eitem2["effect"] = ey2["effect"]
-    training_pool.append(eitem2)
 
     # Division sticker (always available floor 2+)
     if floor >= 2:
@@ -940,8 +945,7 @@ def _generate_shop(conn, state):
         })
         slot_idx += 1
 
-    random.shuffle(training_pool[1:])
-    for tp in training_pool[:3]:
+    for tp in training_pool:
         tp["slot"] = slot_idx
         items.append(tp)
         slot_idx += 1
@@ -1004,14 +1008,15 @@ def start_game(conn):
         "combo_boosts": {ht: 0 for ht in HAND_TYPES},
         "card_effects": {},
         "shop_items": [],
-        "max_hand_size": 7,
+        "max_hand_size": 6,
         "base_discards": 3,
         "restock_count": 0,
         "max_jokers": 5,
         "joker_state": {},
         "joker_enhancements": {},
         "shop_packs": [],
-        "held_cards": [],
+        "held_items": [],  # each entry: {"kind": "card"|"consumable", ...fields}
+        "fight_discards": [],
     }
     _deal_for_level(state)
     _GAMES[gid] = state
@@ -1080,6 +1085,7 @@ def play_hand(gid, card_ids):
 
     g["current_score"] += result["score"]
     g["hands_remaining"] -= 1
+    g.setdefault("fight_played", []).extend(played)
 
     coins_earned = _calc_coins_earned(
         result["hand_type"], result["scoring_cards"], played, g["jokers"], g["coins"],
@@ -1140,6 +1146,9 @@ def play_hand(gid, card_ids):
     result["coins_earned"] = coins_earned
     result["coins"] = g["coins"]
     result["broken_cards"] = broken_cards
+    result["hand"] = g["hand"]
+    result["deck_cards"] = g["deck"]
+    result["fight_played"] = g.get("fight_played", [])
 
     if g["current_score"] >= g["target_score"]:
         fight = g.get("fight", 1)
@@ -1178,9 +1187,6 @@ def advance_fight(gid, conn=None):
     fight = g.get("fight", 1)
     round_num = g.get("round", 1)
 
-    fight_coins = 2 + round_num
-    g["coins"] = g.get("coins", 0) + fight_coins
-
     if fight == 3:
         next_round = round_num + 1
         next_fight = 1
@@ -1195,34 +1201,73 @@ def advance_fight(gid, conn=None):
     g["next_fight"] = next_fight
     g["pending_boss_effect"] = boss_effect
 
+    # goat_status: gain +0.15 bonus each round won (boss fight win)
+    if fight == 3 and "goat_status" in g["jokers"]:
+        g["joker_state"]["goat_bonus"] = g["joker_state"].get("goat_bonus", 0.0) + 0.15
+
+    # Generate reward options — player chooses between coins or a free joker
+    reward_coins = 3 + round_num * 2
+    owned = set(g.get("jokers", []))
+    available = [j for j in JOKERS if j["id"] not in owned]
+    reward_weights = {"common": 35, "uncommon": 35, "rare": 25, "legendary": 5}
+    reward_jokers = _weighted_joker_sample(available, reward_weights, 3)
+
+    g["reward_coins_amount"] = reward_coins
+    g["reward_joker_options"] = [j["id"] for j in reward_jokers]
+    g["status"] = "choosing_reward"
+
+    return {
+        "status": "choosing_reward",
+        "coins": g["coins"],
+        "reward_coins_amount": reward_coins,
+        "reward_joker_options": reward_jokers,
+        "next_fight": next_fight,
+        "next_boss_effect": BOSS_EFFECT_MAP.get(boss_effect) if boss_effect else None,
+    }, None
+
+
+def claim_fight_reward(gid, choice, joker_id=None, conn=None):
+    g = _GAMES.get(gid)
+    if not g or g["status"] != "choosing_reward":
+        return None, "Not in choosing_reward state"
+
+    if choice == "coins":
+        reward_coins = g.get("reward_coins_amount", 5)
+        g["coins"] = g.get("coins", 0) + reward_coins
+    elif choice == "joker":
+        if joker_id not in g.get("reward_joker_options", []):
+            return None, "Invalid joker choice"
+        if len(g.get("jokers", [])) >= g.get("max_jokers", 5):
+            return None, "Joker slots full"
+        g["jokers"].append(joker_id)
+        g["coins"] = g.get("coins", 0) + 2  # small base coins
+    else:
+        return None, "Invalid choice"
+
     g["status"] = "shopping"
     g["restock_count"] = 0
 
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
-    g["shop_packs"] = shop_packs[:2]
+    g["shop_packs"] = shop_packs[:4]
+
     if conn:
         g["shop_items"] = _generate_shop(conn, g)
     else:
         g["shop_items"] = []
         g["pending_shop_generation"] = True
 
-    # goat_status: gain +0.15 bonus each round won (boss fight win)
-    if fight == 3 and "goat_status" in g["jokers"]:
-        g["joker_state"]["goat_bonus"] = g["joker_state"].get("goat_bonus", 0.0) + 0.15
-
     return {
         "status": "shopping",
         "coins": g["coins"],
-        "fight_coins_earned": fight_coins,
         "jokers": [JOKER_MAP[jid] for jid in g["jokers"]],
         "max_jokers": g.get("max_jokers", 5),
         "shop_items": g["shop_items"],
         "shop_packs": g["shop_packs"],
         "joker_enhancements": g.get("joker_enhancements", {}),
-        "held_cards": g.get("held_cards", []),
-        "next_fight": next_fight,
-        "next_boss_effect": BOSS_EFFECT_MAP.get(boss_effect) if boss_effect else None,
+        "held_items": g.get("held_items", []),
+        "next_fight": g.get("next_fight", 1),
+        "next_boss_effect": BOSS_EFFECT_MAP.get(g.get("pending_boss_effect")) if g.get("pending_boss_effect") else None,
     }, None
 
 
@@ -1247,11 +1292,14 @@ def discard_cards(gid, card_ids):
     draw_count = min(len(discarded), len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
+    g.setdefault("fight_discards", []).extend(discarded)
 
     return {
         "discards_remaining": g["discards_remaining"],
         "hand": g["hand"],
         "status": "playing",
+        "deck_cards": g["deck"],
+        "fight_discards": g["fight_discards"],
     }, None
 
 
@@ -1273,7 +1321,7 @@ def select_joker(gid, joker_id):
 
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
-    g["shop_packs"] = shop_packs[:2]
+    g["shop_packs"] = shop_packs[:4]
 
     g["pending_shop_generation"] = True
 
@@ -1286,7 +1334,7 @@ def select_joker(gid, joker_id):
         "max_jokers": g.get("max_jokers", 5),
         "shop_packs": g["shop_packs"],
         "joker_enhancements": g.get("joker_enhancements", {}),
-        "held_cards": g.get("held_cards", []),
+        "held_items": g.get("held_items", []),
     }, None
 
 
@@ -1319,106 +1367,42 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
             return None, "Joker slots full"
         g["jokers"].append(item["joker_id"])
 
-    elif item["type"] == "skill_card":
-        pos = item["pos"]
-        g["skill_levels"][pos] = g["skill_levels"].get(pos, 0) + 1
-
-    elif item["type"] == "combo_card":
-        ht = item["hand_type"]
-        g["combo_boosts"][ht] = round(g["combo_boosts"].get(ht, 0) + item["boost"], 2)
-
-    elif item["type"] == "effect_card":
-        if not target_card_id:
-            return None, "Target card required"
-        effect = item["effect"]
-        if target_card_id not in g["card_effects"]:
-            g["card_effects"][target_card_id] = []
-        if effect not in g["card_effects"][target_card_id]:
-            g["card_effects"][target_card_id].append(effect)
-
-    elif item["type"] == "year_card":
-        if not target_card_id:
-            return None, "Target card required"
-        if not target_year:
-            return None, "Year not specified"
-        if not conn:
-            return None, "DB connection required"
-        target_card = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
-        if not target_card:
-            return None, "Target card not found in pool"
-        rows = conn.execute("""
-            SELECT ns.season, ns.team, ns.fantasy_score
-            FROM nba_stats ns
-            WHERE ns.player = ? AND ns.season = ? AND ns.pos = ?
-            LIMIT 1
-        """, (target_card["player"], int(target_year), target_card["pos"])).fetchall()
-        if rows:
-            r = rows[0]
-            target_card["season"] = r[0]
-            target_card["team"] = r[1]
-            target_card["fantasy_pts"] = round(r[2] / 10, 1)
-            for hcard in g["hand"]:
-                if hcard["id"] == target_card_id:
-                    hcard["season"] = r[0]
-                    hcard["team"] = r[1]
-                    hcard["fantasy_pts"] = round(r[2] / 10, 1)
-            updated_card = target_card
-
-    elif item["type"] == "cut_card":
-        if not target_card_id:
-            return None, "Target card required"
-        g["deck_pool"] = [c for c in g["deck_pool"] if c["id"] != target_card_id]
-        g["hand"] = [c for c in g["hand"] if c["id"] != target_card_id]
-        g["deck"] = [c for c in g["deck"] if c["id"] != target_card_id]
-        g["card_effects"].pop(target_card_id, None)
-
-    elif item["type"] == "upgrade":
-        stat = item["stat"]
-        amount = item["amount"]
-        if stat == "max_jokers":
-            g["max_jokers"] = g.get("max_jokers", 5) + amount
-        else:
-            g[stat] = g.get(stat, 7 if stat == "max_hand_size" else 3) + amount
-        if stat == "max_hand_size" and g["deck"]:
-            g["hand"].append(g["deck"][0])
-            g["deck"] = g["deck"][1:]
-
-    elif item["type"] == "mod_card":
-        if not target_card_id:
-            return None, "Target card required"
-        effect = item.get("effect", "")
-        if effect == "duplicate":
-            import copy as _copy
-            target = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
-            if not target:
-                return None, "Card not found"
-            dup = _copy.deepcopy(target)
-            dup["id"] = target["id"] + "_dup" + str(len(g["deck_pool"]))
-            g["deck_pool"].append(dup)
-        elif effect == "trained":
-            effs = g["card_effects"].setdefault(target_card_id, [])
-            if "trained" not in effs:
-                effs.append("trained")
-        elif effect == "pos_switch":
-            switch_map = {"G": "F", "F": "C", "C": "F"}
-            target = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
-            if not target:
-                return None, "Card not found"
-            new_pos = switch_map.get(target["pos"], target["pos"])
-            target["pos"] = new_pos
-            for hc in g["hand"]:
-                if hc["id"] == target_card_id:
-                    hc["pos"] = new_pos
+    elif item["type"] in ("skill_card", "combo_card", "effect_card", "year_card",
+                          "cut_card", "upgrade", "mod_card"):
+        # These go into held_items as consumables instead of applying immediately
+        if "held_items" not in g:
+            g["held_items"] = []
+        if len(g["held_items"]) >= 3:
+            return None, "Held item limit reached (max 3)"
+        held_entry = {
+            "kind": "consumable",
+            "held_id": str(uuid.uuid4())[:8],
+            "item_type": item["type"],
+            "name": item.get("name", ""),
+            "desc": item.get("desc", ""),
+            "needs_target": item.get("needs_target", False),
+            "stat": item.get("stat"),
+            "amount": item.get("amount"),
+            "effect": item.get("effect"),
+            "pos": item.get("pos"),
+            "hand_type": item.get("hand_type"),
+            "boost": item.get("boost"),
+        }
+        g["held_items"].append(held_entry)
 
     elif item["type"] == "buy_card":
         card_data = item.get("card_data")
         if not card_data:
             return None, "No card data in item"
-        if "held_cards" not in g:
-            g["held_cards"] = []
-        if len(g["held_cards"]) >= 3:
-            return None, "Held card limit reached (max 3)"
-        g["held_cards"].append(card_data)
+        if "held_items" not in g:
+            g["held_items"] = []
+        if len(g["held_items"]) >= 3:
+            return None, "Held item limit reached (max 3)"
+        import copy as _copy
+        card_entry = _copy.deepcopy(card_data)
+        card_entry["kind"] = "card"
+        card_entry["held_id"] = str(uuid.uuid4())[:8]
+        g["held_items"].append(card_entry)
 
     elif item["type"] == "joker_enhancement":
         target_joker_id = target_card_id
@@ -1444,11 +1428,11 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
         "combo_boosts": g["combo_boosts"],
         "card_effects": g["card_effects"],
         "hand": g["hand"],
-        "max_hand_size": g.get("max_hand_size", 7),
+        "max_hand_size": g.get("max_hand_size", 6),
         "base_discards": g.get("base_discards", 3),
         "max_jokers": g.get("max_jokers", 5),
         "joker_enhancements": g.get("joker_enhancements", {}),
-        "held_cards": g.get("held_cards", []),
+        "held_items": g.get("held_items", []),
     }
     if updated_card:
         result["updated_card"] = updated_card
@@ -1470,7 +1454,7 @@ def restock_shop(gid, conn):
     g["shop_items"] = _generate_shop(conn, g)
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
-    g["shop_packs"] = shop_packs[:2]
+    g["shop_packs"] = shop_packs[:4]
     return {
         "coins": g["coins"],
         "shop_items": g["shop_items"],
@@ -1494,6 +1478,127 @@ def sell_joker(gid, joker_id):
         "jokers": [JOKER_MAP[j] for j in g["jokers"]],
         "sold": joker.get("name", joker_id),
         "earned": sell_price,
+    }, None
+
+
+def use_held_item(gid, held_id, target_card_id=None, target_year=None, conn=None, discard_only=False):
+    g = _GAMES.get(gid)
+    if not g:
+        return None, "Game not found"
+    if "held_items" not in g:
+        g["held_items"] = []
+    item = next((i for i in g["held_items"] if i.get("held_id") == held_id), None)
+    if not item:
+        return None, "Held item not found"
+
+    if not discard_only:
+        kind = item.get("kind", "consumable")
+        itype = item.get("item_type", kind)
+
+        if kind == "card":
+            if len(g["hand"]) >= g.get("max_hand_size", 6):
+                return None, "Hand is full"
+            import copy as _copy
+            card = _copy.deepcopy(item)
+            card.pop("kind", None)
+            card.pop("held_id", None)
+            g["hand"].append(card)
+
+        elif itype == "upgrade":
+            stat = item["stat"]
+            amount = item["amount"]
+            if stat == "max_jokers":
+                g["max_jokers"] = g.get("max_jokers", 5) + amount
+            else:
+                g[stat] = g.get(stat, 7 if stat == "max_hand_size" else 3) + amount
+            if stat == "max_hand_size" and g.get("deck"):
+                g["hand"].append(g["deck"][0])
+                g["deck"] = g["deck"][1:]
+
+        elif itype == "skill_card":
+            pos = item.get("pos")
+            if pos:
+                g["skill_levels"][pos] = g["skill_levels"].get(pos, 0) + 1
+
+        elif itype == "combo_card":
+            ht = item["hand_type"]
+            g["combo_boosts"][ht] = round(g["combo_boosts"].get(ht, 0) + item["boost"], 2)
+
+        elif itype == "effect_card":
+            if not target_card_id:
+                return None, "Target card required"
+            effect = item["effect"]
+            g["card_effects"].setdefault(target_card_id, [])
+            if effect not in g["card_effects"][target_card_id]:
+                g["card_effects"][target_card_id].append(effect)
+
+        elif itype == "year_card":
+            if not target_card_id or not target_year or not conn:
+                return None, "Target and year required"
+            target_card = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
+            if not target_card:
+                return None, "Target card not found"
+            rows = conn.execute(
+                "SELECT season, team, fantasy_score FROM nba_stats WHERE player = ? AND season = ? AND pos = ? LIMIT 1",
+                (target_card["player"], int(target_year), target_card["pos"])
+            ).fetchall()
+            if rows:
+                r = rows[0]
+                target_card["season"] = r[0]
+                target_card["team"] = r[1]
+                target_card["fantasy_pts"] = round(r[2] / 10, 1)
+                for hc in g["hand"]:
+                    if hc["id"] == target_card_id:
+                        hc["season"] = r[0]
+                        hc["team"] = r[1]
+                        hc["fantasy_pts"] = round(r[2] / 10, 1)
+
+        elif itype == "cut_card":
+            if not target_card_id:
+                return None, "Target card required"
+            g["deck_pool"] = [c for c in g["deck_pool"] if c["id"] != target_card_id]
+            g["hand"] = [c for c in g["hand"] if c["id"] != target_card_id]
+            g["deck"] = [c for c in g["deck"] if c["id"] != target_card_id]
+            g["card_effects"].pop(target_card_id, None)
+
+        elif itype == "mod_card":
+            if not target_card_id:
+                return None, "Target card required"
+            effect = item.get("effect", "")
+            if effect == "duplicate":
+                import copy as _copy
+                target = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
+                if target:
+                    dup = _copy.deepcopy(target)
+                    dup["id"] = target["id"] + "_dup" + str(len(g["deck_pool"]))
+                    g["deck_pool"].append(dup)
+            elif effect == "trained":
+                g["card_effects"].setdefault(target_card_id, [])
+                if "trained" not in g["card_effects"][target_card_id]:
+                    g["card_effects"][target_card_id].append("trained")
+            elif effect == "pos_switch":
+                switch_map = {"G": "F", "F": "C", "C": "F"}
+                target = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
+                if target:
+                    new_pos = switch_map.get(target["pos"], target["pos"])
+                    target["pos"] = new_pos
+                    for hc in g["hand"]:
+                        if hc["id"] == target_card_id:
+                            hc["pos"] = new_pos
+
+    # Remove from held_items
+    g["held_items"] = [i for i in g["held_items"] if i.get("held_id") != held_id]
+
+    return {
+        "held_items": g["held_items"],
+        "hand": g["hand"],
+        "skill_levels": g["skill_levels"],
+        "combo_boosts": g["combo_boosts"],
+        "card_effects": g["card_effects"],
+        "max_hand_size": g.get("max_hand_size", 6),
+        "base_discards": g.get("base_discards", 3),
+        "max_jokers": g.get("max_jokers", 5),
+        "deck_pool": g["deck_pool"],
     }, None
 
 
@@ -1558,12 +1663,15 @@ def leave_shop(gid):
             "combo_boosts": g["combo_boosts"],
             "card_effects": g["card_effects"],
             "status": "playing",
-            "max_hand_size": g.get("max_hand_size", 7),
+            "max_hand_size": g.get("max_hand_size", 6),
             "base_discards": g.get("base_discards", 3),
             "max_jokers": g.get("max_jokers", 5),
             "joker_state": g.get("joker_state", {}),
             "joker_enhancements": g.get("joker_enhancements", {}),
-            "held_cards": g.get("held_cards", []),
+            "held_items": g.get("held_items", []),
+            "deck_cards": g["deck"],
+            "fight_discards": g.get("fight_discards", []),
+            "fight_played": g.get("fight_played", []),
         }, None
 
     # Legacy fallback
@@ -1610,12 +1718,15 @@ def leave_shop(gid):
         "combo_boosts": g["combo_boosts"],
         "card_effects": g["card_effects"],
         "status": "playing",
-        "max_hand_size": g.get("max_hand_size", 7),
+        "max_hand_size": g.get("max_hand_size", 6),
         "base_discards": g.get("base_discards", 3),
         "max_jokers": g.get("max_jokers", 5),
         "joker_state": g.get("joker_state", {}),
         "joker_enhancements": g.get("joker_enhancements", {}),
-        "held_cards": g.get("held_cards", []),
+        "held_items": g.get("held_items", []),
+        "deck_cards": g["deck"],
+        "fight_discards": g.get("fight_discards", []),
+        "fight_played": g.get("fight_played", []),
     }, None
 
 
@@ -1665,9 +1776,10 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
 
     base_q = """
         SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-               nd.draft_pick, nd.college
+               nd.draft_pick, nd.college, na.selections
         FROM nba_stats ns
         LEFT JOIN nba_draft nd ON ns.player = nd.player
+        LEFT JOIN nba_allstars na ON ns.player = na.player
         WHERE ns.pos IN ('G','F','C')
     """
 
@@ -1686,6 +1798,8 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
         rows = conn.execute(base_q + f" AND ns.fantasy_score >= 1200 ORDER BY RANDOM() LIMIT {fetch_limit}").fetchall()
     elif pack_id == "all_star_pack":
         rows = conn.execute(base_q + f" AND ns.fantasy_score >= 1500 ORDER BY RANDOM() LIMIT {fetch_limit}").fetchall()
+    elif pack_id == "allstar_draft_pack":
+        rows = conn.execute(base_q + f" AND na.selections >= 1 AND ns.fantasy_score >= 800 ORDER BY na.selections DESC, RANDOM() LIMIT {fetch_limit}").fetchall()
     elif pack_id == "legend_pack":
         rows = conn.execute(base_q + f" AND ns.fantasy_score >= 3500 ORDER BY RANDOM() LIMIT {fetch_limit}").fetchall()
     elif pack_id == "dynasty_pack":
@@ -1719,6 +1833,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
             "draft_pick": r[5],
             "college": college,
             "undrafted": r[5] is None,
+            "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
         }
         cards.append(card)

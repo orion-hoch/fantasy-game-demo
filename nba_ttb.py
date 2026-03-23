@@ -263,6 +263,17 @@ def _build_hints(conn, player, pos):
         except Exception:
             pass
 
+    allstar = conn.execute(
+        "SELECT selections FROM nba_allstars WHERE player = ? LIMIT 1", (player,)
+    ).fetchone()
+    if allstar and allstar[0]:
+        count = int(allstar[0])
+        sfx_word = "time" if count == 1 else "times"
+        hints.append({"icon": "⭐", "label": "All-Star", "text": f"Named an NBA All-Star {count} {sfx_word}"})
+    else:
+        hints.append({"icon": "📊", "label": "Career Stat", "text": stat_text or "Stat data unavailable"})
+        return hints
+
     hints.append({"icon": "📊", "label": "Career Stat", "text": stat_text or "Stat data unavailable"})
     return hints
 

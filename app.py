@@ -682,6 +682,9 @@ def nfl_balatro_start():
         "max_jokers": state.get("max_jokers", 5),
         "joker_state": state.get("joker_state", {}),
         "held_cards": state.get("held_cards", []),
+        "deck_cards": state.get("deck", []),
+        "fight_discards": state.get("fight_discards", []),
+        "fight_played": state.get("fight_played", []),
     })
 
 
@@ -861,8 +864,20 @@ def nfl_balatro_confirm_pack_picks():
 def nfl_balatro_advance_fight():
     data = request.get_json(force=True) or {}
     gid = data.get("game_id", "")
+    result, err = nb.advance_fight(gid)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nfl_balatro/claim_reward", methods=["POST"])
+def nfl_balatro_claim_reward():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    choice = data.get("choice", "")
+    joker_id = data.get("joker_id", None)
     conn = get_db()
-    result, err = nb.advance_fight(gid, conn)
+    result, err = nb.claim_fight_reward(gid, choice, joker_id, conn)
     conn.close()
     if err:
         return jsonify({"error": err}), 400
@@ -903,8 +918,11 @@ def nba_balatro_start():
         "base_discards": state.get("base_discards", 3),
         "max_jokers": state.get("max_jokers", 5),
         "joker_state": state.get("joker_state", {}),
-        "held_cards": state.get("held_cards", []),
+        "held_items": state.get("held_items", []),
         "deck_pool": state.get("deck_pool", []),
+        "deck_cards": state.get("deck", []),
+        "fight_discards": state.get("fight_discards", []),
+        "fight_played": state.get("fight_played", []),
     })
 
 
@@ -982,6 +1000,22 @@ def nba_balatro_buy_item():
     target_year = data.get("target_year", None)
     conn = get_db()
     result, err = nba_b.buy_shop_item(gid, item_type, shop_id, target_card_id=target_card_id, target_year=target_year, conn=conn)
+    conn.close()
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/use_held_item", methods=["POST"])
+def nba_balatro_use_held_item():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    held_id = data.get("held_id", "")
+    target_card_id = data.get("target_card_id")
+    target_year = data.get("target_year")
+    discard_only = data.get("discard_only", False)
+    conn = get_db()
+    result, err = nba_b.use_held_item(gid, held_id, target_card_id, target_year, conn, discard_only)
     conn.close()
     if err:
         return jsonify({"error": err}), 400
@@ -1067,9 +1101,7 @@ def nba_balatro_confirm_pack_picks():
     data = request.get_json(force=True) or {}
     gid = data.get("game_id", "")
     selected_ids = data.get("selected_ids", [])
-    conn = get_db()
-    result, err = nba_b.confirm_pack_picks(gid, selected_ids, conn)
-    conn.close()
+    result, err = nba_b.confirm_pack_picks(gid, selected_ids)
     if err:
         return jsonify({"error": err}), 400
     return jsonify(result)
@@ -1079,8 +1111,20 @@ def nba_balatro_confirm_pack_picks():
 def nba_balatro_advance_fight():
     data = request.get_json(force=True) or {}
     gid = data.get("game_id", "")
+    result, err = nba_b.advance_fight(gid)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+
+@app.route("/api/nba_balatro/claim_reward", methods=["POST"])
+def nba_balatro_claim_reward():
+    data = request.get_json(force=True) or {}
+    gid = data.get("game_id", "")
+    choice = data.get("choice", "")
+    joker_id = data.get("joker_id", None)
     conn = get_db()
-    result, err = nba_b.advance_fight(gid, conn)
+    result, err = nba_b.claim_fight_reward(gid, choice, joker_id, conn)
     conn.close()
     if err:
         return jsonify({"error": err}), 400

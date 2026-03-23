@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Fantasy Sports Trivia</title>
+    <title>Fantasy Sports Trivia By Orion</title>
     <link rel="stylesheet" href="/static/style.css">
     <style>
         /* ── Tab bar ──────────────────────────────────────────────── */
@@ -44,7 +44,7 @@
         .tab-panel.active { display: block; }
 
         /* ── Game list ────────────────────────────────────────────── */
-        .game-list { display: flex; flex-direction: column; gap: 8px; }
+        .game-list { display: flex; flex-direction: column; gap: 16px; }
 
         .q-btn {
             display: flex !important;
@@ -65,7 +65,7 @@
         }
 
         .q-btn-accent {
-            width: 6px;
+            width: 8px;
             flex-shrink: 0;
         }
         .accent-yellow { background: var(--yellow); }
@@ -74,27 +74,27 @@
         .q-card-body {
             display: flex;
             flex-direction: column;
-            gap: 4px;
-            padding: 14px 18px;
+            gap: 6px;
+            padding: 20px 22px;
             flex: 1;
         }
 
         .q-btn strong {
             display: block;
             font-family: 'Bebas Neue', Impact, sans-serif;
-            font-size: 1.1rem;
+            font-size: 1.45rem;
             font-weight: 900;
             letter-spacing: 3px;
             text-transform: uppercase;
             line-height: 1;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
         .accent-yellow ~ .q-card-body strong { color: var(--yellow); }
         .accent-red    ~ .q-card-body strong { color: var(--red-bright); }
 
         .q-btn small {
             font-family: 'Barlow Condensed', Arial, sans-serif;
-            font-size: 0.84rem;
+            font-size: 1rem;
             line-height: 1.4;
             font-weight: 400;
             color: var(--text-dim);
@@ -172,6 +172,18 @@
             line-height: 1.5;
         }
 
+        /* ── Tab banner ───────────────────────────────────────────── */
+        .tab-banner {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            margin-bottom: 16px;
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--border);
+        }
+
         /* ── Mobile ───────────────────────────────────────────────── */
         @media (max-width: 600px) {
             #tab-bar { padding: 12px 14px 0; }
@@ -185,7 +197,7 @@
 <div id="app">
     <header>
         <div class="header-inner">
-            <h1>Fantasy Sports Trivia</h1>
+            <h1>Fantasy Sports Trivia <span style="font-size: 0.55em; font-weight: 400; opacity: 0.75;">by Orion</span></h1>
         </div>
     </header>
 
@@ -220,6 +232,7 @@
 
     <!-- ── NFL ────────────────────────────────────────────────── -->
     <div id="tab-nfl" class="tab-panel">
+        <img src="/static/img/football_logo.jpg" alt="NFL" class="tab-banner">
         <div class="game-list">
             <a href="/chain" class="q-btn">
                 <div class="q-btn-accent accent-yellow"></div>
@@ -238,7 +251,7 @@
             <a href="/starting6" class="q-btn">
                 <div class="q-btn-accent accent-yellow"></div>
                 <div class="q-card-body">
-                    <strong>Starting 6 — 2 Player Draft</strong>
+                    <strong>Fantasy Duel</strong>
                     <small>Draw a random team each round and draft your best lineup vs a friend</small>
                 </div>
             </a>
@@ -252,7 +265,7 @@
             <a href="/nfl_balatro" class="q-btn">
                 <div class="q-btn-accent accent-yellow"></div>
                 <div class="q-card-body">
-                    <strong>NFL Balatro: Skill Position Edition</strong>
+                    <strong>Balatro</strong>
                     <small>Roguelike card game — draft player-season cards, build combos, beat 8 rounds to win the Super Bowl</small>
                 </div>
             </a>
@@ -261,39 +274,40 @@
 
     <!-- ── NBA ────────────────────────────────────────────────── -->
     <div id="tab-nba" class="tab-panel">
+        <img src="/static/img/basketball_logo.jpg" alt="NBA" class="tab-banner">
         <div class="game-list">
             <a href="/nba_chain" class="q-btn">
                 <div class="q-btn-accent accent-yellow"></div>
                 <div class="q-card-body">
-                    <strong>NBA Chain Game</strong>
+                    <strong>Chain Game</strong>
                     <small>Build a chain of NBA clues — name players that fit every link</small>
                 </div>
             </a>
             <a href="/nba_ttb" class="q-btn">
                 <div class="q-btn-accent accent-red"></div>
                 <div class="q-card-body">
-                    <strong>NBA Time Bomb</strong>
+                    <strong>Ticking Time Bomb</strong>
                     <small>5 clues, 5 guesses — identify the mystery NBA player before the bomb explodes</small>
                 </div>
             </a>
             <a href="/nba_starting5" class="q-btn">
                 <div class="q-btn-accent accent-yellow"></div>
                 <div class="q-card-body">
-                    <strong>Starting 5 — NBA Draft</strong>
+                    <strong>Fantasy Duel</strong>
                     <small>Draw a random NBA team each round and draft your best lineup vs a friend</small>
                 </div>
             </a>
             <a href="/nba_dungeon_adventure" class="q-btn">
                 <div class="q-btn-accent accent-red"></div>
                 <div class="q-card-body">
-                    <strong>NBA Dungeon Adventure</strong>
+                    <strong>Dungeon Adventure</strong>
                     <small>Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 NBA dungeon floors</small>
                 </div>
             </a>
             <a href="/nba_balatro" class="q-btn">
                 <div class="q-btn-accent accent-yellow"></div>
                 <div class="q-card-body">
-                    <strong>NBA Balatro</strong>
+                    <strong>Balatro</strong>
                     <small>Draft hands of NBA player-season cards — build combos and beat the shot clock!</small>
                 </div>
             </a>

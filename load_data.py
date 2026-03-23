@@ -622,6 +622,68 @@ def load_nba_stats(base_dir, db_path="fantasy.db"):
     conn.close()
 
 
+def load_nba_allstars(db_path="fantasy.db", csv_path="NBA_AllStars.csv"):
+    """Parse NBA_AllStars.csv and load into the nba_allstars table."""
+    import re
+    import unicodedata
+
+    # Known nickname / CSV-vs-DB name mismatches
+    _NAME_FIXES = {
+        "Penny Hardaway":         "Anfernee Hardaway",
+        "Nate Archibald":         "Tiny Archibald",
+        "Micheal Ray Richardson": "Michael Ray Richardson",
+        "Žydrūnas Ilgauskas":     "Zydrunas Ilgauskas",
+    }
+
+    conn = sqlite3.connect(db_path)
+    try:
+        df = pd.read_csv(csv_path, encoding="utf-8")
+    except Exception as e:
+        print(f"WARNING: Could not read {csv_path}: {e}")
+        conn.close()
+        return
+
+    # Get all player names actually in nba_stats for validation
+    stats_names = set(
+        r[0] for r in conn.execute("SELECT DISTINCT player FROM nba_stats").fetchall()
+    )
+
+    def clean_name(name):
+        if not isinstance(name, str):
+            return name
+        # Strip footnote markers, HOF/active/deceased/banned symbols
+        name = re.sub(r'\[[a-z]\]', '', name)
+        name = name.replace('*', '').replace('^', '').replace('†', '').replace('§', '')
+        name = name.strip()
+        # Apply known fixes first
+        if name in _NAME_FIXES:
+            return _NAME_FIXES[name]
+        # If still not in stats, try stripping accents
+        if name not in stats_names:
+            stripped = ''.join(
+                c for c in unicodedata.normalize('NFD', name)
+                if unicodedata.category(c) != 'Mn'
+            )
+            if stripped in stats_names:
+                return stripped
+        return name
+
+    df['player'] = df['Player'].apply(clean_name)
+    df['selections'] = pd.to_numeric(df['#'], errors='coerce').astype('Int64')
+    df = df[df['player'].notna() & df['selections'].notna()]
+    df = df[['player', 'selections']].drop_duplicates(subset=['player'])
+
+    df.to_sql("nba_allstars", conn, if_exists="replace", index=False)
+
+    # Report how many matched stats
+    matched = conn.execute(
+        "SELECT COUNT(DISTINCT na.player) FROM nba_allstars na "
+        "JOIN nba_stats ns ON na.player = ns.player"
+    ).fetchone()[0]
+    print(f"nba_allstars: {len(df)} rows loaded, {matched} matched to nba_stats.")
+    conn.close()
+
+
 def build_db(folders, db_path="fantasy.db"):
     conn = sqlite3.connect(db_path)
     all_dfs = []

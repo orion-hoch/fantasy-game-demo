@@ -220,6 +220,19 @@ def _players_ast_season(conn, value):
     )
 
 
+def _pick_allstar_count(conn, current_players=None):
+    return str(random.choice([1, 3, 5, 10]))
+
+
+def _players_allstar_count(conn, value):
+    threshold = int(value)
+    return _query_set(
+        conn,
+        "SELECT player FROM nba_allstars WHERE selections >= ?",
+        (threshold,),
+    )
+
+
 def _pick_teammate(conn, current_players=None):
     if not current_players:
         return None
@@ -336,6 +349,13 @@ CATEGORIES = [
         "pick": _pick_teammate,
         "players": _players_teammate,
         "is_teammate": True,
+    },
+    {
+        "id": "allstar_count",
+        "label": "Made {value}+ NBA All-Star appearances",
+        "pick": _pick_allstar_count,
+        "players": _players_allstar_count,
+        "is_teammate": False,
     },
 ]
 

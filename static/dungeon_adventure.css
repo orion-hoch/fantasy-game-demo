@@ -32,6 +32,14 @@
     line-height: 1;
 }
 
+.dungeon-header .subhead {
+    color: var(--text-dim);
+}
+
+.dungeon-header .eyebrow {
+    color: var(--text-dim);
+}
+
 /* ── Typography helpers ──────────────────────────────────────────────────── */
 
 .eyebrow,
