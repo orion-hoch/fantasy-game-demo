@@ -1,6 +1,9 @@
 (function () {
   'use strict';
 
+  // NBA seasons are stored by start year (2023 = 2023-24). Display as end year.
+  function nbaYear(s) { return s + 1; }
+
   // ── NBA Division lookup ─────────────────────────────────────────────
   const NBA_DIV = {
     BOS:'Atlantic',BRK:'Atlantic',BKN:'Atlantic',NYK:'Atlantic',PHI:'Atlantic',TOR:'Atlantic',NJN:'Atlantic',
@@ -657,7 +660,7 @@
         btn.innerHTML =
           '<div class="sticker-card-pos">' + card.pos + '</div>' +
           '<div class="sticker-card-name">' + card.player + '</div>' +
-          '<div class="sticker-card-meta">' + card.team + ' \u00b7 ' + card.season + '</div>' +
+          '<div class="sticker-card-meta">' + card.team + ' \u00b7 ' + nbaYear(card.season) + '</div>' +
           (divInfo ? '<div class="card-div-badge ' + divInfo.cls + '">' + divInfo.label + '</div>' : '');
         btn.addEventListener('click', function() {
           pendingDivSticker.cardId = card.id;
@@ -861,7 +864,7 @@
         '<span class="card-back-team">' + escHtml(card.team || '') + '</span>' +
       '</div>' +
       '<div class="card-back-name">' + escHtml(card.player) + '</div>' +
-      '<div class="card-back-season">' + card.season + '</div>' +
+      '<div class="card-back-season">' + nbaYear(card.season) + '</div>' +
       '<div class="card-back-college">' + escHtml((card.college && card.college !== 'Unknown') ? card.college : 'Undrafted') + '</div>' +
       draftHtml +
       '<div class="card-back-stats">' + (stats.games ? stats.games + ' games' : '') + '</div>' +
@@ -1072,7 +1075,7 @@
             '<div class="held-card-pos">' + item.pos + '</div>' +
             '<div class="held-card-name">' + item.player.split(' ').pop() + '</div>' +
             '<div class="held-card-pts">' + Math.round(item.fantasy_pts) + '</div>';
-          slot.title = item.player + " '" + String(item.season).slice(-2) + ' \u2014 Click to use';
+          slot.title = item.player + " '" + String(nbaYear(item.season)).slice(-2) + ' \u2014 Click to use';
         } else {
           var icon = getConsumableIcon(item.item_type, item.effect);
           slot.className = 'held-slot filled held-consumable';
@@ -1142,7 +1145,7 @@
       (labelTag ? '<div class="dci-tag ' + labelTag.cls + '">' + labelTag.text + '</div>' : '') +
       '<div class="dci-pos">' + card.pos + '</div>' +
       '<div class="dci-name">' + card.player + '</div>' +
-      '<div class="dci-season">\'' + String(card.season).slice(-2) + ' · ' + (card.team || '') + '</div>' +
+      '<div class="dci-season">\'' + String(nbaYear(card.season)).slice(-2) + ' · ' + (card.team || '') + '</div>' +
       '<div class="dci-pts">' + Math.round(card.fantasy_pts) + ' FP</div>' +
       (divInfo ? '<div class="card-div-badge ' + divInfo.cls + '">' + divInfo.label + '</div>' : '');
     return el;
@@ -1293,7 +1296,7 @@
     var icon = isCard ? '' : getConsumableIcon(item.item_type, item.effect);
     var useBtnText = isCard ? 'ADD TO HAND' : 'USE';
     var descText = isCard
-      ? (item.player + " '" + String(item.season).slice(-2) + ' \xB7 ' + item.pos + ' \xB7 ' + item.fantasy_pts + ' FP')
+      ? (item.player + " '" + String(nbaYear(item.season)).slice(-2) + ' \xB7 ' + item.pos + ' \xB7 ' + item.fantasy_pts + ' FP')
       : item.desc;
     popup.innerHTML =
       '<div class="held-popup-header">' +
@@ -1415,7 +1418,7 @@
         (data.seasons || []).forEach(function(s) {
           var btn = document.createElement('button');
           btn.className = 'btn-secondary year-option-btn';
-          btn.textContent = s.season + ' \xB7 ' + s.team + ' \xB7 ' + s.fantasy_pts + ' FP';
+          btn.textContent = nbaYear(s.season) + ' \xB7 ' + s.team + ' \xB7 ' + s.fantasy_pts + ' FP';
           btn.addEventListener('click', function() {
             closeYearModalForHeld();
             doUseHeldItemApi(item.held_id, card.id, s.season, false);
@@ -1464,7 +1467,7 @@
     var header = document.createElement('div');
     header.className = 'shop-section-header';
     header.style.cssText = 'margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.12);';
-    header.innerHTML = '<span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span><span style="font-size:0.6rem;color:var(--nb-dim);margin-left:auto;font-family:Arial,sans-serif;">hover to sell</span>';
+    header.innerHTML = '<span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span><span style="font-size:0.6rem;color:var(--nb-dim);margin-left:auto;font-family:Arial,sans-serif;">click SELL to sell</span>';
     els.shopJokersSect.appendChild(header);
 
     var row = document.createElement('div');
@@ -1516,17 +1519,38 @@
     }
 
     // Sell button - available in shopping and playing
+    var sellPrice = ({common: 2, uncommon: 3, rare: 4})[j.rarity] || 2;
+    var jokerId = j.id;
+
     var sellBtn = document.createElement('button');
     sellBtn.className = 'joker-sell-btn';
     sellBtn.textContent = 'SELL';
-    var jokerId = j.id;
     sellBtn.addEventListener('click', function (e) {
       e.stopPropagation();
-      if (confirm('Sell ' + j.name + '?')) {
-        sellJoker(jokerId);
-      }
+      slot.classList.add('sell-confirming');
     });
     slot.appendChild(sellBtn);
+
+    var confirmOverlay = document.createElement('div');
+    confirmOverlay.className = 'joker-sell-confirm';
+    var cancelBtn = document.createElement('button');
+    cancelBtn.className = 'joker-sell-cancel';
+    cancelBtn.textContent = '✕';
+    cancelBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      slot.classList.remove('sell-confirming');
+    });
+    var okBtn = document.createElement('button');
+    okBtn.className = 'joker-sell-ok';
+    okBtn.textContent = '$' + sellPrice;
+    okBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      slot.classList.remove('sell-confirming');
+      sellJoker(jokerId);
+    });
+    confirmOverlay.appendChild(cancelBtn);
+    confirmOverlay.appendChild(okBtn);
+    slot.appendChild(confirmOverlay);
   }
 
   function renderHand() {
@@ -1661,7 +1685,7 @@
     // Season
     var season = document.createElement('div');
     season.className = 'card-season';
-    season.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
+    season.textContent = card.season ? "'" + String(nbaYear(card.season)).slice(-2) : '';
     front.appendChild(season);
 
     // Division badge (with sticker overlay if applied)
@@ -2001,7 +2025,7 @@
     var iconArea = document.createElement('div');
     iconArea.className = 'shop-item-icon-area';
     if (isPack) {
-      iconArea.style.background = 'linear-gradient(135deg, #1a0a2e, #2e1a00)';
+      iconArea.style.background = 'linear-gradient(135deg, #1a0a2e, #0a1a3e)';
     } else {
       var pos = item.card_data ? item.card_data.pos : null;
       var bg = pos ? (POS_BG[pos] || ITEM_BG[item.type] || '#1a1a3e') : (ITEM_BG[item.type] || '#1a1a3e');
@@ -2262,7 +2286,7 @@
       var opt = document.createElement('div');
       opt.className = 'year-option' + (s.season === currentSeason ? ' current' : '');
       opt.innerHTML =
-        '<span class="year-num">' + s.season + '</span>' +
+        '<span class="year-num">' + nbaYear(s.season) + '</span>' +
         '<span class="year-team">' + escHtml(s.team || '') + '</span>' +
         '<span class="year-ppr">' + s.fantasy_pts + ' FPT</span>';
       (function (season) {

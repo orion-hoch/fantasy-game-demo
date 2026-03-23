@@ -235,7 +235,7 @@ async function selectName(name) {
 
     const sel = document.getElementById("pick-year-select");
     sel.innerHTML = `<option value="">— select a season —</option>` +
-        data.years.map(y => `<option value="${y}">${y}</option>`).join("");
+        data.years.map(y => `<option value="${y}">${y + 1}</option>`).join("");
     document.getElementById("confirm-year-btn").disabled = true;
     setStep("year");
 }
@@ -343,7 +343,7 @@ function renderRosters() {
                                 <span class="slot-player">${pick.player}</span>
                                 <span class="slot-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(0)}${gotBonus ? " ★" : ""}</span>
                             </div>
-                            <span class="slot-meta">${pick.season} · ${pick.team}</span>
+                            <span class="slot-meta">${pick.season + 1} · ${pick.team}</span>
                         </div>
                     </div>`;
             }
@@ -403,7 +403,7 @@ function showResults() {
                         <div class="result-slot${gotBonus ? " bonus-slot" : ""}">
                             <span class="slot-label">${s.label}</span>
                             ${pick
-                                ? `<span class="result-player">${pick.player} <small>${pick.season} · ${pick.team}</small></span>
+                                ? `<span class="result-player">${pick.player} <small>${pick.season + 1} · ${pick.team}</small></span>
                                    <span class="result-ppr">${(pick.ppr * (pick.bonusMultiplier || 1)).toFixed(0)}${gotBonus ? " ★" : ""}</span>`
                                 : `<span class="result-empty">—</span><span></span>`
                             }
