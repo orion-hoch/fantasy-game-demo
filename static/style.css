@@ -85,6 +85,22 @@ header h1 {
     gap: 16px;
 }
 
+/* ── Mute button ─────────────────────────────────────────────────────────── */
+.sfx-mute-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 2px solid var(--border-dim);
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    line-height: 1;
+    transition: border-color 0.12s, color 0.12s;
+    flex-shrink: 0;
+}
+.sfx-mute-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
 /* ── Back / nav links ────────────────────────────────────────────────────── */
 
 .back-link {

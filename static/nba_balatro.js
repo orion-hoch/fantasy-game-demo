@@ -156,12 +156,14 @@
       var start = parseFloat(el.textContent.replace(/,/g, '')) || 0;
       var startTime = null;
       var isInt = Number.isInteger(target);
+      var lastTickTime = 0;
       function step(ts) {
         if (!startTime) startTime = ts;
         var prog = Math.min((ts - startTime) / duration, 1);
         var eased = 1 - Math.pow(1 - prog, 3);
         var val = start + (target - start) * eased;
         el.textContent = isInt ? Math.round(val).toLocaleString() : val.toFixed(1);
+        if (window.SFX && ts - lastTickTime > 80) { SFX.play('score_tick'); lastTickTime = ts; }
         if (prog < 1) { requestAnimationFrame(step); }
         else {
           el.textContent = isInt ? target.toLocaleString() : target.toFixed(1);
@@ -370,6 +372,7 @@
 
   function playHand() {
     if (gs.selectedIds.size === 0) return;
+    if (window.SFX) SFX.play('card_play');
     var ids = Array.from(gs.selectedIds);
     var oldHandIds = new Set(gs.hand.map(function(c) { return c.id; }));
     els.playBtn.disabled = true;
@@ -443,6 +446,7 @@
 
   function discardCards() {
     if (gs.selectedIds.size === 0) return;
+    if (window.SFX) SFX.play('discard');
     var ids = Array.from(gs.selectedIds);
     var oldHandIds = new Set(gs.hand.map(function(c) { return c.id; }));
     els.discardBtn.disabled = true;
@@ -544,6 +548,7 @@
   }
 
   function claimRewardCoins() {
+    if (window.SFX) SFX.play('buy');
     apiPost('/api/nba_balatro/claim_reward', { game_id: gameId, choice: 'coins' }).then(function (data) {
       if (data.error) { alert(data.error); return; }
       _applyShoppingData(data);
@@ -713,6 +718,7 @@
     }
     apiPost('/api/nba_balatro/buy_item', payload).then(function (data) {
       if (data.error) { alert(data.error); return; }
+      if (window.SFX) SFX.play('buy');
       gs.coins = data.coins !== undefined ? data.coins : gs.coins;
       gs.shopItems = data.shop_items || [];
       gs.jokers = data.jokers || gs.jokers;
@@ -1827,6 +1833,7 @@
   }
 
   function showFightRewardScreen(data) {
+    if (window.SFX) SFX.play('reward');
     var isBossWin = (gs.fight === 3);
     var titleEl = document.getElementById('reward-title');
     if (titleEl) titleEl.textContent = isBossWin ? 'ROUND COMPLETE!' : 'FIGHT COMPLETE!';
@@ -2384,6 +2391,7 @@
 
   // ── Game Over Screen ───────────────────────────────────────────────
   function showGameOver(won, data) {
+    if (window.SFX) SFX.play(won ? 'win' : 'lose');
     showScreen('gameover');
     var html = '';
     if (won) {

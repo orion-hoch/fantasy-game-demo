@@ -621,6 +621,7 @@
   }
 
   function endRun(message) {
+    if (window.SFX) SFX.play('lose');
     state.gameOver   = true;
     state.question   = null;
     els.battleMessage.textContent = message;
@@ -631,6 +632,7 @@
   // ── Victory / progression ─────────────────────────────────────────────────
 
   async function handleVictory() {
+    if (window.SFX) SFX.play('level_up');
     state.kills += 1;
     state.hp = Math.min(state.maxHp, state.hp + state.healPerKill);
     addLog("The " + state.enemy.name + " falls. You recover " + state.healPerKill + " HP.");
@@ -649,6 +651,7 @@
   }
 
   async function handleBossPhaseBreak() {
+    if (window.SFX) SFX.play('win');
     if (state.bossPhase >= state.enemy.phaseGoal) {
       await handleVictory();
       return;
@@ -687,6 +690,7 @@
         } else {
           // Valid hit
           if (state.infiniteMode) { state.usedPlayerNames.add(result.player); }
+          if (window.SFX) SFX.play('dungeon_hit');
           var damage = totalAttack();
           state.enemy.hp = Math.max(0, state.enemy.hp - damage);
           els.battleMessage.textContent = result.player + " fits every rule. You deal " + damage + " damage.";
@@ -700,6 +704,7 @@
           await refreshQuestion();
         }
       } else {
+        if (window.SFX) SFX.play('dungeon_dmg');
         state.hp -= state.enemy.damage;
         if (result.question_match && result.filter_failures.length) {
           els.battleMessage.textContent = result.player + " fits the prompt but breaks: " + result.filter_failures.join(", ") + ". You take " + state.enemy.damage + ".";

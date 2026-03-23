@@ -276,6 +276,7 @@ async function confirmYear() {
 
     const slot = SLOTS.find(s => s.pos === data.pos && !roster[s.key])
         || SLOTS.find(s => s.pos === "UTIL" && !roster[s.key]);
+    if (window.SFX) SFX.play('draft_pick');
     roster[slot.key] = data;
     state.pickedPlayers.add(data.player);
 
@@ -296,6 +297,7 @@ function backToName() {
 // ── Turn management ────────────────────────────────────────────────────────
 
 function passTurn() {
+    if (window.SFX) SFX.play('click');
     state.skipsUsed[state.currentPlayer]++;
     state.bonus = randomBonus();
     renderRosters();
@@ -362,6 +364,7 @@ function renderRosters() {
 // ── Results ────────────────────────────────────────────────────────────────
 
 function showResults() {
+    if (window.SFX) SFX.play('confetti');
     document.getElementById("game-panel").classList.add("hidden");
     document.getElementById("results-panel").classList.remove("hidden");
 

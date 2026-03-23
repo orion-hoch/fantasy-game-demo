@@ -56,6 +56,7 @@
     }
 
     function flashWrong(name) {
+        if (window.SFX) SFX.play('wrong');
         clearTimeout(flashTimer);
         bombInner.classList.add("flash-wrong");
         setBombDisplay(name, "WRONG");
@@ -67,6 +68,7 @@
     }
 
     function flashSkip() {
+        if (window.SFX) SFX.play('click');
         clearTimeout(flashTimer);
         bombInner.classList.add("flash-skip");
         setBombDisplay("SKIP", "");
@@ -78,6 +80,7 @@
     }
 
     function triggerExplosion() {
+        if (window.SFX) SFX.play('explosion');
         clearTimeout(flashTimer);
         bombBody.className = "exploded";
         setBombDisplay("BOOM", "");
@@ -88,6 +91,7 @@
     }
 
     function triggerDefuse() {
+        if (window.SFX) SFX.play('defuse');
         clearTimeout(flashTimer);
         bombBody.className = "defused";
         setBombDisplay("WIN", "defused!");
@@ -151,6 +155,7 @@
     };
 
     function unlockNextHint() {
+        if (window.SFX) SFX.play('hint');
         if (hintsRevealed < allHints.length) {
             hintsRevealed++;
             renderHintsPanel();

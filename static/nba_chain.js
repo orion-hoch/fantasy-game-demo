@@ -340,6 +340,7 @@
 
     function handleGuessResult(playerName, data) {
         if (data.correct) {
+            if (window.SFX) SFX.play('correct');
             usedPlayers.add(playerName);
             const pts = data.chain_length;
             setScore(score + pts);
@@ -407,6 +408,7 @@
                 html += "<div class=\"examples\">Valid answers included: <strong>" +
                     data.examples.map(escapeHtml).join(", ") + "</strong></div>";
             }
+            if (window.SFX) SFX.play('wrong');
             showFeedback("wrong", html);
             gameActive = false;
 

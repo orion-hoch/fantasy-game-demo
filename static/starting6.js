@@ -277,6 +277,7 @@ async function confirmYear() {
 
     const slot = SLOTS.find(s => s.pos === data.pos && !roster[s.key])
         || SLOTS.find(s => s.pos === "UTIL" && !roster[s.key]);
+    if (window.SFX) SFX.play('draft_pick');
     roster[slot.key] = data;
     state.pickedPlayers.add(data.player);
 
@@ -297,6 +298,7 @@ function backToName() {
 // ── Turn management ────────────────────────────────────────────────────────
 
 function passTurn() {
+    if (window.SFX) SFX.play('click');
     state.skipsUsed[state.currentPlayer]++;
     state.bonus = randomBonus();
     renderRosters();
@@ -366,6 +368,7 @@ let confettiRAF = null;
 const CONFETTI_COLORS = ["#e8b820","#ff3c3c","#18a894","#ffffff","#a855f7","#3b82f6","#f97316"];
 
 function startConfetti() {
+    if (window.SFX) SFX.play('confetti');
     const canvas = document.getElementById("confetti-canvas");
     const ctx = canvas.getContext("2d");
 
