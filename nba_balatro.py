@@ -294,7 +294,7 @@ def _build_deck_pool(conn):
     for pos, count in exact_counts.items():
         rows = conn.execute("""
             SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-                   nd.draft_pick, nd.college, na.selections, pi.nba_id, pi.bbref_id
+                   nd.draft_pick, nd.college, na.selections, pi.bbref_id
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
             LEFT JOIN nba_allstars na ON ns.player = na.player
@@ -318,8 +318,7 @@ def _build_deck_pool(conn):
         card_id = f"{r[0]}_{r[1]}_{r[2]}_{i}"
         draft_pick = r[5]
         college = r[6] if r[6] else ("No college" if draft_pick is not None else None)
-        nba_id = r[8]
-        bbref_id = r[9] if len(r) > 9 else None
+        bbref_id = r[8] if len(r) > 8 else None
         cards.append({
             "id": card_id,
             "player": r[0],
@@ -333,8 +332,7 @@ def _build_deck_pool(conn):
             "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
             "division": get_nba_division(r[3]),
-            "headshot_url": f"https://cdn.nba.com/headshots/nba/latest/260x190/{nba_id}.png" if nba_id else None,
-            "headshot_fallback_url": f"https://www.basketball-reference.com/req/202106291/images/headshots/{bbref_id}.jpg" if bbref_id else None,
+            "headshot_url": f"https://www.basketball-reference.com/req/202106291/images/headshots/{bbref_id}.jpg" if bbref_id else None,
         })
     return cards
 
@@ -861,7 +859,7 @@ def _generate_shop(conn, state):
         score_min = fp_min * 10
         buy_rows = conn.execute("""
             SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-                   nd.draft_pick, nd.college, na.selections, pi.nba_id, pi.bbref_id
+                   nd.draft_pick, nd.college, na.selections, pi.bbref_id
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
             LEFT JOIN nba_allstars na ON ns.player = na.player
@@ -875,8 +873,7 @@ def _generate_shop(conn, state):
         buy_candidates = [r for r in buy_rows if (r[0], r[1]) not in existing_ids]
         for i, row in enumerate(buy_candidates[:roster_player_count]):
             college = row[6]
-            nba_id = row[8] if len(row) > 8 else None
-            bbref_id = row[9] if len(row) > 9 else None
+            bbref_id = row[8] if len(row) > 8 else None
             card_data = {
                 "id": f"{row[0]}_{row[1]}_{row[2]}_buycard{i}",
                 "player": row[0],
@@ -888,8 +885,7 @@ def _generate_shop(conn, state):
                 "college": college,
                 "undrafted": row[5] is None,
                 "allstar_count": int(row[7]) if row[7] is not None else 0,
-                "headshot_url": f"https://cdn.nba.com/headshots/nba/latest/260x190/{nba_id}.png" if nba_id else None,
-                "headshot_fallback_url": f"https://www.basketball-reference.com/req/202106291/images/headshots/{bbref_id}.jpg" if bbref_id else None,
+                "headshot_url": f"https://www.basketball-reference.com/req/202106291/images/headshots/{bbref_id}.jpg" if bbref_id else None,
             }
             base_card_cost = random.randint(4, 8)
             items.append({
@@ -1866,7 +1862,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
 
     base_q = """
         SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-               nd.draft_pick, nd.college, na.selections, pi.nba_id, pi.bbref_id
+               nd.draft_pick, nd.college, na.selections, pi.bbref_id
         FROM nba_stats ns
         LEFT JOIN nba_draft nd ON ns.player = nd.player
         LEFT JOIN nba_allstars na ON ns.player = na.player
@@ -1917,8 +1913,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
         if (r[0], r[1]) in existing_ids:
             continue
         college = r[6]
-        nba_id = r[8] if len(r) > 8 else None
-        bbref_id = r[9] if len(r) > 9 else None
+        bbref_id = r[8] if len(r) > 8 else None
         card = {
             "id": f"{r[0]}_{r[1]}_{r[2]}_pack{idx_start + i}",
             "player": r[0], "season": r[1], "pos": r[2], "team": r[3],
@@ -1928,8 +1923,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
             "undrafted": r[5] is None,
             "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
-            "headshot_url": f"https://cdn.nba.com/headshots/nba/latest/260x190/{nba_id}.png" if nba_id else None,
-            "headshot_fallback_url": f"https://www.basketball-reference.com/req/202106291/images/headshots/{bbref_id}.jpg" if bbref_id else None,
+            "headshot_url": f"https://www.basketball-reference.com/req/202106291/images/headshots/{bbref_id}.jpg" if bbref_id else None,
         }
         cards.append(card)
         if len(cards) >= candidate_count:

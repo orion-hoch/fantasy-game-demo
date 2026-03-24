@@ -1505,45 +1505,7 @@
     nameLast.textContent = lastName;
     front.appendChild(nameLast);
 
-    // Pro Bowl star badge
-    if (card.pro_bowls && card.pro_bowls > 0) {
-      var pbDiv = document.createElement('div');
-      pbDiv.className = 'card-pb-stars';
-      var stars = Math.min(card.pro_bowls, 4);
-      pbDiv.textContent = '★'.repeat(stars);
-      pbDiv.title = card.pro_bowls + 'x Pro Bowl';
-      front.appendChild(pbDiv);
-    }
-
-    // Season
-    var season = document.createElement('div');
-    season.className = 'card-season';
-    season.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
-    front.appendChild(season);
-
-    // Division badge (with sticker overlay if applied)
-    var divInfo = getNflDivInfo(card.team || '');
-    if (divInfo || card._stickerCls) {
-      if (divInfo && card._stickerCls) {
-        // Show original (faded) + sticker on top
-        var divBadge = document.createElement('div');
-        divBadge.className = 'card-div-badge ' + divInfo.cls + ' div-badge-faded';
-        divBadge.textContent = divInfo.label;
-        front.appendChild(divBadge);
-        var sticker = document.createElement('div');
-        sticker.className = 'card-div-badge card-div-sticker ' + card._stickerCls;
-        sticker.textContent = card._stickerLabel || card.division || '';
-        front.appendChild(sticker);
-      } else {
-        var badge = document.createElement('div');
-        var info = divInfo || { cls: card._stickerCls, label: card._stickerLabel };
-        badge.className = 'card-div-badge ' + (info.cls || '');
-        badge.textContent = info.label || '';
-        front.appendChild(badge);
-      }
-    }
-
-    // Score (fantasy PPR)
+    // Score (fantasy PPR) — above headshot
     var score = document.createElement('div');
     score.className = 'card-score';
     score.textContent = card.fantasy_ppr !== undefined ? String(Math.round(card.fantasy_ppr)) : '';
@@ -1554,12 +1516,74 @@
     scoreLabel.textContent = 'PPR PTS';
     front.appendChild(scoreLabel);
 
-    // Flip button — bottom-right corner of card front
+    // Headshot — fills remaining space; pro bowl stars + season inside
+    var headshotDiv = document.createElement('div');
+    headshotDiv.className = 'card-headshot';
+
+    // Meta corner: pro bowl stars + season year (top-right of headshot)
+    var metaCorner = document.createElement('div');
+    metaCorner.className = 'card-meta-corner';
+    if (card.pro_bowls && card.pro_bowls > 0) {
+      var pbSpan = document.createElement('div');
+      pbSpan.className = 'card-allstar-badge';
+      pbSpan.textContent = '★'.repeat(Math.min(card.pro_bowls, 4));
+      pbSpan.title = card.pro_bowls + 'x Pro Bowl';
+      metaCorner.appendChild(pbSpan);
+    }
+    var seasonSpan = document.createElement('div');
+    seasonSpan.className = 'card-season';
+    seasonSpan.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
+    metaCorner.appendChild(seasonSpan);
+    headshotDiv.appendChild(metaCorner);
+
+    if (card.headshot_url) {
+      var img = document.createElement('img');
+      img.alt = '';
+      img.className = 'card-headshot-img';
+      img.onerror = function() {
+        headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+      };
+      img.src = card.headshot_url;
+      headshotDiv.appendChild(img);
+    } else {
+      headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+    }
+    front.appendChild(headshotDiv);
+
+    // Footer: division badge + flip button
+    var footer = document.createElement('div');
+    footer.className = 'card-footer';
+
+    var divWrapper = document.createElement('div');
+    divWrapper.className = 'card-footer-div';
+    var divInfo = getNflDivInfo(card.team || '');
+    if (divInfo || card._stickerCls) {
+      if (divInfo && card._stickerCls) {
+        var divBadgeEl = document.createElement('div');
+        divBadgeEl.className = 'card-div-badge ' + divInfo.cls + ' div-badge-faded';
+        divBadgeEl.textContent = divInfo.label;
+        divWrapper.appendChild(divBadgeEl);
+        var stickerEl = document.createElement('div');
+        stickerEl.className = 'card-div-badge card-div-sticker ' + card._stickerCls;
+        stickerEl.textContent = card._stickerLabel || card.division || '';
+        divWrapper.appendChild(stickerEl);
+      } else {
+        var badgeEl = document.createElement('div');
+        var bInfo = divInfo || { cls: card._stickerCls, label: card._stickerLabel };
+        badgeEl.className = 'card-div-badge ' + (bInfo.cls || '');
+        badgeEl.textContent = bInfo.label || '';
+        divWrapper.appendChild(badgeEl);
+      }
+    }
+    footer.appendChild(divWrapper);
+
     var flipBtn = document.createElement('button');
     flipBtn.className = 'card-flip-btn';
     flipBtn.title = 'View stats';
-    flipBtn.textContent = '?';
-    front.appendChild(flipBtn);
+    flipBtn.textContent = '↩';
+    footer.appendChild(flipBtn);
+
+    front.appendChild(footer);
 
     // ── Card Back ───────────────────────────────────────────────────
     var back = document.createElement('div');
