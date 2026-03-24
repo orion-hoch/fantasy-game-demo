@@ -1730,7 +1730,8 @@
     if (card.headshot_url) {
       var img = document.createElement('img');
       img.alt = '';
-      img.className = 'card-headshot-img';
+      img.className = 'card-headshot-img card-headshot-loading';
+      img.onload  = function() { img.classList.remove('card-headshot-loading'); };
       img.onerror = function() {
         headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
       };

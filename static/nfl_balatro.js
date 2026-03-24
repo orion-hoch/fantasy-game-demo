@@ -86,6 +86,33 @@
   // ── Card stats cache ────────────────────────────────────────────────
   var cardStatsCache = {};
 
+  // ── Headshot URL resolver cache ──────────────────────────────────────
+  // Probes URLs off-DOM so the visible img never flickers through 404s.
+  var _pfrUrlCache = {};  // pfr_id -> resolved URL string, or null
+
+  function resolvePfrUrl(pfr_id, max_season, callback) {
+    if (pfr_id in _pfrUrlCache) { callback(_pfrUrlCache[pfr_id]); return; }
+    var newBase = 'https://www.pro-football-reference.com/req/20230307/images/headshots/';
+    var oldBase = 'https://www.pro-football-reference.com/req/20180910/images/headshots/';
+    var ms = max_season || 0;
+    var urls = [
+      newBase + pfr_id + '.jpg',
+      newBase + pfr_id + '_' + ms + '.jpg',
+      newBase + pfr_id + '_' + (ms + 1) + '.jpg',
+      newBase + pfr_id + '_' + (ms - 1) + '.jpg',
+      oldBase + pfr_id + '.jpg',
+    ];
+    var i = 0;
+    function tryNext() {
+      if (i >= urls.length) { _pfrUrlCache[pfr_id] = null; callback(null); return; }
+      var probe = new Image();
+      probe.onload  = function() { _pfrUrlCache[pfr_id] = urls[i]; callback(urls[i]); };
+      probe.onerror = function() { i++; tryNext(); };
+      probe.src = urls[i];
+    }
+    tryNext();
+  }
+
   // ── Year select pending state ────────────────────────────────────────
   var pendingYearTarget = null;  // {shopId, itemType, cardId, playerName}
 
@@ -1530,26 +1557,17 @@
     if (card.pfr_id) {
       var img = document.createElement('img');
       img.alt = '';
-      img.className = 'card-headshot-img';
-      // Try: bare → last season → last season+1 → last season-1 → old base → placeholder
-      var newBase = 'https://www.pro-football-reference.com/req/20230307/images/headshots/';
-      var oldBase = 'https://www.pro-football-reference.com/req/20180910/images/headshots/';
-      var ms = card.max_season || card.season || 0;
-      var fallbacks = [
-        newBase + card.pfr_id + '.jpg',
-        newBase + card.pfr_id + '_' + ms + '.jpg',
-        newBase + card.pfr_id + '_' + (ms + 1) + '.jpg',
-        newBase + card.pfr_id + '_' + (ms - 1) + '.jpg',
-        oldBase + card.pfr_id + '.jpg',
-      ];
-      var _fi = 0;
-      img.onerror = function() {
-        _fi++;
-        if (_fi < fallbacks.length) { img.src = fallbacks[_fi]; }
-        else { headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>'; }
-      };
-      img.src = fallbacks[0];
+      img.className = 'card-headshot-img card-headshot-loading';
       headshotDiv.appendChild(img);
+      resolvePfrUrl(card.pfr_id, card.max_season || card.season, function(url) {
+        if (!img.parentNode) return;  // card was removed before we resolved
+        if (url) {
+          img.onload = function() { img.classList.remove('card-headshot-loading'); };
+          img.src = url;
+        } else {
+          headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+        }
+      });
     } else {
       headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
     }
