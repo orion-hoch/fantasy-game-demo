@@ -1041,10 +1041,14 @@ body.scoring {
   overflow: hidden;
 }
 
-/* Flip button — inside card footer */
+/* Flip button — absolute overlay on headshot (bottom-right) */
 .card-flip-btn {
-  background: rgba(0,0,0,0.3);
-  border: 1px solid rgba(255,255,255,0.4);
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  z-index: 3;
+  background: rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.35);
   color: rgba(255,255,255,0.9);
   font-size: 0.7rem;
   cursor: pointer;
@@ -1055,7 +1059,7 @@ body.scoring {
 }
 
 .card-flip-btn:hover {
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,0.65);
 }
 
 /* Card back content styles */
@@ -2997,25 +3001,95 @@ body.scoring {
   color: #444;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  padding: 0 7px 0 5px;
+  padding: 0;
   line-height: 1.1;
-  margin-top: 6px;
-  text-align: right;
 }
 .card-player-last {
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 400;
   color: var(--text-dark);
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 0 7px 0 5px;
+  padding: 0;
   line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 2px;
-  text-align: right;
+}
+
+/* ── New card layout: top row, name box, score box, bottom row ─── */
+.card-top-row {
+  display: flex;
+  align-items: stretch;
+  padding: 5px 5px 3px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.card-name-box {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 3px;
+  padding: 3px 5px 2px;
+  background: rgba(255,255,255,0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+.card-year-line {
+  font-family: Arial, sans-serif;
+  font-size: 0.5rem;
+  color: #777;
+  font-style: italic;
+  letter-spacing: 0.4px;
+  line-height: 1.1;
+  margin-bottom: 1px;
+}
+.card-top-right {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+  min-width: 30px;
+}
+.card-stars-box {
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 3px;
+  padding: 2px 3px;
+  background: rgba(255,255,255,0.5);
+  font-size: 0.55rem;
+  color: var(--accent-yellow);
+  text-shadow: 0 0 3px rgba(245,199,0,0.6);
+  letter-spacing: 0.5px;
+  text-align: center;
+  line-height: 1;
+}
+.card-score-box {
+  border: 1px solid rgba(0,0,0,0.15);
+  border-radius: 3px;
+  padding: 2px 3px;
+  background: rgba(255,255,255,0.5);
+  font-family: Impact, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--text-dark);
+  text-align: center;
+  line-height: 1;
+  white-space: nowrap;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.card-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 6px;
+  flex-shrink: 0;
+  background: var(--footer-color);
+  z-index: 5;
 }
 
 /* ── Player Headshot ─────────────────────────────────────────────── */
@@ -3104,7 +3178,8 @@ body.scoring {
   flex: none;
   height: 60px;
 }
-.deck-cards-grid .card .card-footer {
+.deck-cards-grid .card .card-footer,
+.deck-cards-grid .card .card-bottom-row {
   padding: 3px 4px;
 }
 .deck-cards-grid .card .card-flip-btn {
@@ -3113,10 +3188,19 @@ body.scoring {
 }
 .deck-cards-grid .card .card-player-first {
   font-size: 0.55rem;
-  margin-top: 4px;
 }
 .deck-cards-grid .card .card-player-last {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+}
+.deck-cards-grid .card .card-top-row {
+  padding: 3px 3px 2px;
+  gap: 2px;
+}
+.deck-cards-grid .card .card-score-box {
+  font-size: 0.85rem;
+}
+.deck-cards-grid .card .card-year-line {
+  display: none;
 }
 
 /* ── Trained effect (green shimmer) ────────────────────────────── */

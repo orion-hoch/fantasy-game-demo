@@ -1459,22 +1459,58 @@
     var front = document.createElement('div');
     front.className = 'card-front';
 
-    // Pos badge + team header
-    var header = document.createElement('div');
-    header.className = 'card-header';
+    // Player name split
+    var parts = card.player.split(' ');
+    var firstName = parts[0] || '';
+    var lastName = parts.slice(1).join(' ') || firstName;
+    if (parts.length === 1) { firstName = ''; lastName = parts[0]; }
 
-    var badge = document.createElement('span');
-    badge.className = 'card-pos-badge';
-    badge.textContent = card.pos;
-    header.appendChild(badge);
+    // ── Top row: [Year · Team / Name box] [Stars / Points box] ──────
+    var topRow = document.createElement('div');
+    topRow.className = 'card-top-row';
 
-    var team = document.createElement('span');
-    team.className = 'card-team';
-    team.textContent = card.team || '';
-    header.appendChild(team);
-    front.appendChild(header);
+    // Left: name box
+    var nameBox = document.createElement('div');
+    nameBox.className = 'card-name-box';
 
-    // Effect badges
+    var yearLine = document.createElement('div');
+    yearLine.className = 'card-year-line';
+    yearLine.textContent = (card.season ? "'" + String(card.season).slice(-2) : '') +
+                           (card.team ? ' · ' + card.team : '');
+    nameBox.appendChild(yearLine);
+
+    if (firstName) {
+      var nameFirst = document.createElement('div');
+      nameFirst.className = 'card-player-first';
+      nameFirst.textContent = firstName;
+      nameBox.appendChild(nameFirst);
+    }
+    var nameLast = document.createElement('div');
+    nameLast.className = 'card-player-last';
+    nameLast.textContent = lastName;
+    nameBox.appendChild(nameLast);
+    topRow.appendChild(nameBox);
+
+    // Right: pro bowl stars box + score box
+    var topRight = document.createElement('div');
+    topRight.className = 'card-top-right';
+
+    if (card.pro_bowls && card.pro_bowls > 0) {
+      var starsBox = document.createElement('div');
+      starsBox.className = 'card-stars-box';
+      starsBox.textContent = '★'.repeat(Math.min(card.pro_bowls, 5));
+      starsBox.title = card.pro_bowls + 'x Pro Bowl';
+      topRight.appendChild(starsBox);
+    }
+    var scoreBox = document.createElement('div');
+    scoreBox.className = 'card-score-box';
+    scoreBox.textContent = card.fantasy_ppr !== undefined ? String(Math.round(card.fantasy_ppr)) : '';
+    topRight.appendChild(scoreBox);
+    topRow.appendChild(topRight);
+
+    front.appendChild(topRow);
+
+    // Effect badges (absolute overlay)
     if (effects.length > 0) {
       var badgesDiv = document.createElement('div');
       badgesDiv.className = 'card-effect-badges';
@@ -1487,54 +1523,9 @@
       front.appendChild(badgesDiv);
     }
 
-    // Player name — split first/last
-    var parts = card.player.split(' ');
-    var firstName = parts[0] || '';
-    var lastName = parts.slice(1).join(' ') || firstName;
-    if (parts.length === 1) { firstName = ''; lastName = parts[0]; }
-
-    if (firstName) {
-      var nameFirst = document.createElement('div');
-      nameFirst.className = 'card-player-first';
-      nameFirst.textContent = firstName;
-      front.appendChild(nameFirst);
-    }
-
-    var nameLast = document.createElement('div');
-    nameLast.className = 'card-player-last';
-    nameLast.textContent = lastName;
-    front.appendChild(nameLast);
-
-    // Score (fantasy PPR) — above headshot
-    var score = document.createElement('div');
-    score.className = 'card-score';
-    score.textContent = card.fantasy_ppr !== undefined ? String(Math.round(card.fantasy_ppr)) : '';
-    front.appendChild(score);
-
-    var scoreLabel = document.createElement('div');
-    scoreLabel.className = 'card-score-label';
-    scoreLabel.textContent = 'PPR PTS';
-    front.appendChild(scoreLabel);
-
-    // Headshot — fills remaining space; pro bowl stars + season inside
+    // ── Headshot ─────────────────────────────────────────────────────
     var headshotDiv = document.createElement('div');
     headshotDiv.className = 'card-headshot';
-
-    // Meta corner: pro bowl stars + season year (top-right of headshot)
-    var metaCorner = document.createElement('div');
-    metaCorner.className = 'card-meta-corner';
-    if (card.pro_bowls && card.pro_bowls > 0) {
-      var pbSpan = document.createElement('div');
-      pbSpan.className = 'card-allstar-badge';
-      pbSpan.textContent = '★'.repeat(Math.min(card.pro_bowls, 4));
-      pbSpan.title = card.pro_bowls + 'x Pro Bowl';
-      metaCorner.appendChild(pbSpan);
-    }
-    var seasonSpan = document.createElement('div');
-    seasonSpan.className = 'card-season';
-    seasonSpan.textContent = card.season ? "'" + String(card.season).slice(-2) : '';
-    metaCorner.appendChild(seasonSpan);
-    headshotDiv.appendChild(metaCorner);
 
     if (card.headshot_url) {
       var img = document.createElement('img');
@@ -1548,11 +1539,19 @@
     } else {
       headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
     }
+
+    // Flip button overlaid on headshot
+    var flipBtn = document.createElement('button');
+    flipBtn.className = 'card-flip-btn';
+    flipBtn.title = 'View stats';
+    flipBtn.textContent = '↩';
+    headshotDiv.appendChild(flipBtn);
+
     front.appendChild(headshotDiv);
 
-    // Footer: division badge + flip button
-    var footer = document.createElement('div');
-    footer.className = 'card-footer';
+    // ── Bottom row: [Division]  [Position] ───────────────────────────
+    var bottomRow = document.createElement('div');
+    bottomRow.className = 'card-bottom-row';
 
     var divWrapper = document.createElement('div');
     divWrapper.className = 'card-footer-div';
@@ -1575,15 +1574,14 @@
         divWrapper.appendChild(badgeEl);
       }
     }
-    footer.appendChild(divWrapper);
+    bottomRow.appendChild(divWrapper);
 
-    var flipBtn = document.createElement('button');
-    flipBtn.className = 'card-flip-btn';
-    flipBtn.title = 'View stats';
-    flipBtn.textContent = '↩';
-    footer.appendChild(flipBtn);
+    var posBadge = document.createElement('span');
+    posBadge.className = 'card-pos-badge';
+    posBadge.textContent = card.pos;
+    bottomRow.appendChild(posBadge);
 
-    front.appendChild(footer);
+    front.appendChild(bottomRow);
 
     // ── Card Back ───────────────────────────────────────────────────
     var back = document.createElement('div');
