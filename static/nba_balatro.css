@@ -3119,11 +3119,6 @@ body.scoring {
   object-fit: cover;
   object-position: 70% 10%;
   display: block;
-  opacity: 1;
-  transition: opacity 0.25s ease;
-}
-.card-headshot-img.card-headshot-loading {
-  opacity: 0;
 }
 .card-headshot-placeholder {
   font-size: 2rem;
