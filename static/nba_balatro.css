@@ -2465,8 +2465,14 @@ body.scoring {
 }
 
 .target-cards-grid .card {
-  width: 90px;
-  height: 140px;
+  width: 110px;
+  height: 175px;
+}
+.target-cards-grid .card .card-headshot {
+  height: 44px;
+}
+.target-cards-grid .card .card-headshot-img {
+  height: 58px;
 }
 
 .loading-msg {
@@ -2701,12 +2707,12 @@ body.scoring {
 .deck-cards-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .deck-cards-grid .card {
-  width: 110px;
-  height: 165px;
+  width: 120px;
+  height: 210px;
   cursor: default;
 }
 
@@ -3009,27 +3015,39 @@ body.scoring {
 /* ── Player Headshot ─────────────────────────────────────────────── */
 .card-headshot {
   width: 100%;
-  height: 62px;
+  height: 110px;
   overflow: hidden;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.18));
   margin: 2px 0 0;
   position: relative;
 }
 .card-headshot-img {
-  width: auto;
-  height: 80px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  object-position: center top;
-  margin-top: -10px;
+  object-position: center 20%;
   display: block;
 }
 .card-headshot-placeholder {
   font-size: 1.6rem;
   color: rgba(0,0,0,0.25);
-  line-height: 62px;
+  line-height: 110px;
+}
+
+/* ── Meta corner (stars + year, top-right overlay) ──────────────── */
+.card-meta-corner {
+  position: absolute;
+  top: 8px;
+  right: 4px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  pointer-events: none;
 }
 
 /* ── Pro Bowl Stars Badge ────────────────────────────────────────── */
@@ -3042,15 +3060,43 @@ body.scoring {
   line-height: 1;
 }
 .card-allstar-badge {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   letter-spacing: 0;
+  color: var(--accent-yellow);
+  text-shadow: 0 0 4px rgba(245,199,0,0.8), 0 1px 2px rgba(0,0,0,0.6);
+  line-height: 1;
 }
 
-/* ── Hide stars + year in deck viewer ───────────────────────────── */
+/* ── Season label ───────────────────────────────────────────────── */
+.card-meta-corner .card-season {
+  font-size: 0.62rem;
+  color: rgba(255,255,255,0.85);
+  text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+  font-style: italic;
+  font-family: Arial, sans-serif;
+  padding: 0;
+  line-height: 1;
+}
+
+/* ── Deck viewer card adjustments ───────────────────────────────── */
 .deck-cards-grid .card .card-pb-stars,
 .deck-cards-grid .card .card-allstar-badge,
-.deck-cards-grid .card .card-season {
+.deck-cards-grid .card .card-season,
+.deck-cards-grid .card .card-meta-corner {
   display: none;
+}
+.deck-cards-grid .card .card-headshot {
+  height: 50px;
+}
+.deck-cards-grid .card .card-headshot-img {
+  height: 66px;
+}
+.deck-cards-grid .card .card-player-first {
+  font-size: 0.55rem;
+  margin-top: 4px;
+}
+.deck-cards-grid .card .card-player-last {
+  font-size: 0.95rem;
 }
 
 /* ── Trained effect (green shimmer) ────────────────────────────── */

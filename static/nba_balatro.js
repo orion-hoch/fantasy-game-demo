@@ -1705,38 +1705,44 @@
     nameLast.textContent = lastName;
     front.appendChild(nameLast);
 
-    // Headshot
+    // Stars + year corner badge (top-right, absolute)
+    var metaCorner = document.createElement('div');
+    metaCorner.className = 'card-meta-corner';
+    if (card.allstar_count && card.allstar_count > 0) {
+      var asSpan = document.createElement('div');
+      asSpan.className = 'card-allstar-badge';
+      asSpan.textContent = '★'.repeat(Math.min(card.allstar_count, 5));
+      asSpan.title = card.allstar_count + 'x NBA All-Star';
+      metaCorner.appendChild(asSpan);
+    }
+    var seasonSpan = document.createElement('div');
+    seasonSpan.className = 'card-season';
+    seasonSpan.textContent = card.season ? "'" + String(nbaYear(card.season)).slice(-2) : '';
+    metaCorner.appendChild(seasonSpan);
+    front.appendChild(metaCorner);
+
+    // Headshot (NBA CDN → BBRef fallback → ? placeholder)
     var headshotDiv = document.createElement('div');
     headshotDiv.className = 'card-headshot';
-    if (card.headshot_url) {
+    if (card.headshot_url || card.headshot_fallback_url) {
       var img = document.createElement('img');
-      img.src = card.headshot_url;
       img.alt = '';
       img.className = 'card-headshot-img';
+      var _triedFallback = false;
       img.onerror = function() {
-        headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+        if (!_triedFallback && card.headshot_fallback_url) {
+          _triedFallback = true;
+          img.src = card.headshot_fallback_url;
+        } else {
+          headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+        }
       };
+      img.src = card.headshot_url || card.headshot_fallback_url;
       headshotDiv.appendChild(img);
     } else {
       headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
     }
     front.appendChild(headshotDiv);
-
-    // All-Star stars badge (replaces draft pick)
-    if (card.allstar_count && card.allstar_count > 0) {
-      var asDiv = document.createElement('div');
-      asDiv.className = 'card-pb-stars card-allstar-badge';
-      var starCount = Math.min(card.allstar_count, 5);
-      asDiv.textContent = '★'.repeat(starCount);
-      asDiv.title = card.allstar_count + 'x NBA All-Star';
-      front.appendChild(asDiv);
-    }
-
-    // Season
-    var season = document.createElement('div');
-    season.className = 'card-season';
-    season.textContent = card.season ? "'" + String(nbaYear(card.season)).slice(-2) : '';
-    front.appendChild(season);
 
     // Division badge (with sticker overlay if applied)
     var divInfo = getNbaDivInfo(card.team || '');
