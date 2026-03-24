@@ -94,14 +94,13 @@
     if (pfr_id in _pfrUrlCache) { callback(_pfrUrlCache[pfr_id]); return; }
     var newBase = 'https://www.pro-football-reference.com/req/20230307/images/headshots/';
     var oldBase = 'https://www.pro-football-reference.com/req/20180910/images/headshots/';
-    var ms = max_season || 0;
-    var urls = [
-      newBase + pfr_id + '.jpg',
-      newBase + pfr_id + '_' + ms + '.jpg',
-      newBase + pfr_id + '_' + (ms + 1) + '.jpg',
-      newBase + pfr_id + '_' + (ms - 1) + '.jpg',
-      oldBase + pfr_id + '.jpg',
-    ];
+    var ms = max_season || new Date().getFullYear();
+    // Try base URL first, then every season year from max down to 2000, then old CDN base
+    var urls = [newBase + pfr_id + '.jpg'];
+    for (var yr = ms; yr >= 2000; yr--) {
+      urls.push(newBase + pfr_id + '_' + yr + '.jpg');
+    }
+    urls.push(oldBase + pfr_id + '.jpg');
     var i = 0;
     function tryNext() {
       if (i >= urls.length) { _pfrUrlCache[pfr_id] = null; callback(null); return; }
