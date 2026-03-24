@@ -71,8 +71,7 @@ HAND_TYPES = {
     "royal_flush":      {"name": "Royal Flush",       "mult": 20.0, "desc": "5+ cards same position & same division"},
     "division_six":     {"name": "Division Court",    "mult": 6.0,  "desc": "5+ cards all from same division"},
     "six_man_rotation": {"name": "Zone Press",        "mult": 5.5,  "desc": "5 of the same position"},
-    "twin_towers":      {"name": "Twin Towers",        "mult": 4.0,  "desc": "3 of one position + 2 of another"},
-    "starting_lineup":  {"name": "Starting Lineup",   "mult": 3.5,  "desc": "G + F + C all present (5+ cards)"},
+    "twin_towers":      {"name": "Twin Towers",        "mult": 2.5,  "desc": "3 of one position + 2 of another"},
     "starting_four":    {"name": "Starting Four",      "mult": 3.0,  "desc": "4 of same position"},
     "pick_roll":        {"name": "Pick & Roll",        "mult": 2.0,  "desc": "3 of same position"},
     "catch_shoot":      {"name": "Catch & Shoot",      "mult": 1.5,  "desc": "2 of same position"},
@@ -118,7 +117,7 @@ JOKERS = [
     {"id": "showtime",         "name": "Showtime",             "desc": "+3 mult per G beyond the first in scoring hand",                        "rarity": "uncommon"},
     {"id": "pick_and_pop",     "name": "Pick & Pop",           "desc": "+6 mult when playing Twin Towers",                                      "rarity": "uncommon"},
     # ── Rare ─────────────────────────────────────────────────────────────────────
-    {"id": "championship_run", "name": "Championship Run",     "desc": "+6 mult when playing Starting Lineup",                                  "rarity": "rare"},
+    {"id": "championship_run", "name": "Championship Run",     "desc": "+6 mult when playing Starting Four",                                    "rarity": "rare"},
     {"id": "franchise_corner", "name": "Franchise Cornerstone","desc": "Best card in scoring hand adds double its fantasy pts as bonus pts",    "rarity": "rare"},
     {"id": "smart_money",      "name": "Smart Money",          "desc": "Earn $1 per $5 held at end of each round (max $5)",                     "rarity": "rare"},
     {"id": "ring_chaser",      "name": "Ring Chaser",          "desc": "+1 mult per joker you own",                                             "rarity": "rare"},
@@ -188,7 +187,6 @@ SHOP_SKILL_CARDS = [
 ]
 
 SHOP_COMBO_CARDS = [
-    {"id": "combo_starting_lineup",  "type": "combo_card", "hand_type": "starting_lineup",  "boost": 0.5, "name": "Full Rotation",      "desc": "+0.5 Starting Lineup mult",   "cost": 5},
     {"id": "combo_zone_press",       "type": "combo_card", "hand_type": "zone_press",       "boost": 0.5, "name": "Full Court Press",   "desc": "+0.5 Zone Press mult",        "cost": 5},
     {"id": "combo_twin_towers",      "type": "combo_card", "hand_type": "twin_towers",      "boost": 0.5, "name": "Big Man Duo",        "desc": "+0.5 Twin Towers mult",       "cost": 5},
     {"id": "combo_pick_roll",        "type": "combo_card", "hand_type": "pick_roll",        "boost": 0.5, "name": "Pick & Pop",         "desc": "+0.5 Pick & Roll mult",       "cost": 5},
@@ -379,10 +377,6 @@ def evaluate_hand(cards):
         five_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:5]
         return "six_man_rotation", five_cards
 
-    # starting_lineup: all 3 positions present AND n >= 5
-    if n >= 5 and len(pos_counts) == 3 and all(p in pos_counts for p in ["G", "F", "C"]):
-        return "starting_lineup", cards
-
     # twin_towers: one position with 3+, another with 2+ (3+2 = 5 cards)
     trio_positions = [p for p, cnt in pos_counts.items() if cnt >= 3]
     pair_positions = [p for p, cnt in pos_counts.items() if cnt >= 2]
@@ -458,7 +452,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
             if extra > 0:
                 jpts = 300 * extra
         elif jid == "triple_double":
-            if hand_type in ("pick_roll", "catch_shoot", "zone_press", "twin_towers", "starting_four", "six_man_rotation", "starting_lineup"):
+            if hand_type in ("pick_roll", "catch_shoot", "zone_press", "twin_towers", "starting_four", "six_man_rotation"):
                 jbonus = 5
         elif jid == "old_school":
             if all((c.get("season") or 9999) < 1990 for c in cards_played):
@@ -485,7 +479,7 @@ def _calc_joker_mult(joker_ids, cards_played, hand_type, skill_levels, card_effe
             if hand_type == "twin_towers":
                 jbonus = 6
         elif jid == "championship_run":
-            if hand_type == "starting_lineup":
+            if hand_type == "starting_four":
                 jbonus = 6
         elif jid == "franchise_corner":
             if cards_played:

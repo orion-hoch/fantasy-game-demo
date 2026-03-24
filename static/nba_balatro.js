@@ -59,7 +59,7 @@
     rewardOptions: [],
     coins: 4,
     skillLevels: { G: 0, F: 0, C: 0 },
-    comboBoosts: { starting_lineup: 0, six_man_rotation: 0, zone_press: 0, twin_towers: 0, starting_four: 0, pick_roll: 0, catch_shoot: 0, isolation: 0 },
+    comboBoosts: { six_man_rotation: 0, zone_press: 0, twin_towers: 0, starting_four: 0, pick_roll: 0, catch_shoot: 0, isolation: 0 },
     cardEffects: {},   // card_id -> [effects]
     shopItems: [],
     pendingShopItem: null,  // item waiting for target selection
