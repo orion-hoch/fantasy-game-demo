@@ -1015,9 +1015,13 @@ body.scoring {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   filter: contrast(1.1) saturate(0.82) brightness(1.0);
+  opacity: 1;
+  transition: opacity 0.2s ease;
 }
-.card-headshot-img[src="/static/img/blank_player.png"] {
-  object-fit: cover;
+.card-headshot-img.card-headshot-loading {
+  opacity: 0;
+}
+.card-headshot-img.card-headshot-blank {
   object-position: 50% 20%;
 }
 /* Dither dot-matrix overlay for retro feel */

@@ -1727,23 +1727,22 @@
     var headshotDiv = document.createElement('div');
     headshotDiv.className = 'card-headshot';
 
+    var img = document.createElement('img');
+    img.alt = '';
+    img.className = 'card-headshot-img card-headshot-loading';
+    img.onload = function() { this.classList.remove('card-headshot-loading'); };
     if (card.headshot_url) {
-      var img = document.createElement('img');
-      img.alt = '';
-      img.className = 'card-headshot-img';
       img.onerror = function() {
         this.onerror = null;
+        this.classList.add('card-headshot-blank');
         this.src = '/static/img/blank_player.png';
       };
       img.src = card.headshot_url;
-      headshotDiv.appendChild(img);
     } else {
-      var img = document.createElement('img');
-      img.alt = '';
-      img.className = 'card-headshot-img';
+      img.classList.add('card-headshot-blank');
       img.src = '/static/img/blank_player.png';
-      headshotDiv.appendChild(img);
     }
+    headshotDiv.appendChild(img);
 
     // Flip button overlaid on headshot
     var flipBtn = document.createElement('button');

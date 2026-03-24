@@ -1553,25 +1553,24 @@
     var headshotDiv = document.createElement('div');
     headshotDiv.className = 'card-headshot';
 
+    var img = document.createElement('img');
+    img.alt = '';
+    img.className = 'card-headshot-img card-headshot-loading';
+    img.onload = function() { this.classList.remove('card-headshot-loading'); };
+    headshotDiv.appendChild(img);
     if (card.pfr_id) {
-      var img = document.createElement('img');
-      img.alt = '';
-      img.className = 'card-headshot-img';
-      headshotDiv.appendChild(img);
       resolvePfrUrl(card.pfr_id, card.max_season || card.season, function(url) {
         if (!img.parentNode) return;  // card was removed before we resolved
         if (url) {
           img.src = url;
         } else {
+          img.classList.add('card-headshot-blank');
           img.src = '/static/img/blank_player.png';
         }
       });
     } else {
-      var img = document.createElement('img');
-      img.alt = '';
-      img.className = 'card-headshot-img';
+      img.classList.add('card-headshot-blank');
       img.src = '/static/img/blank_player.png';
-      headshotDiv.appendChild(img);
     }
 
     // Flip button overlaid on headshot
