@@ -3121,18 +3121,18 @@ body.scoring {
   display: block;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
-  filter: contrast(1.25) saturate(0.45) brightness(0.93);
+  filter: contrast(1.1) saturate(0.82) brightness(1.0);
 }
 .card-headshot-img[src="/static/img/blank_player.png"] {
-  object-position: 50% 50%;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: 50% 20%;
 }
 /* Dither dot-matrix overlay for retro feel */
 .card-headshot::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: repeating-conic-gradient(rgba(0,0,0,0.22) 0% 25%, transparent 0% 50%);
+  background-image: repeating-conic-gradient(rgba(0,0,0,0.13) 0% 25%, transparent 0% 50%);
   background-size: 4px 4px;
   pointer-events: none;
   mix-blend-mode: multiply;
