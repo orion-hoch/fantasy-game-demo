@@ -1788,18 +1788,6 @@
 
     front.appendChild(bottomRow);
 
-    // ── Stars row (below division/position) ─────────────────────────
-    if (card.allstar_count && card.allstar_count > 0) {
-      var starsRow = document.createElement('div');
-      starsRow.className = 'card-stars-row';
-      var starsBox = document.createElement('div');
-      starsBox.className = 'card-stars-box';
-      starsBox.textContent = '★'.repeat(Math.min(card.allstar_count, 5));
-      starsBox.title = card.allstar_count + 'x NBA All-Star';
-      starsRow.appendChild(starsBox);
-      front.appendChild(starsRow);
-    }
-
     // ── Card Back ───────────────────────────────────────────────────
     var back = document.createElement('div');
     back.className = 'card-back';
