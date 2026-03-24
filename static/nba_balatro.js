@@ -1647,6 +1647,10 @@
     if (effects.indexOf('foil') !== -1) el.classList.add('card-foil');
     if (effects.indexOf('trained') !== -1) el.classList.add('card-trained');
 
+    if (card.boss_disabled) {
+      el.classList.add('boss-disabled');
+    }
+
     if (!opts.noSelect && gs.selectedIds.has(card.id)) {
       el.classList.add('selected');
     }
@@ -1851,6 +1855,8 @@
   function toggleCardSelect(cardId) {
     if (gs.status !== 'playing') return;
     if (_animLock) return;
+    var card = gs.hand.find(function(c) { return c.id === cardId; });
+    if (card && card.boss_disabled) return;
     if (window.SFX) SFX.play('card_sel');
     if (gs.selectedIds.has(cardId)) {
       gs.selectedIds.delete(cardId);

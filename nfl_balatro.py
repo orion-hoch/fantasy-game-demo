@@ -1102,15 +1102,19 @@ def _get_level_name(round_num, fight_num, boss_effect=None, mode="normal"):
 
 
 def _apply_boss_hand_effect(state):
-    """Remove cards from hand affected by boss effect."""
+    """Mark cards in hand as disabled by boss effect (red X, unplayable)."""
     boss = state.get("boss_effect")
     if not boss:
         return
     if boss == "sec_lockout":
-        state["hand"] = [c for c in state["hand"] if c.get("conference") != "SEC"]
+        for c in state["hand"]:
+            if c.get("conference") == "SEC":
+                c["boss_disabled"] = True
         state["deck_pool"] = [c for c in state["deck_pool"] if c.get("conference") != "SEC"]
     elif boss == "rookie_ban":
-        state["hand"] = [c for c in state["hand"] if not ((c.get("draft_year") or 0) >= 2020)]
+        for c in state["hand"]:
+            if (c.get("draft_year") or 0) >= 2020:
+                c["boss_disabled"] = True
         state["deck_pool"] = [c for c in state["deck_pool"] if not ((c.get("draft_year") or 0) >= 2020)]
 
 
@@ -1233,9 +1237,9 @@ def play_hand(gid, card_ids):
 
     g["coins"] = g.get("coins", 0) + coins_earned
 
-    # Remove played cards from hand and draw replacements
+    # Remove played cards from hand and draw up to max hand size
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
-    needed = len(card_ids)
+    needed = g.get("max_hand_size", 7) - len(g["hand"])
     # If deck runs short, shuffle fight_discards back in
     if len(g["deck"]) < needed and g.get("fight_discards"):
         recycled = [c for c in g["fight_discards"] if c["id"] not in id_set]
@@ -1479,7 +1483,7 @@ def discard_cards(gid, card_ids):
     g["joker_state"]["discards_used_fight"] = g["joker_state"].get("discards_used_fight", 0) + 1
     g["joker_state"]["clockwork_stacks"] = max(0, g["joker_state"].get("clockwork_stacks", 0) - 1)
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
-    needed = len(discarded)
+    needed = g.get("max_hand_size", 7) - len(g["hand"])
     # If deck runs short, shuffle fight_discards (minus cards being discarded now) back in
     if len(g["deck"]) < needed and g.get("fight_discards"):
         recycled = [c for c in g["fight_discards"] if c["id"] not in id_set]

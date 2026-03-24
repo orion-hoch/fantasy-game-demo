@@ -1002,10 +1002,14 @@ def _apply_boss_hand_effect(state):
     if not boss:
         return
     if boss == "goaltending":
-        state["hand"] = [c for c in state["hand"] if c.get("pos") != "C"]
+        for c in state["hand"]:
+            if c.get("pos") == "C":
+                c["boss_disabled"] = True
         state["deck_pool"] = [c for c in state["deck_pool"] if c.get("pos") != "C"]
     elif boss == "flagrant_foul":
-        state["hand"] = [c for c in state["hand"] if not ((c.get("season") or 0) >= 2010)]
+        for c in state["hand"]:
+            if (c.get("season") or 0) >= 2010:
+                c["boss_disabled"] = True
         state["deck_pool"] = [c for c in state["deck_pool"] if not ((c.get("season") or 0) >= 2010)]
 
 
@@ -1129,9 +1133,10 @@ def play_hand(gid, card_ids):
 
     g["coins"] = g.get("coins", 0) + coins_earned
 
-    # Remove played cards from hand and draw replacements
+    # Remove played cards from hand and draw up to max hand size
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
-    draw_count = min(len(card_ids), len(g["deck"]))
+    needed = g.get("max_hand_size", 6) - len(g["hand"])
+    draw_count = min(needed, len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
 
@@ -1360,7 +1365,8 @@ def discard_cards(gid, card_ids):
     g["joker_state"]["discards_used_fight"] = g["joker_state"].get("discards_used_fight", 0) + 1
     g["joker_state"]["clockwork_stacks"] = max(0, g["joker_state"].get("clockwork_stacks", 0) - 1)
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
-    draw_count = min(len(discarded), len(g["deck"]))
+    needed = g.get("max_hand_size", 6) - len(g["hand"])
+    draw_count = min(needed, len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
     g.setdefault("fight_discards", []).extend(discarded)
