@@ -98,7 +98,6 @@
     gameoverScreen: document.getElementById('gameover-screen'),
 
     startBtn:       document.getElementById('start-btn'),
-    infinityBtn:    document.getElementById('infinity-btn'),
     playBtn:        document.getElementById('play-btn'),
     discardBtn:     document.getElementById('discard-btn'),
     skipJokerBtn:   document.getElementById('skip-joker-btn'),
@@ -376,18 +375,16 @@
   function startGame(mode) {
     mode = mode || 'normal';
     els.startBtn.disabled = true;
-    if (els.infinityBtn) els.infinityBtn.disabled = true;
     els.startBtn.textContent = 'LOADING...';
     apiPost('/api/nfl_balatro/start', {mode: mode}).then(function (data) {
       if (data.error) {
         alert('Error: ' + data.error);
         els.startBtn.disabled = false;
-        if (els.infinityBtn) els.infinityBtn.disabled = false;
         els.startBtn.textContent = 'KICKOFF!';
         return;
       }
       gameId = data.game_id;
-      gs.mode = data.mode || 'normal';
+      gs.mode = 'normal';
       gs.hand = data.hand || [];
       gs.jokers = data.jokers || [];
       gs.floor = data.floor;
@@ -427,12 +424,10 @@
       renderAll();
       setTimeout(triggerDealAnimation, 60);
       els.startBtn.disabled = false;
-      if (els.infinityBtn) els.infinityBtn.disabled = false;
       els.startBtn.textContent = 'KICKOFF!';
     }).catch(function (e) {
       alert('Failed to start game: ' + e);
       els.startBtn.disabled = false;
-      if (els.infinityBtn) els.infinityBtn.disabled = false;
       els.startBtn.textContent = 'KICKOFF!';
     });
   }
@@ -471,6 +466,7 @@
       if (data.joker_state !== undefined) gs.jokerState = data.joker_state;
       if (data.deck_cards !== undefined) gs.deckCards = data.deck_cards;
       if (data.fight_played !== undefined) gs.fightPlayed = data.fight_played;
+      if (data.fight_discards !== undefined) gs.fightDiscards = data.fight_discards;
 
       // Update card effects for broken cards
       if (data.broken_cards && data.broken_cards.length > 0) {
@@ -998,9 +994,10 @@
 
   function renderTopBar() {
     els.levelName.textContent = gs.levelName || 'Preseason';
+    var wave = (gs.round - 1) * 3 + gs.fight;
     var floorText = gs.mode === 'infinity'
-      ? '∞ INFINITY MODE'
-      : 'Round ' + (gs.round || 1) + ' · Fight ' + (gs.fight || 1);
+      ? '\u221e INFINITY MODE \u00b7 Wave ' + wave
+      : 'Round ' + (gs.round || 1) + ' \u00b7 Fight ' + (gs.fight || 1);
     els.floorDisplay.textContent = floorText;
     els.handsCount.textContent = gs.handsRemaining;
     els.discardCount.textContent = gs.discardsRemaining;
@@ -1181,14 +1178,17 @@
 
   function openDeckViewer() {
     var cards = gs.deckCards || [];
-    if (cards.length === 0) return;
     var overlay = document.getElementById('discard-viewer-overlay');
     var content = document.getElementById('discard-viewer-content');
     var title = overlay && overlay.querySelector('.deck-viewer-title');
     if (!overlay || !content) return;
     if (title) title.textContent = 'DRAWABLE DECK (' + cards.length + ')';
     content.innerHTML = '';
-    cards.forEach(function(card) { content.appendChild(_buildCardViewerItem(card, null)); });
+    if (cards.length === 0) {
+      content.innerHTML = '<div style="padding:24px;color:#8888bb;font-size:0.9rem;">Deck is empty — discard pile will shuffle back in when needed.</div>';
+    } else {
+      cards.forEach(function(card) { content.appendChild(_buildCardViewerItem(card, null)); });
+    }
     overlay.classList.remove('hidden');
   }
 
@@ -1196,19 +1196,22 @@
     var played = gs.fightPlayed || [];
     var discarded = gs.fightDiscards || [];
     var total = played.length + discarded.length;
-    if (total === 0) return;
     var overlay = document.getElementById('discard-viewer-overlay');
     var content = document.getElementById('discard-viewer-content');
     var title = overlay && overlay.querySelector('.deck-viewer-title');
     if (!overlay || !content) return;
-    if (title) title.textContent = '\u267B\uFE0F PLAYED & DISCARDED (' + total + ')';
+    if (title) title.textContent = 'PLAYED & DISCARDED (' + total + ')';
     content.innerHTML = '';
-    played.forEach(function(card) {
-      content.appendChild(_buildCardViewerItem(card, { text: 'PLAYED', cls: 'dci-tag-played' }));
-    });
-    discarded.forEach(function(card) {
-      content.appendChild(_buildCardViewerItem(card, { text: 'DISCARDED', cls: 'dci-tag-discarded' }));
-    });
+    if (total === 0) {
+      content.innerHTML = '<div style="padding:24px;color:#8888bb;font-size:0.9rem;">No cards played or discarded yet.</div>';
+    } else {
+      played.forEach(function(card) {
+        content.appendChild(_buildCardViewerItem(card, { text: 'PLAYED', cls: 'dci-tag-played' }));
+      });
+      discarded.forEach(function(card) {
+        content.appendChild(_buildCardViewerItem(card, { text: 'DISCARDED', cls: 'dci-tag-discarded' }));
+      });
+    }
     overlay.classList.remove('hidden');
   }
 
@@ -2010,6 +2013,35 @@
     });
   }
 
+  // ── Position Switch Picker ─────────────────────────────────────────
+  var _posPick = null;
+
+  function openPosSwitchPicker(card, onConfirm, positions) {
+    _posPick = { card: card, onConfirm: onConfirm };
+    document.getElementById('pos-pick-player').textContent = card.player + ' (' + card.pos + ')';
+    var opts = document.getElementById('pos-pick-options');
+    opts.innerHTML = '';
+    positions.forEach(function(pos) {
+      if (pos === card.pos) return;
+      var btn = document.createElement('button');
+      btn.className = 'sticker-div-btn card-pos-' + pos.toLowerCase();
+      btn.textContent = pos;
+      btn.style.minWidth = '64px';
+      btn.addEventListener('click', function() {
+        var cb = _posPick && _posPick.onConfirm;
+        closePosPickModal();
+        if (cb) cb(pos);
+      });
+      opts.appendChild(btn);
+    });
+    document.getElementById('pos-pick-modal').classList.remove('hidden');
+  }
+
+  function closePosPickModal() {
+    document.getElementById('pos-pick-modal').classList.add('hidden');
+    _posPick = null;
+  }
+
   // ── Target Selection (via Deck Viewer) ────────────────────────────
   function openTargetModal(item) {
     openDeckViewerForSelection(item.desc || 'Select a card to apply this effect.', function(selectedCard) {
@@ -2018,6 +2050,10 @@
       gs.pendingShopItem = null;
       if (pending.item && pending.item.type === 'year_card') {
         openYearSelectModal(pending.shopId, pending.itemType, selectedCard.id, selectedCard.player, selectedCard.season);
+      } else if (pending.item && pending.item.effect === 'pos_switch') {
+        openPosSwitchPicker(selectedCard, function(newPos) {
+          executeBuy(pending.shopId, pending.itemType, selectedCard.id, { new_pos: newPos });
+        }, ['QB', 'RB', 'WR', 'TE']);
       } else {
         executeBuy(pending.shopId, pending.itemType, selectedCard.id, null);
       }
@@ -2261,7 +2297,7 @@
     var html = '';
     var isInfinity = gs.mode === 'infinity';
     var waveNum = (gs.round - 1) * 3 + gs.fight;
-    if (won) {
+    if (won && !isInfinity) {
       html += '<div class="go-title win">CHAMPION!</div>';
       html += '<div class="go-sub">You defeated all 8 rounds!</div>';
     } else if (isInfinity) {
@@ -2285,6 +2321,35 @@
     html += '</div>';
 
     els.gameoverContent.innerHTML = html;
+
+    // Show infinity button only on a normal-mode win
+    var existingInfBtn = document.getElementById('go-infinity-btn');
+    if (existingInfBtn) existingInfBtn.remove();
+    if (won && !isInfinity) {
+      var infBtn = document.createElement('button');
+      infBtn.id = 'go-infinity-btn';
+      infBtn.className = 'btn-infinity';
+      infBtn.textContent = '∞ CONTINUE IN INFINITY MODE';
+      infBtn.addEventListener('click', startInfinityMode);
+      els.restartBtn.parentNode.insertBefore(infBtn, els.restartBtn);
+    }
+  }
+
+  function startInfinityMode() {
+    var infBtn = document.getElementById('go-infinity-btn');
+    if (infBtn) infBtn.disabled = true;
+    apiPost('/api/nfl_balatro/start_infinity', { game_id: gameId }).then(function(data) {
+      if (data.error) { alert(data.error); if (infBtn) infBtn.disabled = false; return; }
+      gs.mode = 'infinity';
+      gs.coins = data.coins !== undefined ? data.coins : gs.coins;
+      gs.nextFight = data.next_fight || 1;
+      gs.nextBossEffect = null;
+      gs.status = data.status;
+      showFightRewardScreen(data);
+    }).catch(function(e) {
+      alert('Error: ' + e);
+      if (infBtn) infBtn.disabled = false;
+    });
   }
 
   // ── Screen management ──────────────────────────────────────────────
@@ -2302,7 +2367,6 @@
   if (rewardCoinsBtn) rewardCoinsBtn.addEventListener('click', claimRewardCoins);
 
   els.startBtn.addEventListener('click', function() { startGame('normal'); });
-  if (els.infinityBtn) els.infinityBtn.addEventListener('click', function() { startGame('infinity'); });
 
   els.playBtn.addEventListener('click', function () {
     if (!els.playBtn.disabled) playHand();
@@ -2525,6 +2589,10 @@
   window.toggleDeckViewer = toggleDeckViewer;
   window.closePackModal = closePackModal;
   window.closeDivisionStickerModal = closeDivisionStickerModal;
+  window.closePosPickModal = closePosPickModal;
+  window.openDeckViewer = openDeckViewer;
+  window.openDiscardViewer = openDiscardViewer;
+  window.closeDiscardViewer = closeDiscardViewer;
 
   // ── Init ───────────────────────────────────────────────────────────
   showScreen('start');

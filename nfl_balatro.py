@@ -254,7 +254,7 @@ SHOP_MOD_CARDS = [
     {"id": "training_camp", "type": "mod_card", "effect": "trained", "needs_target": True,
      "name": "Training Camp", "desc": "Target card permanently gains +20% PPR", "cost": 5},
     {"id": "position_switch", "type": "mod_card", "effect": "pos_switch", "needs_target": True,
-     "name": "Position Switch", "desc": "Transform a RB to TE or WR to QB (keeps card, changes mult)", "cost": 6},
+     "name": "Position Switch", "desc": "Switch a card to any other position (QB, RB, WR, or TE)", "cost": 6},
 ]
 
 JOKER_ENHANCEMENT_ITEMS = [
@@ -1211,7 +1211,14 @@ def play_hand(gid, card_ids):
 
     # Remove played cards from hand and draw replacements
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
-    draw_count = min(len(card_ids), len(g["deck"]))
+    needed = len(card_ids)
+    # If deck runs short, shuffle fight_discards back in
+    if len(g["deck"]) < needed and g.get("fight_discards"):
+        recycled = [c for c in g["fight_discards"] if c["id"] not in id_set]
+        random.shuffle(recycled)
+        g["deck"].extend(recycled)
+        g["fight_discards"] = []
+    draw_count = min(needed, len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
 
@@ -1263,6 +1270,7 @@ def play_hand(gid, card_ids):
     result["hand"] = g["hand"]
     result["deck_cards"] = g["deck"]
     result["fight_played"] = g.get("fight_played", [])
+    result["fight_discards"] = g.get("fight_discards", [])
 
     if g["current_score"] >= g["target_score"]:
         fight = g.get("fight", 1)
@@ -1344,6 +1352,43 @@ def advance_fight(gid, conn=None):
     }, None
 
 
+def start_infinity_mode(gid):
+    """Continue a won game in infinity mode from round 9."""
+    g = _GAMES.get(gid)
+    if not g or g["status"] != "won_game":
+        return None, "Game not in won state"
+
+    g["mode"] = "infinity"
+    next_round = g.get("round", 8) + 1
+    next_fight = 1
+
+    g["pending_fight_advance"] = True
+    g["next_round"] = next_round
+    g["next_fight"] = next_fight
+    g["pending_boss_effect"] = None
+
+    reward_coins = 3 + g.get("round", 8) * 2
+    owned = set(g.get("jokers", []))
+    available = [j for j in JOKERS if j["id"] not in owned]
+    reward_weights = {"common": 35, "uncommon": 35, "rare": 25, "legendary": 5}
+    reward_jokers = _weighted_joker_sample(available, reward_weights, 3)
+
+    g["reward_coins_amount"] = reward_coins
+    g["reward_joker_options"] = [j["id"] for j in reward_jokers]
+    g["status"] = "choosing_reward"
+
+    _GAMES[gid] = g
+    return {
+        "status": "choosing_reward",
+        "mode": "infinity",
+        "coins": g["coins"],
+        "reward_coins_amount": reward_coins,
+        "reward_joker_options": reward_jokers,
+        "next_fight": next_fight,
+        "next_boss_effect": None,
+    }, None
+
+
 def claim_fight_reward(gid, choice, joker_id=None, conn=None):
     """Player claims their fight reward: either coins or a free joker."""
     g = _GAMES.get(gid)
@@ -1410,7 +1455,14 @@ def discard_cards(gid, card_ids):
     g["joker_state"]["discards_used_fight"] = g["joker_state"].get("discards_used_fight", 0) + 1
     g["joker_state"]["clockwork_stacks"] = max(0, g["joker_state"].get("clockwork_stacks", 0) - 1)
     g["hand"] = [c for c in g["hand"] if c["id"] not in id_set]
-    draw_count = min(len(discarded), len(g["deck"]))
+    needed = len(discarded)
+    # If deck runs short, shuffle fight_discards (minus cards being discarded now) back in
+    if len(g["deck"]) < needed and g.get("fight_discards"):
+        recycled = [c for c in g["fight_discards"] if c["id"] not in id_set]
+        random.shuffle(recycled)
+        g["deck"].extend(recycled)
+        g["fight_discards"] = []
+    draw_count = min(needed, len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
     g.setdefault("fight_discards", []).extend(discarded)
@@ -1479,7 +1531,7 @@ def generate_shop_for_game(gid, conn):
     return g["shop_items"]
 
 
-def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None, conn=None):
+def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None, conn=None, new_pos=None):
     """Buy an item from the shop."""
     g = _GAMES.get(gid)
     if not g or g["status"] != "shopping":
@@ -1596,15 +1648,19 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
                 if c["id"] == target_card_id:
                     break
         elif effect == "pos_switch":
-            switch_map = {"RB": "TE", "WR": "QB", "TE": "RB", "QB": "WR"}
+            valid_positions = {"QB", "RB", "WR", "TE"}
             target = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
             if not target:
                 return None, "Card not found"
-            new_pos = switch_map.get(target["pos"], target["pos"])
-            target["pos"] = new_pos
+            chosen = new_pos if new_pos in valid_positions else None
+            if not chosen or chosen == target["pos"]:
+                # fallback: cycle to next position
+                cycle = {"QB": "WR", "WR": "RB", "RB": "TE", "TE": "QB"}
+                chosen = cycle.get(target["pos"], "WR")
+            target["pos"] = chosen
             for hc in g["hand"]:
                 if hc["id"] == target_card_id:
-                    hc["pos"] = new_pos
+                    hc["pos"] = chosen
 
     elif item["type"] == "buy_card":
         card_data = item.get("card_data")

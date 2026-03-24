@@ -368,6 +368,17 @@
     </div>
   </div>
 
+  <!-- Position Switch Picker Modal -->
+  <div id="pos-pick-modal" class="overlay hidden">
+    <div class="overlay-backdrop" onclick="closePosPickModal()"></div>
+    <div class="overlay-panel sticker-modal-panel">
+      <h3 class="sticker-modal-title">Position Switch</h3>
+      <p class="sticker-modal-sub">Switch <strong id="pos-pick-player"></strong> to:</p>
+      <div id="pos-pick-options" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0;"></div>
+      <button class="btn-secondary" onclick="closePosPickModal()" style="margin-top:4px">Cancel</button>
+    </div>
+  </div>
+
   <script src="/static/audio.js"></script>
   <script src="/static/nba_balatro.js"></script>
 </body>

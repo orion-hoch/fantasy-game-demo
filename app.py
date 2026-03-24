@@ -796,8 +796,9 @@ def nfl_balatro_buy_item():
     item_type = data.get("item_type", "")
     target_card_id = data.get("target_card_id", None)
     target_year = data.get("target_year", None)
+    new_pos = data.get("new_pos", None)
     conn = get_db()
-    result, err = nb.buy_shop_item(gid, item_type, shop_id, target_card_id=target_card_id, target_year=target_year, conn=conn)
+    result, err = nb.buy_shop_item(gid, item_type, shop_id, target_card_id=target_card_id, target_year=target_year, conn=conn, new_pos=new_pos)
     conn.close()
     if err:
         return jsonify({"error": err}), 400
@@ -1041,8 +1042,9 @@ def nba_balatro_use_held_item():
     target_card_id = data.get("target_card_id")
     target_year = data.get("target_year")
     discard_only = data.get("discard_only", False)
+    new_pos = data.get("new_pos", None)
     conn = get_db()
-    result, err = nba_b.use_held_item(gid, held_id, target_card_id, target_year, conn, discard_only)
+    result, err = nba_b.use_held_item(gid, held_id, target_card_id, target_year, conn, discard_only, new_pos=new_pos)
     conn.close()
     if err:
         return jsonify({"error": err}), 400
@@ -1167,6 +1169,22 @@ def api_nfl_apply_division_sticker():
 def api_nba_apply_division_sticker():
     data = request.json
     return jsonify(nba_b.apply_division_sticker(data['game_id'], data['card_id'], data['new_division']))
+
+@app.route('/api/nfl_balatro/start_infinity', methods=['POST'])
+def api_nfl_start_infinity():
+    data = request.json
+    result, err = nb.start_infinity_mode(data['game_id'])
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
+
+@app.route('/api/nba_balatro/start_infinity', methods=['POST'])
+def api_nba_start_infinity():
+    data = request.json
+    result, err = nba_b.start_infinity_mode(data['game_id'])
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify(result)
 
 
 if __name__ == "__main__":

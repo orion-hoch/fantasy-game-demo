@@ -3356,6 +3356,11 @@ body.scoring {
 .sticker-div-btn.div-northwest { background: #9b59b6; }
 .sticker-div-btn.div-pacific   { background: #1abc9c; }
 .sticker-div-btn.div-southwest { background: #d4a017; }
+/* Position buttons */
+.sticker-div-btn.card-pos-qb { background: var(--pos-qb); color: #fff; }
+.sticker-div-btn.card-pos-rb { background: var(--pos-rb); color: #fff; }
+.sticker-div-btn.card-pos-wr { background: var(--pos-wr); color: #fff; }
+.sticker-div-btn.card-pos-te { background: var(--pos-te); color: #fff; }
 
 /* Sticker overlay on card */
 .card-div-sticker {

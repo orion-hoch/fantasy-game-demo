@@ -41,7 +41,7 @@ window.SFX = (function () {
   // card_sel = crunchy paper/backpack crinkle (highpass removes rumble, keeps crispy highs)
   // rustle   = soft card shuffle (lowpass keeps warm swish, cuts harsh highs)
   var NOISE_SOUNDS = {
-    card_sel: { highpass: 600, dur: 0.06, vol: 0.18 },
+    card_sel: { lowpass: 400, dur: 0.09, vol: 0.07 },
     rustle:   { lowpass:  1800, dur: 0.18, vol: 0.35 },
   };
 

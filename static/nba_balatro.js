@@ -46,6 +46,7 @@
     floor: 1,
     round: 1,
     fight: 1,
+    mode: 'normal',
     bossEffect: null,
     levelName: 'Preseason',
     targetScore: 0,
@@ -361,6 +362,7 @@
         return;
       }
       gameId = data.game_id;
+      gs.mode = 'normal';
       gs.hand = data.hand || [];
       gs.jokers = data.jokers || [];
       gs.floor = data.floor;
@@ -968,7 +970,12 @@
 
   function renderTopBar() {
     els.levelName.textContent = gs.levelName || 'Preseason';
-    els.floorDisplay.textContent = 'Round ' + (gs.round || 1) + ' · Fight ' + (gs.fight || 1);
+    if (gs.mode === 'infinity') {
+      var wave = (gs.round - 1) * 3 + gs.fight;
+      els.floorDisplay.textContent = '\u221e INFINITY MODE \u00b7 Wave ' + wave;
+    } else {
+      els.floorDisplay.textContent = 'Round ' + (gs.round || 1) + ' \u00b7 Fight ' + (gs.fight || 1);
+    }
     els.handsCount.textContent = gs.handsRemaining;
     els.discardCount.textContent = gs.discardsRemaining;
     if (els.coinsCount) els.coinsCount.textContent = gs.coins;
@@ -1375,6 +1382,11 @@
               gs.pendingHeldItem.targetCard = selectedCard;
               closeTargetModalForHeld();
               openYearModalForHeld(selectedCard, item);
+            } else if (item.effect === 'pos_switch') {
+              closeTargetModalForHeld();
+              openPosSwitchPicker(selectedCard, function(newPos) {
+                doUseHeldItemApi(item.held_id, selectedCard.id, null, false, newPos);
+              }, ['G', 'F', 'C']);
             } else {
               closeTargetModalForHeld();
               doUseHeldItemApi(item.held_id, selectedCard.id, null, false);
@@ -1425,13 +1437,43 @@
     gs.pendingHeldItem = null;
   }
 
-  function doUseHeldItemApi(heldId, targetCardId, targetYear, discardOnly) {
+  // ── Position Switch Picker ─────────────────────────────────────────
+  var _posPick = null; // { card, onConfirm }
+
+  function openPosSwitchPicker(card, onConfirm, positions) {
+    _posPick = { card: card, onConfirm: onConfirm };
+    document.getElementById('pos-pick-player').textContent = card.player + ' (' + card.pos + ')';
+    var opts = document.getElementById('pos-pick-options');
+    opts.innerHTML = '';
+    positions.forEach(function(pos) {
+      if (pos === card.pos) return; // skip current
+      var btn = document.createElement('button');
+      btn.className = 'sticker-div-btn card-pos-' + pos.toLowerCase();
+      btn.textContent = pos;
+      btn.style.minWidth = '64px';
+      btn.addEventListener('click', function() {
+        var cb = _posPick && _posPick.onConfirm;
+        closePosPickModal();
+        if (cb) cb(pos);
+      });
+      opts.appendChild(btn);
+    });
+    document.getElementById('pos-pick-modal').classList.remove('hidden');
+  }
+
+  function closePosPickModal() {
+    document.getElementById('pos-pick-modal').classList.add('hidden');
+    _posPick = null;
+  }
+
+  function doUseHeldItemApi(heldId, targetCardId, targetYear, discardOnly, newPos) {
     apiPost('/api/nba_balatro/use_held_item', {
       game_id: gameId,
       held_id: heldId,
       target_card_id: targetCardId || null,
       target_year: targetYear || null,
       discard_only: discardOnly,
+      new_pos: newPos || null,
     }).then(function(data) {
       if (data.error) { showToast(data.error, 'error'); return; }
       gs.heldItems = data.held_items || [];
@@ -1662,6 +1704,23 @@
     nameLast.className = 'card-player-last';
     nameLast.textContent = lastName;
     front.appendChild(nameLast);
+
+    // Headshot
+    var headshotDiv = document.createElement('div');
+    headshotDiv.className = 'card-headshot';
+    if (card.headshot_url) {
+      var img = document.createElement('img');
+      img.src = card.headshot_url;
+      img.alt = '';
+      img.className = 'card-headshot-img';
+      img.onerror = function() {
+        headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+      };
+      headshotDiv.appendChild(img);
+    } else {
+      headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+    }
+    front.appendChild(headshotDiv);
 
     // All-Star stars badge (replaces draft pick)
     if (card.allstar_count && card.allstar_count > 0) {
@@ -2421,18 +2480,25 @@
     if (window.SFX) SFX.play(won ? 'win' : 'lose');
     showScreen('gameover');
     var html = '';
-    if (won) {
-      html += '';
+    var isInfinity = gs.mode === 'infinity';
+    var waveNum = (gs.round - 1) * 3 + gs.fight;
+    if (won && !isInfinity) {
       html += '<div class="go-title win">CHAMPION!</div>';
       html += '<div class="go-sub">You defeated all 8 rounds!</div>';
+    } else if (isInfinity) {
+      html += '<div class="go-title lose">GAME OVER</div>';
+      html += '<div class="go-sub">\u221e Survived ' + (waveNum - 1) + ' waves of infinity!</div>';
     } else {
-      html += '';
       html += '<div class="go-title lose">GAME OVER</div>';
       html += '<div class="go-sub">The shot clock got you at level ' + gs.floor + '</div>';
     }
 
     html += '<div class="go-stats">';
-    html += '<div class="go-stat"><div class="go-stat-label">Level Reached</div><div class="go-stat-val">' + gs.floor + ' / 8</div></div>';
+    if (isInfinity) {
+      html += '<div class="go-stat"><div class="go-stat-label">Waves Survived</div><div class="go-stat-val">' + (waveNum - 1) + '</div></div>';
+    } else {
+      html += '<div class="go-stat"><div class="go-stat-label">Level Reached</div><div class="go-stat-val">' + gs.floor + ' / 8</div></div>';
+    }
     html += '<div class="go-stat"><div class="go-stat-label">Fans</div><div class="go-stat-val">' + gs.jokers.length + ' / 5</div></div>';
     html += '<div class="go-stat"><div class="go-stat-label">Final Score</div><div class="go-stat-val">' + formatNum(gs.currentScore) + '</div></div>';
     html += '<div class="go-stat"><div class="go-stat-label">Target</div><div class="go-stat-val">' + formatNum(gs.targetScore) + '</div></div>';
@@ -2440,6 +2506,35 @@
     html += '</div>';
 
     els.gameoverContent.innerHTML = html;
+
+    // Show infinity button only on a normal-mode win
+    var existingInfBtn = document.getElementById('go-infinity-btn');
+    if (existingInfBtn) existingInfBtn.remove();
+    if (won && !isInfinity) {
+      var infBtn = document.createElement('button');
+      infBtn.id = 'go-infinity-btn';
+      infBtn.className = 'btn-infinity';
+      infBtn.textContent = '\u221e CONTINUE IN INFINITY MODE';
+      infBtn.addEventListener('click', startInfinityMode);
+      els.restartBtn.parentNode.insertBefore(infBtn, els.restartBtn);
+    }
+  }
+
+  function startInfinityMode() {
+    var infBtn = document.getElementById('go-infinity-btn');
+    if (infBtn) infBtn.disabled = true;
+    apiPost('/api/nba_balatro/start_infinity', { game_id: gameId }).then(function(data) {
+      if (data.error) { alert(data.error); if (infBtn) infBtn.disabled = false; return; }
+      gs.mode = 'infinity';
+      gs.coins = data.coins !== undefined ? data.coins : gs.coins;
+      gs.nextFight = data.next_fight || 1;
+      gs.nextBossEffect = null;
+      gs.status = data.status;
+      showFightRewardScreen(data);
+    }).catch(function(e) {
+      alert('Error: ' + e);
+      if (infBtn) infBtn.disabled = false;
+    });
   }
 
   // ── Screen management ──────────────────────────────────────────────
@@ -2679,6 +2774,7 @@
   window.toggleDeckViewer = toggleDeckViewer;
   window.closePackModal = closePackModal;
   window.closeDivisionStickerModal = closeDivisionStickerModal;
+  window.closePosPickModal = closePosPickModal;
 
   // ── Init ───────────────────────────────────────────────────────────
   showScreen('start');

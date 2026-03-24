@@ -23,7 +23,6 @@
       <p class="start-tagline">Draft hands of NFL player-season cards. Build combos to beat the blitz!</p>
       <div class="start-mode-btns">
         <button id="start-btn" class="btn-primary">KICKOFF!</button>
-        <button id="infinity-btn" class="btn-infinity">∞ INFINITY MODE</button>
       </div>
       <div class="rules-preview">
         <h3 class="rules-title">HAND TYPES</h3>
@@ -367,6 +366,17 @@
       </div>
 
       <button class="btn-secondary" onclick="closeDivisionStickerModal()" style="margin-top:12px">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Position Switch Picker Modal -->
+  <div id="pos-pick-modal" class="overlay hidden">
+    <div class="overlay-backdrop" onclick="closePosPickModal()"></div>
+    <div class="overlay-panel sticker-modal-panel">
+      <h3 class="sticker-modal-title">Position Switch</h3>
+      <p class="sticker-modal-sub">Switch <strong id="pos-pick-player"></strong> to:</p>
+      <div id="pos-pick-options" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:16px 0;"></div>
+      <button class="btn-secondary" onclick="closePosPickModal()" style="margin-top:4px">Cancel</button>
     </div>
   </div>
 

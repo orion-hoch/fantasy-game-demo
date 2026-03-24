@@ -226,7 +226,7 @@ SHOP_MOD_CARDS = [
     {"id": "training_camp", "type": "mod_card", "effect": "trained", "needs_target": True,
      "name": "Training Camp", "desc": "Target card permanently gains +20% Fantasy Pts", "cost": 5},
     {"id": "position_switch", "type": "mod_card", "effect": "pos_switch", "needs_target": True,
-     "name": "Position Switch", "desc": "Transform a G to F or F to C (keeps card, changes mult)", "cost": 6},
+     "name": "Position Switch", "desc": "Switch a card to any other position (G, F, or C)", "cost": 6},
 ]
 
 JOKER_ENHANCEMENT_ITEMS = [
@@ -294,10 +294,11 @@ def _build_deck_pool(conn):
     for pos, count in exact_counts.items():
         rows = conn.execute("""
             SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-                   nd.draft_pick, nd.college, na.selections
+                   nd.draft_pick, nd.college, na.selections, pi.nba_id
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
             LEFT JOIN nba_allstars na ON ns.player = na.player
+            LEFT JOIN nba_player_ids pi ON ns.player = pi.bbref_name
             WHERE ns.pos = ? AND ns.fantasy_score >= 600
             ORDER BY RANDOM()
         """, (pos,)).fetchall()
@@ -317,6 +318,8 @@ def _build_deck_pool(conn):
         card_id = f"{r[0]}_{r[1]}_{r[2]}_{i}"
         draft_pick = r[5]
         college = r[6] if r[6] else ("No college" if draft_pick is not None else None)
+        nba_id = r[8]
+        headshot_url = f"https://cdn.nba.com/headshots/nba/latest/260x190/{nba_id}.png" if nba_id else None
         cards.append({
             "id": card_id,
             "player": r[0],
@@ -330,6 +333,7 @@ def _build_deck_pool(conn):
             "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
             "division": get_nba_division(r[3]),
+            "headshot_url": headshot_url,
         })
     return cards
 
@@ -856,10 +860,11 @@ def _generate_shop(conn, state):
         score_min = fp_min * 10
         buy_rows = conn.execute("""
             SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-                   nd.draft_pick, nd.college, na.selections
+                   nd.draft_pick, nd.college, na.selections, pi.nba_id
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
             LEFT JOIN nba_allstars na ON ns.player = na.player
+            LEFT JOIN nba_player_ids pi ON ns.player = pi.bbref_name
             WHERE ns.fantasy_score >= ?
               AND ns.pos IN ('G','F','C')
             ORDER BY RANDOM()
@@ -869,6 +874,7 @@ def _generate_shop(conn, state):
         buy_candidates = [r for r in buy_rows if (r[0], r[1]) not in existing_ids]
         for i, row in enumerate(buy_candidates[:roster_player_count]):
             college = row[6]
+            nba_id = row[8] if len(row) > 8 else None
             card_data = {
                 "id": f"{row[0]}_{row[1]}_{row[2]}_buycard{i}",
                 "player": row[0],
@@ -880,6 +886,7 @@ def _generate_shop(conn, state):
                 "college": college,
                 "undrafted": row[5] is None,
                 "allstar_count": int(row[7]) if row[7] is not None else 0,
+                "headshot_url": f"https://cdn.nba.com/headshots/nba/latest/260x190/{nba_id}.png" if nba_id else None,
             }
             base_card_cost = random.randint(4, 8)
             items.append({
@@ -974,13 +981,22 @@ def _generate_shop(conn, state):
     return items
 
 
-def _get_fight_target(round_num, fight_num):
+def _get_fight_target(round_num, fight_num, mode="normal"):
+    if mode == "infinity":
+        fight_num_total = (round_num - 1) * 3 + fight_num
+        return int(2000 * (2.5 ** (fight_num_total - 1)))
     base = ROUND_BASE_TARGETS[min(round_num - 1, len(ROUND_BASE_TARGETS) - 1)]
     scale = FIGHT_SCALE[min(fight_num - 1, len(FIGHT_SCALE) - 1)]
     return int(base * scale)
 
 
-def _get_level_name(round_num, fight_num, boss_effect=None):
+def _get_level_name(round_num, fight_num, boss_effect=None, mode="normal"):
+    if mode == "infinity":
+        fight_num_total = (round_num - 1) * 3 + fight_num
+        if fight_num == 3:
+            boss_name = BOSS_EFFECT_MAP.get(boss_effect, {}).get("name", "Boss") if boss_effect else "Boss"
+            return f"∞ Wave {fight_num_total} · BOSS: {boss_name}"
+        return f"∞ Wave {fight_num_total}"
     round_name = ROUND_NAMES[min(round_num - 1, len(ROUND_NAMES) - 1)]
     if fight_num == 3:
         boss_name = BOSS_EFFECT_MAP.get(boss_effect, {}).get("name", "Boss") if boss_effect else "Boss"
@@ -1007,6 +1023,7 @@ def start_game(conn):
     gid = str(uuid.uuid4())[:8]
     state = {
         "created_at": time.time(),
+        "mode": "normal",
         "floor": 1,
         "round": 1,
         "fight": 1,
@@ -1173,7 +1190,8 @@ def play_hand(gid, card_ids):
     if g["current_score"] >= g["target_score"]:
         fight = g.get("fight", 1)
         round_num = g.get("round", 1)
-        if fight == 3 and round_num >= 8:
+        mode = g.get("mode", "normal")
+        if mode != "infinity" and fight == 3 and round_num >= 8:
             g["status"] = "won_game"
             result["status"] = "won_game"
         else:
@@ -1245,6 +1263,43 @@ def advance_fight(gid, conn=None):
         "reward_joker_options": reward_jokers,
         "next_fight": next_fight,
         "next_boss_effect": BOSS_EFFECT_MAP.get(boss_effect) if boss_effect else None,
+    }, None
+
+
+def start_infinity_mode(gid):
+    """Continue a won game in infinity mode from round 9."""
+    g = _GAMES.get(gid)
+    if not g or g["status"] != "won_game":
+        return None, "Game not in won state"
+
+    g["mode"] = "infinity"
+    next_round = g.get("round", 8) + 1
+    next_fight = 1
+
+    g["pending_fight_advance"] = True
+    g["next_round"] = next_round
+    g["next_fight"] = next_fight
+    g["pending_boss_effect"] = None
+
+    reward_coins = 3 + g.get("round", 8) * 2
+    owned = set(g.get("jokers", []))
+    available = [j for j in JOKERS if j["id"] not in owned]
+    reward_weights = {"common": 35, "uncommon": 35, "rare": 25, "legendary": 5}
+    reward_jokers = _weighted_joker_sample(available, reward_weights, 3)
+
+    g["reward_coins_amount"] = reward_coins
+    g["reward_joker_options"] = [j["id"] for j in reward_jokers]
+    g["status"] = "choosing_reward"
+
+    _GAMES[gid] = g
+    return {
+        "status": "choosing_reward",
+        "mode": "infinity",
+        "coins": g["coins"],
+        "reward_coins_amount": reward_coins,
+        "reward_joker_options": reward_jokers,
+        "next_fight": next_fight,
+        "next_boss_effect": None,
     }, None
 
 
@@ -1505,7 +1560,7 @@ def sell_joker(gid, joker_id):
     }, None
 
 
-def use_held_item(gid, held_id, target_card_id=None, target_year=None, conn=None, discard_only=False):
+def use_held_item(gid, held_id, target_card_id=None, target_year=None, conn=None, discard_only=False, new_pos=None):
     g = _GAMES.get(gid)
     if not g:
         return None, "Game not found"
@@ -1601,14 +1656,18 @@ def use_held_item(gid, held_id, target_card_id=None, target_year=None, conn=None
                 if "trained" not in g["card_effects"][target_card_id]:
                     g["card_effects"][target_card_id].append("trained")
             elif effect == "pos_switch":
-                switch_map = {"G": "F", "F": "C", "C": "F"}
+                valid_positions = {"G", "F", "C"}
                 target = next((c for c in g["deck_pool"] if c["id"] == target_card_id), None)
                 if target:
-                    new_pos = switch_map.get(target["pos"], target["pos"])
-                    target["pos"] = new_pos
+                    chosen = new_pos if new_pos in valid_positions else None
+                    if not chosen or chosen == target["pos"]:
+                        # fallback: cycle to next position
+                        cycle = {"G": "F", "F": "C", "C": "G"}
+                        chosen = cycle.get(target["pos"], "F")
+                    target["pos"] = chosen
                     for hc in g["hand"]:
                         if hc["id"] == target_card_id:
-                            hc["pos"] = new_pos
+                            hc["pos"] = chosen
 
     # Remove from held_items
     g["held_items"] = [i for i in g["held_items"] if i.get("held_id") != held_id]
@@ -1648,8 +1707,9 @@ def leave_shop(gid):
         g["fight"] = new_fight
         g["floor"] = (new_round - 1) * 3 + new_fight
         g["boss_effect"] = boss_effect
-        g["target_score"] = _get_fight_target(new_round, new_fight)
-        g["level_name"] = _get_level_name(new_round, new_fight, boss_effect)
+        mode = g.get("mode", "normal")
+        g["target_score"] = _get_fight_target(new_round, new_fight, mode=mode)
+        g["level_name"] = _get_level_name(new_round, new_fight, boss_effect, mode=mode)
         g["current_score"] = 0
         g["hands_remaining"] = 4
         g["discards_remaining"] = g.get("base_discards", 3)
@@ -1803,10 +1863,11 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
 
     base_q = """
         SELECT ns.player, ns.season, ns.pos, ns.team, ns.fantasy_score,
-               nd.draft_pick, nd.college, na.selections
+               nd.draft_pick, nd.college, na.selections, pi.nba_id
         FROM nba_stats ns
         LEFT JOIN nba_draft nd ON ns.player = nd.player
         LEFT JOIN nba_allstars na ON ns.player = na.player
+        LEFT JOIN nba_player_ids pi ON ns.player = pi.bbref_name
         WHERE ns.pos IN ('G','F','C')
     """
 
@@ -1853,6 +1914,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
         if (r[0], r[1]) in existing_ids:
             continue
         college = r[6]
+        nba_id = r[8] if len(r) > 8 else None
         card = {
             "id": f"{r[0]}_{r[1]}_{r[2]}_pack{idx_start + i}",
             "player": r[0], "season": r[1], "pos": r[2], "team": r[3],
@@ -1862,6 +1924,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
             "undrafted": r[5] is None,
             "allstar_count": int(r[7]) if r[7] is not None else 0,
             "conference": get_nba_conference(r[3]),
+            "headshot_url": f"https://cdn.nba.com/headshots/nba/latest/260x190/{nba_id}.png" if nba_id else None,
         }
         cards.append(card)
         if len(cards) >= candidate_count:
