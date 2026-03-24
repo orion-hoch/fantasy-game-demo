@@ -3123,6 +3123,10 @@ body.scoring {
   image-rendering: crisp-edges;
   filter: contrast(1.25) saturate(0.45) brightness(0.93);
 }
+.card-headshot-img[src="/static/img/blank_player.png"] {
+  object-position: 50% 50%;
+  object-fit: contain;
+}
 /* Dither dot-matrix overlay for retro feel */
 .card-headshot::before {
   content: '';
