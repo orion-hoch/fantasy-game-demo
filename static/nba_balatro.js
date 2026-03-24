@@ -1733,8 +1733,7 @@
 
     var img = document.createElement('img');
     img.alt = '';
-    img.className = 'card-headshot-img card-headshot-loading';
-    img.onload = function() { this.classList.remove('card-headshot-loading'); };
+    img.className = 'card-headshot-img';
     if (card.headshot_url) {
       img.onerror = function() {
         this.onerror = null;

@@ -1559,8 +1559,7 @@
 
     var img = document.createElement('img');
     img.alt = '';
-    img.className = 'card-headshot-img card-headshot-loading';
-    img.onload = function() { this.classList.remove('card-headshot-loading'); };
+    img.className = 'card-headshot-img';
     headshotDiv.appendChild(img);
     if (card.pfr_id) {
       resolvePfrUrl(card.pfr_id, card.max_season || card.season, function(url) {

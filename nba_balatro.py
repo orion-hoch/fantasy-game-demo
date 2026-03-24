@@ -1005,12 +1005,10 @@ def _apply_boss_hand_effect(state):
         for c in state["hand"]:
             if c.get("pos") == "C":
                 c["boss_disabled"] = True
-        state["deck_pool"] = [c for c in state["deck_pool"] if c.get("pos") != "C"]
     elif boss == "flagrant_foul":
         for c in state["hand"]:
             if (c.get("season") or 0) >= 2010:
                 c["boss_disabled"] = True
-        state["deck_pool"] = [c for c in state["deck_pool"] if not ((c.get("season") or 0) >= 2010)]
 
 
 def start_game(conn):
@@ -1139,6 +1137,7 @@ def play_hand(gid, card_ids):
     draw_count = min(needed, len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
+    _apply_boss_hand_effect(g)
 
     # Handle glass breaking
     broken_cards = []
@@ -1369,6 +1368,7 @@ def discard_cards(gid, card_ids):
     draw_count = min(needed, len(g["deck"]))
     g["hand"].extend(g["deck"][:draw_count])
     g["deck"] = g["deck"][draw_count:]
+    _apply_boss_hand_effect(g)
     g.setdefault("fight_discards", []).extend(discarded)
 
     _GAMES[gid] = g
