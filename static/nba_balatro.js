@@ -86,6 +86,22 @@
   // ── Card stats cache ────────────────────────────────────────────────
   var cardStatsCache = {};
 
+  // ── Headshot URL cache (persisted to localStorage) ───────────────────
+  var _NBA_LS_KEY = 'nba_headshot_cache_v1';
+  var _nbaHeadshotCache = (function() {
+    try { return JSON.parse(localStorage.getItem(_NBA_LS_KEY)) || {}; } catch(e) { return {}; }
+  })();
+  function _saveNbaCache() {
+    try { localStorage.setItem(_NBA_LS_KEY, JSON.stringify(_nbaHeadshotCache)); } catch(e) {}
+  }
+  function resolveNbaUrl(url, callback) {
+    if (url in _nbaHeadshotCache) { callback(_nbaHeadshotCache[url]); return; }
+    var probe = new Image();
+    probe.onload  = function() { _nbaHeadshotCache[url] = url; _saveNbaCache(); callback(url); };
+    probe.onerror = function() { _nbaHeadshotCache[url] = null; _saveNbaCache(); callback(null); };
+    probe.src = url;
+  }
+
   // ── Year select pending state ────────────────────────────────────────
   var pendingYearTarget = null;  // {shopId, itemType, cardId, playerName}
 
@@ -1733,19 +1749,18 @@
 
     var img = document.createElement('img');
     img.alt = '';
-    img.className = 'card-headshot-img';
-    if (card.headshot_url) {
-      img.onerror = function() {
-        this.onerror = null;
-        this.classList.add('card-headshot-blank');
-        this.src = '/static/img/blank_player.png';
-      };
-      img.src = card.headshot_url;
-    } else {
-      img.classList.add('card-headshot-blank');
-      img.src = '/static/img/blank_player.png';
-    }
+    img.className = 'card-headshot-img card-headshot-blank';
+    img.src = '/static/img/blank_player.png';
     headshotDiv.appendChild(img);
+    if (card.headshot_url) {
+      resolveNbaUrl(card.headshot_url, function(url) {
+        if (!img.parentNode) return;
+        if (url) {
+          img.classList.remove('card-headshot-blank');
+          img.src = url;
+        }
+      });
+    }
 
     // Flip button overlaid on headshot
     var flipBtn = document.createElement('button');
