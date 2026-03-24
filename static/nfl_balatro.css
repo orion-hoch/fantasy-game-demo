@@ -1016,7 +1016,8 @@ body.scoring {
   image-rendering: crisp-edges;
   filter: contrast(1.1) saturate(0.82) brightness(1.0);
 .card-headshot-img.card-headshot-blank {
-  object-position: 50% 20%;
+  object-fit: contain;
+  object-position: center center;
 }
 /* Dither dot-matrix overlay for retro feel */
 .card-headshot::before {

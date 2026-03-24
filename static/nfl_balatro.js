@@ -87,15 +87,21 @@
   var cardStatsCache = {};
 
   // ── Headshot URL resolver cache ──────────────────────────────────────
-  // Probes URLs off-DOM so the visible img never flickers through 404s.
-  var _pfrUrlCache = {};  // pfr_id -> resolved URL string, or null
+  // Persisted to localStorage so players with no photo are never probed again.
+  var _LS_KEY = 'nfl_pfr_url_cache_v1';
+  var _pfrUrlCache = (function() {
+    try { return JSON.parse(localStorage.getItem(_LS_KEY)) || {}; } catch(e) { return {}; }
+  })();
+
+  function _savePfrCache() {
+    try { localStorage.setItem(_LS_KEY, JSON.stringify(_pfrUrlCache)); } catch(e) {}
+  }
 
   function resolvePfrUrl(pfr_id, max_season, callback) {
     if (pfr_id in _pfrUrlCache) { callback(_pfrUrlCache[pfr_id]); return; }
     var newBase = 'https://www.pro-football-reference.com/req/20230307/images/headshots/';
     var oldBase = 'https://www.pro-football-reference.com/req/20180910/images/headshots/';
     var ms = max_season || new Date().getFullYear();
-    // Try base URL first, then every season year from max down to 2000, then old CDN base
     var urls = [newBase + pfr_id + '.jpg'];
     for (var yr = ms; yr >= 2000; yr--) {
       urls.push(newBase + pfr_id + '_' + yr + '.jpg');
@@ -103,9 +109,11 @@
     urls.push(oldBase + pfr_id + '.jpg');
     var i = 0;
     function tryNext() {
-      if (i >= urls.length) { _pfrUrlCache[pfr_id] = null; callback(null); return; }
+      if (i >= urls.length) {
+        _pfrUrlCache[pfr_id] = null; _savePfrCache(); callback(null); return;
+      }
       var probe = new Image();
-      probe.onload  = function() { _pfrUrlCache[pfr_id] = urls[i]; callback(urls[i]); };
+      probe.onload  = function() { _pfrUrlCache[pfr_id] = urls[i]; _savePfrCache(); callback(urls[i]); };
       probe.onerror = function() { i++; tryNext(); };
       probe.src = urls[i];
     }
@@ -1559,21 +1567,17 @@
 
     var img = document.createElement('img');
     img.alt = '';
-    img.className = 'card-headshot-img';
+    img.className = 'card-headshot-img card-headshot-blank';
+    img.src = '/static/img/blank_player.png';
     headshotDiv.appendChild(img);
     if (card.pfr_id) {
       resolvePfrUrl(card.pfr_id, card.max_season || card.season, function(url) {
-        if (!img.parentNode) return;  // card was removed before we resolved
+        if (!img.parentNode) return;
         if (url) {
+          img.classList.remove('card-headshot-blank');
           img.src = url;
-        } else {
-          img.classList.add('card-headshot-blank');
-          img.src = '/static/img/blank_player.png';
         }
       });
-    } else {
-      img.classList.add('card-headshot-blank');
-      img.src = '/static/img/blank_player.png';
     }
 
     // Flip button overlaid on headshot
