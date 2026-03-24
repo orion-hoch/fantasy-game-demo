@@ -44,6 +44,7 @@
   var gs = {
     hand: [],
     jokers: [],
+    mode: 'normal',
     floor: 1,
     round: 1,
     fight: 1,
@@ -97,6 +98,7 @@
     gameoverScreen: document.getElementById('gameover-screen'),
 
     startBtn:       document.getElementById('start-btn'),
+    infinityBtn:    document.getElementById('infinity-btn'),
     playBtn:        document.getElementById('play-btn'),
     discardBtn:     document.getElementById('discard-btn'),
     skipJokerBtn:   document.getElementById('skip-joker-btn'),
@@ -371,17 +373,21 @@
   }
 
   // ── Game API calls ─────────────────────────────────────────────────
-  function startGame() {
+  function startGame(mode) {
+    mode = mode || 'normal';
     els.startBtn.disabled = true;
+    if (els.infinityBtn) els.infinityBtn.disabled = true;
     els.startBtn.textContent = 'LOADING...';
-    apiPost('/api/nfl_balatro/start', {}).then(function (data) {
+    apiPost('/api/nfl_balatro/start', {mode: mode}).then(function (data) {
       if (data.error) {
         alert('Error: ' + data.error);
         els.startBtn.disabled = false;
+        if (els.infinityBtn) els.infinityBtn.disabled = false;
         els.startBtn.textContent = 'KICKOFF!';
         return;
       }
       gameId = data.game_id;
+      gs.mode = data.mode || 'normal';
       gs.hand = data.hand || [];
       gs.jokers = data.jokers || [];
       gs.floor = data.floor;
@@ -402,7 +408,7 @@
       gs.comboBoosts = data.combo_boosts || {};
       gs.cardEffects = data.card_effects || {};
       gs.shopItems = [];
-      gs.maxHandSize = data.max_hand_size || 9;
+      gs.maxHandSize = data.max_hand_size || 7;
       gs.baseDiscards = data.base_discards || 3;
       gs.restockCount = 0;
       gs.deckPool = data.hand || [];
@@ -421,10 +427,12 @@
       renderAll();
       setTimeout(triggerDealAnimation, 60);
       els.startBtn.disabled = false;
+      if (els.infinityBtn) els.infinityBtn.disabled = false;
       els.startBtn.textContent = 'KICKOFF!';
     }).catch(function (e) {
       alert('Failed to start game: ' + e);
       els.startBtn.disabled = false;
+      if (els.infinityBtn) els.infinityBtn.disabled = false;
       els.startBtn.textContent = 'KICKOFF!';
     });
   }
@@ -659,36 +667,6 @@
 
   function openDivisionStickerModal(item) {
     pendingDivSticker = { shopId: item.shop_id, cost: item.cost };
-    var modal = document.getElementById('div-sticker-modal');
-    if (!modal) return;
-    modal.classList.remove('hidden');
-    document.getElementById('div-sticker-step1').classList.remove('hidden');
-    document.getElementById('div-sticker-step2').classList.add('hidden');
-    document.getElementById('div-sticker-card-grid').innerHTML = '<div class="loading-msg">Loading\u2026</div>';
-
-    apiPost('/api/nfl_balatro/get_pool', { game_id: gameId }).then(function(data) {
-      if (data.error) { closeDivisionStickerModal(); showToast(data.error, 'error'); return; }
-      var grid = document.getElementById('div-sticker-card-grid');
-      grid.innerHTML = '';
-      (data.deck_pool || []).forEach(function(card) {
-        var divInfo = getNflDivInfo(card.team || '');
-        var btn = document.createElement('div');
-        btn.className = 'sticker-card-option card-pos-' + card.pos.toLowerCase();
-        btn.innerHTML =
-          '<div class="sticker-card-pos">' + card.pos + '</div>' +
-          '<div class="sticker-card-name">' + card.player + '</div>' +
-          '<div class="sticker-card-meta">' + card.team + ' \u00b7 ' + card.season + '</div>' +
-          (divInfo ? '<div class="card-div-badge ' + divInfo.cls + '">' + divInfo.label + '</div>' : '');
-        btn.addEventListener('click', function() {
-          pendingDivSticker.cardId = card.id;
-          pendingDivSticker.card = card;
-          document.getElementById('div-sticker-step1').classList.add('hidden');
-          document.getElementById('div-sticker-step2').classList.remove('hidden');
-          document.getElementById('div-sticker-chosen-card').textContent = card.player + ' (' + card.team + ')';
-        });
-        grid.appendChild(btn);
-      });
-    });
 
     // Pre-populate division buttons for step 2
     var divOpts = document.getElementById('sticker-div-options');
@@ -704,12 +682,32 @@
         divOpts.appendChild(btn);
       });
     }
+
+    // Use deck viewer for card selection instead of inline mini-grid
+    openDeckViewerForSelection('Pick a card to reassign its division', function(card) {
+      pendingDivSticker.cardId = card.id;
+      pendingDivSticker.card = card;
+      document.getElementById('div-sticker-chosen-card').textContent = card.player + ' (' + card.team + ')';
+      var modal = document.getElementById('div-sticker-modal');
+      if (modal) {
+        document.getElementById('div-sticker-step1').classList.add('hidden');
+        document.getElementById('div-sticker-step2').classList.remove('hidden');
+        modal.classList.remove('hidden');
+      }
+    });
   }
 
   function closeDivisionStickerModal() {
     var modal = document.getElementById('div-sticker-modal');
     if (modal) modal.classList.add('hidden');
     pendingDivSticker = null;
+    // Also close deck viewer if it was open for selection
+    _deckSelectCallback = null;
+    if (els.deckViewerOverlay) {
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
+      els.deckViewerOverlay.classList.add('hidden');
+    }
   }
 
   function applyDivisionSticker(newDivision, newDivCls, newDivLabel) {
@@ -1000,7 +998,10 @@
 
   function renderTopBar() {
     els.levelName.textContent = gs.levelName || 'Preseason';
-    els.floorDisplay.textContent = 'Round ' + (gs.round || 1) + ' · Fight ' + (gs.fight || 1);
+    var floorText = gs.mode === 'infinity'
+      ? '∞ INFINITY MODE'
+      : 'Round ' + (gs.round || 1) + ' · Fight ' + (gs.fight || 1);
+    els.floorDisplay.textContent = floorText;
     els.handsCount.textContent = gs.handsRemaining;
     els.discardCount.textContent = gs.discardsRemaining;
     if (els.coinsCount) els.coinsCount.textContent = gs.coins;
@@ -2009,81 +2010,29 @@
     });
   }
 
-  // ── Target Selection Modal ─────────────────────────────────────────
+  // ── Target Selection (via Deck Viewer) ────────────────────────────
   function openTargetModal(item) {
-    els.targetModalDesc.textContent = item.desc || 'Select a card from your pool to apply this effect.';
-    els.targetCardsCont.innerHTML = '<div class="loading-msg">Loading pool...</div>';
-    els.targetModal.classList.remove('hidden');
-
-    apiPost('/api/nfl_balatro/get_pool', { game_id: gameId }).then(function (data) {
-      if (data.error) { alert(data.error); closeTargetModal(); return; }
-      renderTargetCards(data.deck_pool || [], data.card_effects || {}, item);
-    }).catch(function (e) { alert('Error: ' + e); closeTargetModal(); });
-  }
-
-  function renderTargetCards(pool, serverEffects, item) {
-    var cont = els.targetCardsCont;
-    cont.innerHTML = '';
-
-    // Group by position
-    var byPos = { QB: [], RB: [], WR: [], TE: [] };
-    pool.forEach(function (card) {
-      if (byPos[card.pos]) byPos[card.pos].push(card);
-    });
-
-    POS_ORDER.forEach(function (pos) {
-      var cards = byPos[pos];
-      if (!cards || cards.length === 0) return;
-
-      var section = document.createElement('div');
-      section.className = 'target-pos-section';
-
-      var header = document.createElement('div');
-      header.className = 'target-pos-header card-pos-' + pos.toLowerCase();
-      header.textContent = pos;
-      section.appendChild(header);
-
-      var grid = document.createElement('div');
-      grid.className = 'target-cards-grid';
-
-      cards.forEach(function (card) {
-        // Temporarily use server effects for display
-        var savedEffects = gs.cardEffects[card.id];
-        var cardEffectsForCard = serverEffects[card.id] || [];
-
-        var cardEl = buildCardEl(card, {
-          noSelect: true,
-          overrideEffects: cardEffectsForCard,
-          onSelect: function (selectedCard) {
-            var pending = gs.pendingShopItem;
-            if (!pending) return;
-            if (pending.item && pending.item.type === 'year_card') {
-              // Year card: close target modal, open year select modal
-              closeTargetModal();
-              openYearSelectModal(pending.shopId, pending.itemType, selectedCard.id, selectedCard.player, selectedCard.season);
-            } else {
-              executeBuy(pending.shopId, pending.itemType, selectedCard.id, null);
-            }
-          }
-        });
-
-        // Restore
-        if (savedEffects !== undefined) {
-          gs.cardEffects[card.id] = savedEffects;
-        } else {
-          delete gs.cardEffects[card.id];
-        }
-        grid.appendChild(cardEl);
-      });
-
-      section.appendChild(grid);
-      cont.appendChild(section);
+    openDeckViewerForSelection(item.desc || 'Select a card to apply this effect.', function(selectedCard) {
+      var pending = gs.pendingShopItem;
+      if (!pending) return;
+      gs.pendingShopItem = null;
+      if (pending.item && pending.item.type === 'year_card') {
+        openYearSelectModal(pending.shopId, pending.itemType, selectedCard.id, selectedCard.player, selectedCard.season);
+      } else {
+        executeBuy(pending.shopId, pending.itemType, selectedCard.id, null);
+      }
     });
   }
 
   function closeTargetModal() {
-    els.targetModal.classList.add('hidden');
+    // Deck viewer replaced the old target modal — close deck viewer + clear state
+    _deckSelectCallback = null;
     gs.pendingShopItem = null;
+    if (els.deckViewerOverlay) {
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
+      els.deckViewerOverlay.classList.add('hidden');
+    }
   }
 
   // ── Year Select Modal ──────────────────────────────────────────────
@@ -2210,18 +2159,37 @@
   }
 
   // ── Deck Viewer ────────────────────────────────────────────────────
+  var _deckSelectCallback = null;
+
+  function openDeckViewerForSelection(desc, callback) {
+    _deckSelectCallback = callback;
+    if (!els.deckViewerOverlay) return;
+    var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+    if (titleEl) titleEl.textContent = desc || 'Select a Card';
+    renderDeckViewer();
+    els.deckViewerOverlay.classList.remove('hidden');
+  }
+
   function toggleDeckViewer() {
     if (!els.deckViewerOverlay) return;
     if (els.deckViewerOverlay.classList.contains('hidden')) {
+      _deckSelectCallback = null;
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
       renderDeckViewer();
       els.deckViewerOverlay.classList.remove('hidden');
     } else {
+      _deckSelectCallback = null;
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
       els.deckViewerOverlay.classList.add('hidden');
     }
   }
 
   function renderDeckViewer() {
     if (!els.deckViewerContent) return;
+    var isSelectMode = !!_deckSelectCallback;
+    var selectCallback = _deckSelectCallback;
     els.deckViewerContent.innerHTML = '<div class="loading-msg">Loading deck...</div>';
 
     // Fetch the current pool from server to ensure accuracy
@@ -2241,7 +2209,7 @@
 
       var totalEl = document.createElement('div');
       totalEl.style.cssText = 'font-size:0.7rem;color:var(--nb-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;';
-      totalEl.textContent = pool.length + ' cards in deck';
+      totalEl.textContent = isSelectMode ? 'Click a card to select it' : pool.length + ' cards in deck';
       els.deckViewerContent.appendChild(totalEl);
 
       POS_ORDER.forEach(function (pos) {
@@ -2266,8 +2234,15 @@
           var cardEl = buildCardEl(card, {
             noSelect: true,
             overrideEffects: cardEffectsForCard,
+            onSelect: isSelectMode ? function(selectedCard) {
+              _deckSelectCallback = null;
+              var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+              if (titleEl) titleEl.textContent = 'YOUR DECK';
+              els.deckViewerOverlay.classList.add('hidden');
+              selectCallback(selectedCard);
+            } : null,
           });
-          cardEl.style.cursor = 'default';
+          if (!isSelectMode) cardEl.style.cursor = 'default';
           grid.appendChild(cardEl);
         });
 
@@ -2284,18 +2259,25 @@
     if (window.SFX) SFX.play(won ? 'win' : 'lose');
     showScreen('gameover');
     var html = '';
+    var isInfinity = gs.mode === 'infinity';
+    var waveNum = (gs.round - 1) * 3 + gs.fight;
     if (won) {
-      html += '';
       html += '<div class="go-title win">CHAMPION!</div>';
       html += '<div class="go-sub">You defeated all 8 rounds!</div>';
+    } else if (isInfinity) {
+      html += '<div class="go-title lose">GAME OVER</div>';
+      html += '<div class="go-sub">∞ Survived ' + (waveNum - 1) + ' waves of infinity!</div>';
     } else {
-      html += '';
       html += '<div class="go-title lose">GAME OVER</div>';
       html += '<div class="go-sub">The blitz got you at level ' + gs.floor + '</div>';
     }
 
     html += '<div class="go-stats">';
-    html += '<div class="go-stat"><div class="go-stat-label">Level Reached</div><div class="go-stat-val">' + gs.floor + ' / 8</div></div>';
+    if (isInfinity) {
+      html += '<div class="go-stat"><div class="go-stat-label">Waves Survived</div><div class="go-stat-val">' + (waveNum - 1) + '</div></div>';
+    } else {
+      html += '<div class="go-stat"><div class="go-stat-label">Level Reached</div><div class="go-stat-val">' + gs.floor + ' / 8</div></div>';
+    }
     html += '<div class="go-stat"><div class="go-stat-label">Fans</div><div class="go-stat-val">' + gs.jokers.length + ' / 5</div></div>';
     html += '<div class="go-stat"><div class="go-stat-label">Final Score</div><div class="go-stat-val">' + formatNum(gs.currentScore) + '</div></div>';
     html += '<div class="go-stat"><div class="go-stat-label">Target</div><div class="go-stat-val">' + formatNum(gs.targetScore) + '</div></div>';
@@ -2319,7 +2301,8 @@
   var rewardCoinsBtn = document.getElementById('reward-choice-coins');
   if (rewardCoinsBtn) rewardCoinsBtn.addEventListener('click', claimRewardCoins);
 
-  els.startBtn.addEventListener('click', startGame);
+  els.startBtn.addEventListener('click', function() { startGame('normal'); });
+  if (els.infinityBtn) els.infinityBtn.addEventListener('click', function() { startGame('infinity'); });
 
   els.playBtn.addEventListener('click', function () {
     if (!els.playBtn.disabled) playHand();
@@ -2541,6 +2524,7 @@
   window.closeYearModal = closeYearModal;
   window.toggleDeckViewer = toggleDeckViewer;
   window.closePackModal = closePackModal;
+  window.closeDivisionStickerModal = closeDivisionStickerModal;
 
   // ── Init ───────────────────────────────────────────────────────────
   showScreen('start');

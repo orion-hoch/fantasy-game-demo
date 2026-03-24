@@ -62,6 +62,8 @@ ROUND_BASE_TARGETS = [1800, 5000, 13000, 32000, 80000, 200000, 500000, 1300000]
 ROUND_NAMES = ["Preseason", "Wild Card", "Divisional Round", "Conference Championship",
                "Super Bowl LIX", "Super Bowl LX", "Super Bowl LXI", "Super Bowl LXII"]
 FIGHT_SCALE = [1.0, 1.3, 1.7]  # within-round scaling (fight 1, 2, 3=boss)
+MAX_HAND_SIZE = 8
+MAX_DISCARDS = 8
 
 BOSS_EFFECTS = [
     {"id": "sec_lockout",    "name": "SEC Lockout",    "desc": "SEC players are removed from your hand this fight"},
@@ -410,7 +412,7 @@ def _deal_for_level(state):
     """Shuffle deck_pool, deal hand_size for hand, rest into deck."""
     pool = list(state["deck_pool"])
     random.shuffle(pool)
-    hand_size = state.get("max_hand_size", 9)
+    hand_size = state.get("max_hand_size", 7)
     state["hand"] = pool[:hand_size]
     state["deck"] = pool[hand_size:]
     state["fight_discards"] = []
@@ -1005,8 +1007,13 @@ def _generate_shop(conn, state):
             eitem["effect"] = ey["effect"]
         training_pool.append(eitem)
 
-    # 2 upgrades
-    upgrade_options = list(SHOP_UPGRADES)
+    # 2 upgrades (filter out capped ones)
+    cur_hand_size = state.get("max_hand_size", 7)
+    cur_discards = state.get("base_discards", 3)
+    upgrade_options = [u for u in SHOP_UPGRADES if not (
+        (u["stat"] == "max_hand_size" and cur_hand_size >= MAX_HAND_SIZE) or
+        (u["stat"] == "base_discards" and cur_discards >= MAX_DISCARDS)
+    )]
     random.shuffle(upgrade_options)
     for ug in upgrade_options[:2]:
         training_pool.append({
@@ -1046,13 +1053,23 @@ def _generate_shop(conn, state):
     return items
 
 
-def _get_fight_target(round_num, fight_num):
+def _get_fight_target(round_num, fight_num, mode="normal"):
+    if mode == "infinity":
+        # Exponential scaling: starts at 2000, grows ~×2.5 per fight
+        fight_num_total = (round_num - 1) * 3 + fight_num
+        return int(2000 * (2.5 ** (fight_num_total - 1)))
     base = ROUND_BASE_TARGETS[min(round_num - 1, len(ROUND_BASE_TARGETS) - 1)]
     scale = FIGHT_SCALE[min(fight_num - 1, len(FIGHT_SCALE) - 1)]
     return int(base * scale)
 
 
-def _get_level_name(round_num, fight_num, boss_effect=None):
+def _get_level_name(round_num, fight_num, boss_effect=None, mode="normal"):
+    if mode == "infinity":
+        fight_num_total = (round_num - 1) * 3 + fight_num
+        if fight_num == 3:
+            boss_name = BOSS_EFFECT_MAP.get(boss_effect, {}).get("name", "Boss") if boss_effect else "Boss"
+            return f"∞ Wave {fight_num_total} · BOSS: {boss_name}"
+        return f"∞ Wave {fight_num_total}"
     round_name = ROUND_NAMES[min(round_num - 1, len(ROUND_NAMES) - 1)]
     if fight_num == 3:
         boss_name = BOSS_EFFECT_MAP.get(boss_effect, {}).get("name", "Boss") if boss_effect else "Boss"
@@ -1073,19 +1090,20 @@ def _apply_boss_hand_effect(state):
         state["deck_pool"] = [c for c in state["deck_pool"] if not ((c.get("draft_year") or 0) >= 2020)]
 
 
-def start_game(conn):
+def start_game(conn, mode="normal"):
     cleanup_old_games()
     deck_pool = _build_deck_pool(conn)
 
     gid = str(uuid.uuid4())[:8]
     state = {
         "created_at": time.time(),
+        "mode": mode,
         "floor": 1,
         "round": 1,
         "fight": 1,
         "boss_effect": None,
-        "target_score": _get_fight_target(1, 1),
-        "level_name": _get_level_name(1, 1),
+        "target_score": _get_fight_target(1, 1, mode=mode),
+        "level_name": _get_level_name(1, 1, mode=mode),
         "current_score": 0,
         "hands_remaining": 4,
         "discards_remaining": 3,
@@ -1249,7 +1267,8 @@ def play_hand(gid, card_ids):
     if g["current_score"] >= g["target_score"]:
         fight = g.get("fight", 1)
         round_num = g.get("round", 1)
-        if fight == 3 and round_num >= 8:
+        mode = g.get("mode", "normal")
+        if mode != "infinity" and fight == 3 and round_num >= 8:
             # Final boss of final round — game won
             g["status"] = "won_game"
             result["status"] = "won_game"
@@ -1543,6 +1562,12 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
         amount = item["amount"]
         if stat == "max_jokers":
             g["max_jokers"] = g.get("max_jokers", 5) + amount
+        elif stat == "max_hand_size":
+            new_val = min(g.get("max_hand_size", 7) + amount, MAX_HAND_SIZE)
+            g["max_hand_size"] = new_val
+        elif stat == "base_discards":
+            new_val = min(g.get("base_discards", 3) + amount, MAX_DISCARDS)
+            g["base_discards"] = new_val
         else:
             g[stat] = g.get(stat, 7 if stat == "max_hand_size" else 3) + amount
         # For hand size upgrade: draw 1 more card from deck into hand
@@ -1714,8 +1739,9 @@ def leave_shop(gid):
         g["fight"] = new_fight
         g["floor"] = (new_round - 1) * 3 + new_fight
         g["boss_effect"] = boss_effect
-        g["target_score"] = _get_fight_target(new_round, new_fight)
-        g["level_name"] = _get_level_name(new_round, new_fight, boss_effect)
+        mode = g.get("mode", "normal")
+        g["target_score"] = _get_fight_target(new_round, new_fight, mode=mode)
+        g["level_name"] = _get_level_name(new_round, new_fight, boss_effect, mode=mode)
         g["current_score"] = 0
         g["hands_remaining"] = 4
         g["discards_remaining"] = g.get("base_discards", 3)
@@ -1780,8 +1806,9 @@ def leave_shop(gid):
     g["fight"] = 1
     g["floor"] = (new_round - 1) * 3 + 1
     g["boss_effect"] = None
-    g["target_score"] = _get_fight_target(new_round, 1)
-    g["level_name"] = _get_level_name(new_round, 1)
+    mode = g.get("mode", "normal")
+    g["target_score"] = _get_fight_target(new_round, 1, mode=mode)
+    g["level_name"] = _get_level_name(new_round, 1, mode=mode)
     g["current_score"] = 0
     g["hands_remaining"] = 4
     g["discards_remaining"] = g.get("base_discards", 3)

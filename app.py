@@ -681,11 +681,14 @@ def nfl_balatro_page():
 @app.route("/api/nfl_balatro/start", methods=["POST"])
 def nfl_balatro_start():
     nb.cleanup_old_games()
+    data = request.get_json(silent=True) or {}
+    mode = data.get("mode", "normal")
     conn = get_db()
-    gid, state = nb.start_game(conn)
+    gid, state = nb.start_game(conn, mode=mode)
     conn.close()
     return jsonify({
         "game_id": gid,
+        "mode": state.get("mode", "normal"),
         "floor": state["floor"],
         "round": state.get("round", 1),
         "fight": state.get("fight", 1),
@@ -701,7 +704,7 @@ def nfl_balatro_start():
         "combo_boosts": state["combo_boosts"],
         "card_effects": state["card_effects"],
         "status": state["status"],
-        "max_hand_size": state.get("max_hand_size", 9),
+        "max_hand_size": state.get("max_hand_size", 7),
         "base_discards": state.get("base_discards", 3),
         "max_jokers": state.get("max_jokers", 5),
         "joker_state": state.get("joker_state", {}),

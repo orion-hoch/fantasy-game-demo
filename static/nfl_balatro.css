@@ -244,6 +244,37 @@ body.scoring {
   box-shadow: 1px 1px 0 var(--card-border);
 }
 
+.start-mode-btns {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-infinity {
+  background: #1a0a2e;
+  color: #c084fc;
+  border: 3px solid #7c3aed;
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'Oswald', Arial, sans-serif;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-radius: 4px;
+  box-shadow: 3px 3px 0 #7c3aed;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.btn-infinity:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #7c3aed;
+  background: #2d1060;
+}
+.btn-infinity:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #7c3aed;
+}
+
 .btn-secondary {
   background: var(--bg-secondary);
   color: var(--text-light);

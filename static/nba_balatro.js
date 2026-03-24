@@ -642,36 +642,6 @@
 
   function openDivisionStickerModal(item) {
     pendingDivSticker = { shopId: item.shop_id, cost: item.cost };
-    var modal = document.getElementById('div-sticker-modal');
-    if (!modal) return;
-    modal.classList.remove('hidden');
-    document.getElementById('div-sticker-step1').classList.remove('hidden');
-    document.getElementById('div-sticker-step2').classList.add('hidden');
-    document.getElementById('div-sticker-card-grid').innerHTML = '<div class="loading-msg">Loading\u2026</div>';
-
-    apiPost('/api/nba_balatro/get_pool', { game_id: gameId }).then(function(data) {
-      if (data.error) { closeDivisionStickerModal(); showToast(data.error, 'error'); return; }
-      var grid = document.getElementById('div-sticker-card-grid');
-      grid.innerHTML = '';
-      (data.deck_pool || []).forEach(function(card) {
-        var divInfo = getNbaDivInfo(card.team || '');
-        var btn = document.createElement('div');
-        btn.className = 'sticker-card-option card-pos-' + card.pos.toLowerCase();
-        btn.innerHTML =
-          '<div class="sticker-card-pos">' + card.pos + '</div>' +
-          '<div class="sticker-card-name">' + card.player + '</div>' +
-          '<div class="sticker-card-meta">' + card.team + ' \u00b7 ' + nbaYear(card.season) + '</div>' +
-          (divInfo ? '<div class="card-div-badge ' + divInfo.cls + '">' + divInfo.label + '</div>' : '');
-        btn.addEventListener('click', function() {
-          pendingDivSticker.cardId = card.id;
-          pendingDivSticker.card = card;
-          document.getElementById('div-sticker-step1').classList.add('hidden');
-          document.getElementById('div-sticker-step2').classList.remove('hidden');
-          document.getElementById('div-sticker-chosen-card').textContent = card.player + ' (' + card.team + ')';
-        });
-        grid.appendChild(btn);
-      });
-    });
 
     // Pre-populate division buttons for step 2
     var divOpts = document.getElementById('sticker-div-options');
@@ -687,12 +657,32 @@
         divOpts.appendChild(btn);
       });
     }
+
+    // Use deck viewer for card selection instead of inline mini-grid
+    openDeckViewerForSelection('Pick a card to reassign its division', function(card) {
+      pendingDivSticker.cardId = card.id;
+      pendingDivSticker.card = card;
+      document.getElementById('div-sticker-chosen-card').textContent = card.player + ' (' + card.team + ')';
+      var modal = document.getElementById('div-sticker-modal');
+      if (modal) {
+        document.getElementById('div-sticker-step1').classList.add('hidden');
+        document.getElementById('div-sticker-step2').classList.remove('hidden');
+        modal.classList.remove('hidden');
+      }
+    });
   }
 
   function closeDivisionStickerModal() {
     var modal = document.getElementById('div-sticker-modal');
     if (modal) modal.classList.add('hidden');
     pendingDivSticker = null;
+    // Also close deck viewer if it was open for selection
+    _deckSelectCallback = null;
+    if (els.deckViewerOverlay) {
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
+      els.deckViewerOverlay.classList.add('hidden');
+    }
   }
 
   function applyDivisionSticker(newDivision, newDivCls, newDivLabel) {
@@ -2182,81 +2172,29 @@
     });
   }
 
-  // ── Target Selection Modal ─────────────────────────────────────────
+  // ── Target Selection (via Deck Viewer) ────────────────────────────
   function openTargetModal(item) {
-    els.targetModalDesc.textContent = item.desc || 'Select a card from your pool to apply this effect.';
-    els.targetCardsCont.innerHTML = '<div class="loading-msg">Loading pool...</div>';
-    els.targetModal.classList.remove('hidden');
-
-    apiPost('/api/nba_balatro/get_pool', { game_id: gameId }).then(function (data) {
-      if (data.error) { alert(data.error); closeTargetModal(); return; }
-      renderTargetCards(data.deck_pool || [], data.card_effects || {}, item);
-    }).catch(function (e) { alert('Error: ' + e); closeTargetModal(); });
-  }
-
-  function renderTargetCards(pool, serverEffects, item) {
-    var cont = els.targetCardsCont;
-    cont.innerHTML = '';
-
-    // Group by position
-    var byPos = { G: [], F: [], C: [] };
-    pool.forEach(function (card) {
-      if (byPos[card.pos]) byPos[card.pos].push(card);
-    });
-
-    POS_ORDER.forEach(function (pos) {
-      var cards = byPos[pos];
-      if (!cards || cards.length === 0) return;
-
-      var section = document.createElement('div');
-      section.className = 'target-pos-section';
-
-      var header = document.createElement('div');
-      header.className = 'target-pos-header card-pos-' + pos.toLowerCase();
-      header.textContent = pos;
-      section.appendChild(header);
-
-      var grid = document.createElement('div');
-      grid.className = 'target-cards-grid';
-
-      cards.forEach(function (card) {
-        // Temporarily use server effects for display
-        var savedEffects = gs.cardEffects[card.id];
-        var cardEffectsForCard = serverEffects[card.id] || [];
-
-        var cardEl = buildCardEl(card, {
-          noSelect: true,
-          overrideEffects: cardEffectsForCard,
-          onSelect: function (selectedCard) {
-            var pending = gs.pendingShopItem;
-            if (!pending) return;
-            if (pending.item && pending.item.type === 'year_card') {
-              // Year card: close target modal, open year select modal
-              closeTargetModal();
-              openYearSelectModal(pending.shopId, pending.itemType, selectedCard.id, selectedCard.player, selectedCard.season);
-            } else {
-              executeBuy(pending.shopId, pending.itemType, selectedCard.id, null);
-            }
-          }
-        });
-
-        // Restore
-        if (savedEffects !== undefined) {
-          gs.cardEffects[card.id] = savedEffects;
-        } else {
-          delete gs.cardEffects[card.id];
-        }
-        grid.appendChild(cardEl);
-      });
-
-      section.appendChild(grid);
-      cont.appendChild(section);
+    openDeckViewerForSelection(item.desc || 'Select a card to apply this effect.', function(selectedCard) {
+      var pending = gs.pendingShopItem;
+      if (!pending) return;
+      gs.pendingShopItem = null;
+      if (pending.item && pending.item.type === 'year_card') {
+        openYearSelectModal(pending.shopId, pending.itemType, selectedCard.id, selectedCard.player, selectedCard.season);
+      } else {
+        executeBuy(pending.shopId, pending.itemType, selectedCard.id, null);
+      }
     });
   }
 
   function closeTargetModal() {
-    els.targetModal.classList.add('hidden');
+    // Deck viewer replaced the old target modal — close deck viewer + clear state
+    _deckSelectCallback = null;
     gs.pendingShopItem = null;
+    if (els.deckViewerOverlay) {
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
+      els.deckViewerOverlay.classList.add('hidden');
+    }
   }
 
   // ── Year Select Modal ──────────────────────────────────────────────
@@ -2383,18 +2321,37 @@
   }
 
   // ── Deck Viewer ────────────────────────────────────────────────────
+  var _deckSelectCallback = null;
+
+  function openDeckViewerForSelection(desc, callback) {
+    _deckSelectCallback = callback;
+    if (!els.deckViewerOverlay) return;
+    var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+    if (titleEl) titleEl.textContent = desc || 'Select a Card';
+    renderDeckViewer();
+    els.deckViewerOverlay.classList.remove('hidden');
+  }
+
   function toggleDeckViewer() {
     if (!els.deckViewerOverlay) return;
     if (els.deckViewerOverlay.classList.contains('hidden')) {
+      _deckSelectCallback = null;
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
       renderDeckViewer();
       els.deckViewerOverlay.classList.remove('hidden');
     } else {
+      _deckSelectCallback = null;
+      var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+      if (titleEl) titleEl.textContent = 'YOUR DECK';
       els.deckViewerOverlay.classList.add('hidden');
     }
   }
 
   function renderDeckViewer() {
     if (!els.deckViewerContent) return;
+    var isSelectMode = !!_deckSelectCallback;
+    var selectCallback = _deckSelectCallback;
     els.deckViewerContent.innerHTML = '<div class="loading-msg">Loading deck...</div>';
 
     // Fetch the current pool from server to ensure accuracy
@@ -2414,7 +2371,7 @@
 
       var totalEl = document.createElement('div');
       totalEl.style.cssText = 'font-size:0.7rem;color:var(--nb-dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;';
-      totalEl.textContent = pool.length + ' cards in deck';
+      totalEl.textContent = isSelectMode ? 'Click a card to select it' : pool.length + ' cards in deck';
       els.deckViewerContent.appendChild(totalEl);
 
       POS_ORDER.forEach(function (pos) {
@@ -2439,8 +2396,15 @@
           var cardEl = buildCardEl(card, {
             noSelect: true,
             overrideEffects: cardEffectsForCard,
+            onSelect: isSelectMode ? function(selectedCard) {
+              _deckSelectCallback = null;
+              var titleEl = els.deckViewerOverlay.querySelector('.deck-viewer-title');
+              if (titleEl) titleEl.textContent = 'YOUR DECK';
+              els.deckViewerOverlay.classList.add('hidden');
+              selectCallback(selectedCard);
+            } : null,
           });
-          cardEl.style.cursor = 'default';
+          if (!isSelectMode) cardEl.style.cursor = 'default';
           grid.appendChild(cardEl);
         });
 
@@ -2714,6 +2678,7 @@
   window.closeYearModal = closeYearModal;
   window.toggleDeckViewer = toggleDeckViewer;
   window.closePackModal = closePackModal;
+  window.closeDivisionStickerModal = closeDivisionStickerModal;
 
   // ── Init ───────────────────────────────────────────────────────────
   showScreen('start');
