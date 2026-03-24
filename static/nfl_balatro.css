@@ -1035,6 +1035,14 @@ body.scoring {
   font-size: 2rem;
   color: rgba(0,0,0,0.2);
 }
+.card-stars-row {
+  display: flex;
+  justify-content: center;
+  padding: 3px 6px 4px;
+  flex-shrink: 0;
+  background: var(--footer-color);
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
 
 /* ── Meta corner (pro bowl stars + year overlay) ──────────────────── */
 .card-meta-corner {
