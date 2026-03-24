@@ -1691,10 +1691,17 @@
     nameBox.appendChild(nameLast);
     topRow.appendChild(nameBox);
 
-    // Right: score box
+    // Right: stars box + score box
     var topRight = document.createElement('div');
     topRight.className = 'card-top-right';
 
+    if (card.allstar_count && card.allstar_count > 0) {
+      var starsBox = document.createElement('div');
+      starsBox.className = 'card-stars-box';
+      starsBox.textContent = '★'.repeat(Math.min(card.allstar_count, 5));
+      starsBox.title = card.allstar_count + 'x NBA All-Star';
+      topRight.appendChild(starsBox);
+    }
     var scoreBox = document.createElement('div');
     scoreBox.className = 'card-score-box';
     scoreBox.textContent = card.fantasy_pts !== undefined ? String(Math.round(card.fantasy_pts)) : '';

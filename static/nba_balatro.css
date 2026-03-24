@@ -3142,13 +3142,20 @@ body.scoring {
   font-size: 2rem;
   color: rgba(0,0,0,0.2);
 }
+/* Stars row only visible in deck view */
 .card-stars-row {
-  display: flex;
+  display: none;
   justify-content: center;
   padding: 3px 6px 4px;
   flex-shrink: 0;
   background: var(--footer-color);
   border-top: 1px solid rgba(0,0,0,0.1);
+}
+.deck-cards-grid .card .card-stars-row {
+  display: flex;
+}
+.deck-cards-grid .card .card-top-right .card-stars-box {
+  display: none;
 }
 
 /* ── Meta corner (stars + year, top-right of headshot) ──────────── */

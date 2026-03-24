@@ -1518,10 +1518,17 @@
     nameBox.appendChild(nameLast);
     topRow.appendChild(nameBox);
 
-    // Right: score box
+    // Right: pro bowl stars box + score box
     var topRight = document.createElement('div');
     topRight.className = 'card-top-right';
 
+    if (card.pro_bowls && card.pro_bowls > 0) {
+      var starsBox = document.createElement('div');
+      starsBox.className = 'card-stars-box';
+      starsBox.textContent = '★'.repeat(Math.min(card.pro_bowls, 5));
+      starsBox.title = card.pro_bowls + 'x Pro Bowl';
+      topRight.appendChild(starsBox);
+    }
     var scoreBox = document.createElement('div');
     scoreBox.className = 'card-score-box';
     scoreBox.textContent = card.fantasy_ppr !== undefined ? String(Math.round(card.fantasy_ppr)) : '';
