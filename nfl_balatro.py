@@ -322,7 +322,8 @@ def _build_deck_pool(conn):
         rows = conn.execute("""
             SELECT s.player, s.season, s.pos, s.team, s.fantasy_ppr,
                    d.pro_bowls, d.college, d.draft_year, d.draft_round, d.draft_pick,
-                   pi.pfr_id
+                   pi.pfr_id,
+                   (SELECT MAX(s2.season) FROM stats s2 WHERE s2.player = s.player) AS max_season
             FROM stats s
             LEFT JOIN draft d ON s.player = d.player
             LEFT JOIN nfl_player_ids pi ON s.player = pi.pfr_name
@@ -348,6 +349,7 @@ def _build_deck_pool(conn):
         card_id = f"{r[0]}_{r[1]}_{r[2]}_{i}"
         draft_pick = r[9]
         pfr_id = r[10] if len(r) > 10 else None
+        max_season = r[11] if len(r) > 11 else None
         raw_college = r[6]
         college = raw_college if (raw_college and raw_college != "Unknown") else ("No college" if draft_pick is not None else None)
         cards.append({
@@ -365,7 +367,9 @@ def _build_deck_pool(conn):
             "undrafted": draft_pick is None,
             "conference": get_conference(raw_college),
             "division": get_nfl_division(r[3]),
-            "headshot_url": f"https://www.pro-football-reference.com/req/20180910/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+            "pfr_id": pfr_id,
+            "max_season": max_season,
+            "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
         })
     return cards
 
@@ -375,7 +379,8 @@ def _build_deck(conn):
     rows = conn.execute("""
         SELECT s.player, s.season, s.pos, s.team, s.fantasy_ppr,
                d.pro_bowls, d.college, d.draft_year, d.draft_round, d.draft_pick,
-               pi.pfr_id
+               pi.pfr_id,
+               (SELECT MAX(s2.season) FROM stats s2 WHERE s2.player = s.player) AS max_season
         FROM stats s
         LEFT JOIN draft d ON s.player = d.player
         LEFT JOIN nfl_player_ids pi ON s.player = pi.pfr_name
@@ -394,6 +399,7 @@ def _build_deck(conn):
         seen_ids.add(card_id)
         draft_pick = r[9]
         pfr_id = r[10] if len(r) > 10 else None
+        max_season = r[11] if len(r) > 11 else None
         raw_college = r[6]
         college = raw_college if (raw_college and raw_college != "Unknown") else ("No college" if draft_pick is not None else None)
         cards.append({
@@ -411,7 +417,9 @@ def _build_deck(conn):
             "undrafted": draft_pick is None,
             "conference": get_conference(raw_college),
             "division": get_nfl_division(r[3]),
-            "headshot_url": f"https://www.pro-football-reference.com/req/20180910/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+            "pfr_id": pfr_id,
+            "max_season": max_season,
+            "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
         })
     return cards
 
@@ -935,7 +943,8 @@ def _generate_shop(conn, state):
         buy_rows = conn.execute("""
             SELECT s.player, s.season, s.pos, s.team, s.fantasy_ppr,
                    d.pro_bowls, d.college, d.draft_year, d.draft_round, d.draft_pick,
-                   pi.pfr_id
+                   pi.pfr_id,
+                   (SELECT MAX(s2.season) FROM stats s2 WHERE s2.player = s.player) AS max_season
             FROM stats s
             LEFT JOIN draft d ON s.player = d.player
             LEFT JOIN nfl_player_ids pi ON s.player = pi.pfr_name
@@ -949,6 +958,7 @@ def _generate_shop(conn, state):
         for i, row in enumerate(buy_candidates[:roster_player_count]):
             college = row[6]
             pfr_id = row[10] if len(row) > 10 else None
+            max_season = row[11] if len(row) > 11 else None
             card_data = {
                 "id": f"{row[0]}_{row[1]}_{row[2]}_buycard{i}",
                 "player": row[0],
@@ -963,7 +973,9 @@ def _generate_shop(conn, state):
                 "draft_pick": row[9],
                 "undrafted": not college or college == "Unknown",
                 "conference": get_conference(college),
-                "headshot_url": f"https://www.pro-football-reference.com/req/20180910/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+                "pfr_id": pfr_id,
+                "max_season": max_season,
+                "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
             }
             base_card_cost = random.randint(4, 8)
             items.append({

@@ -1527,14 +1527,28 @@
     var headshotDiv = document.createElement('div');
     headshotDiv.className = 'card-headshot';
 
-    if (card.headshot_url) {
+    if (card.pfr_id) {
       var img = document.createElement('img');
       img.alt = '';
       img.className = 'card-headshot-img';
+      // Try: bare → last season → last season+1 → last season-1 → old base → placeholder
+      var newBase = 'https://www.pro-football-reference.com/req/20230307/images/headshots/';
+      var oldBase = 'https://www.pro-football-reference.com/req/20180910/images/headshots/';
+      var ms = card.max_season || card.season || 0;
+      var fallbacks = [
+        newBase + card.pfr_id + '.jpg',
+        newBase + card.pfr_id + '_' + ms + '.jpg',
+        newBase + card.pfr_id + '_' + (ms + 1) + '.jpg',
+        newBase + card.pfr_id + '_' + (ms - 1) + '.jpg',
+        oldBase + card.pfr_id + '.jpg',
+      ];
+      var _fi = 0;
       img.onerror = function() {
-        headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+        _fi++;
+        if (_fi < fallbacks.length) { img.src = fallbacks[_fi]; }
+        else { headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>'; }
       };
-      img.src = card.headshot_url;
+      img.src = fallbacks[0];
       headshotDiv.appendChild(img);
     } else {
       headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
