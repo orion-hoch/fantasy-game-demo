@@ -50,8 +50,15 @@ def normalize_for_match(name: str) -> str:
 
 
 def alpha_only(text: str) -> str:
-    """Lowercase alpha only. 'O\'Neal' → 'oneal'"""
+    """Lowercase alpha only. Used for BBRef (all-lowercase IDs)."""
     return re.sub(r"[^a-z]", "", strip_accents(text).lower())
+
+
+def alpha_keep_case(text: str) -> str:
+    """Strip non-alpha but preserve original capitalization.
+    Used for PFR IDs which mirror the name's natural casing.
+    'LaPorta' → 'LaPorta',  'O\\'Brien' → 'OBrien',  'McDonald' → 'McDonald'"""
+    return re.sub(r"[^a-zA-Z]", "", strip_accents(text))
 
 
 def split_name(player: str):
@@ -72,10 +79,16 @@ def bbref_base(player: str) -> str:
 
 
 def pfr_base(player: str) -> str:
-    """'Nick Chubb' → 'ChubNi'"""
+    """PFR preserves the name's original internal capitalization.
+    'Nick Chubb'  → 'ChubNi'
+    'Sam LaPorta' → 'LaPoSa'  (capital P preserved from LaPorta)
+    'Trey McBride'→ 'McBrTr'  (capital B preserved from McBride)
+    'Ken O\\'Brien'→ 'OBriKe'  (capital B preserved after stripping apostrophe)
+    """
     first, last = split_name(player)
-    lp = alpha_only(last)[:4]
-    fp = alpha_only(first)[:2]
+    lp = alpha_keep_case(last)[:4]   # preserve internal caps in last name
+    fp = alpha_keep_case(first)[:2]  # first 2 of first name (only 2 chars, caps usually irrelevant)
+    # Ensure the first character of each segment is uppercase
     lp = (lp[0].upper() + lp[1:]) if lp else ""
     fp = (fp[0].upper() + fp[1:]) if fp else ""
     return lp + fp
@@ -185,7 +198,7 @@ def assign_nba_ids(conn: sqlite3.Connection):
 
 # ─── NFL ───────────────────────────────────────────────────────────────────
 
-def assign_nfl_ids(conn: sqlite3.Connection):
+def assign_nfl_ids(conn: sqlite3.Connection, recalculate: bool = False):
     print("\n── NFL ──────────────────────────────────────────────────────")
 
     conn.execute("""
@@ -195,6 +208,11 @@ def assign_nfl_ids(conn: sqlite3.Connection):
         )
     """)
     conn.commit()
+
+    if recalculate:
+        print("Recalculating all NFL IDs (--recalculate-nfl)...")
+        conn.execute("DELETE FROM nfl_player_ids")
+        conn.commit()
 
     # Already done
     already: set = {
@@ -240,6 +258,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--nba-only", action="store_true")
     parser.add_argument("--nfl-only", action="store_true")
+    parser.add_argument("--recalculate-nfl", action="store_true",
+                        help="Wipe and regenerate all NFL PFR IDs (use after formula fixes)")
     args = parser.parse_args()
 
     conn = sqlite3.connect(DB)
@@ -247,7 +267,7 @@ def main():
         if not args.nfl_only:
             assign_nba_ids(conn)
         if not args.nba_only:
-            assign_nfl_ids(conn)
+            assign_nfl_ids(conn, recalculate=args.recalculate_nfl)
     finally:
         conn.close()
 

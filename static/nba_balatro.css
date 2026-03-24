@@ -1234,21 +1234,21 @@ body.scoring {
   font-family: Impact, sans-serif;
   font-size: 2rem;
   font-weight: 900;
-  text-align: center;
+  text-align: right;
   color: var(--text-dark);
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   line-height: 1;
-  padding: 2px 0;
+  padding: 2px 8px 2px 0;
 }
 
 .card-score-label {
   font-size: 0.58rem;
-  text-align: center;
+  text-align: right;
   color: #777;
   font-family: Arial, sans-serif;
-  padding-bottom: 3px;
+  padding: 0 8px 3px 0;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -2997,9 +2997,10 @@ body.scoring {
   color: #444;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  padding: 0 5px;
+  padding: 0 7px 0 5px;
   line-height: 1.1;
   margin-top: 6px;
+  text-align: right;
 }
 .card-player-last {
   font-family: 'Bebas Neue', Impact, sans-serif;
@@ -3008,12 +3009,13 @@ body.scoring {
   color: var(--text-dark);
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 0 5px;
+  padding: 0 7px 0 5px;
   line-height: 1.1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   margin-bottom: 2px;
+  text-align: right;
 }
 
 /* ── Player Headshot ─────────────────────────────────────────────── */
@@ -3027,13 +3029,13 @@ body.scoring {
   justify-content: center;
   position: relative;
 }
-/* Gradient fade from footer color up into headshot */
+/* Subtle gradient at base of headshot — does not cover footer */
 .card-headshot::after {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 50px;
-  background: linear-gradient(to top, var(--footer-color), transparent);
+  height: 18px;
+  background: linear-gradient(to top, rgba(0,0,0,0.28), transparent);
   pointer-events: none;
   z-index: 1;
 }
@@ -3041,7 +3043,7 @@ body.scoring {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 15%;
+  object-position: 70% 10%;
   display: block;
 }
 .card-headshot-placeholder {
