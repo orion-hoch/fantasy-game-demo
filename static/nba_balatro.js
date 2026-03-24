@@ -1732,12 +1732,17 @@
       img.alt = '';
       img.className = 'card-headshot-img';
       img.onerror = function() {
-        headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+        this.onerror = null;
+        this.src = '/static/img/blank_player.png';
       };
       img.src = card.headshot_url;
       headshotDiv.appendChild(img);
     } else {
-      headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+      var img = document.createElement('img');
+      img.alt = '';
+      img.className = 'card-headshot-img';
+      img.src = '/static/img/blank_player.png';
+      headshotDiv.appendChild(img);
     }
 
     // Flip button overlaid on headshot

@@ -1564,11 +1564,15 @@
         if (url) {
           img.src = url;
         } else {
-          headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+          img.src = '/static/img/blank_player.png';
         }
       });
     } else {
-      headshotDiv.innerHTML = '<div class="card-headshot-placeholder">?</div>';
+      var img = document.createElement('img');
+      img.alt = '';
+      img.className = 'card-headshot-img';
+      img.src = '/static/img/blank_player.png';
+      headshotDiv.appendChild(img);
     }
 
     // Flip button overlaid on headshot

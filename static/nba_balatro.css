@@ -3119,6 +3119,20 @@ body.scoring {
   object-fit: cover;
   object-position: 70% 10%;
   display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: contrast(1.08) saturate(0.72) brightness(0.97);
+}
+/* Dither dot-matrix overlay for retro feel */
+.card-headshot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-conic-gradient(rgba(0,0,0,0.07) 0% 25%, transparent 0% 50%);
+  background-size: 3px 3px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  z-index: 2;
 }
 .card-headshot-placeholder {
   font-size: 2rem;
