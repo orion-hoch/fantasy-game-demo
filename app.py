@@ -1,6 +1,7 @@
 from flask import Flask, jsonify, request, render_template
 import sqlite3
 import os
+import urllib.parse
 from load_data import repair_db_text
 import chain_categories as cc
 import ttb as ttb_mod
@@ -10,10 +11,46 @@ import dungeon_adventure as da
 import nba_dungeon_adventure as nba_da
 import nfl_balatro as nb
 import nba_balatro as nba_b
+import nba_bullseye as nba_bull
+import nfl_bullseye as nfl_bull
+import starting6_game as starting6_game_mod
+import nba_starting5_game as nba_starting5_game_mod
+from lobby_store import (
+    SUPPORTED_GAMES,
+    claim_seat,
+    create_room,
+    get_room,
+    leave_seat,
+    occupied_seats,
+    room_payload,
+    save_room,
+    set_started,
+)
 
 app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "fantasy.db")
+
+
+def _build_room_redirect(room_id: str, game_type: str) -> str:
+    route = SUPPORTED_GAMES[game_type]["route"]
+    return f"{route}?room_id={urllib.parse.quote(room_id)}"
+
+
+def _room_game_state(room: dict):
+    game_type = room["game_type"]
+    game_id = room.get("game_id")
+    if not game_id:
+        return None
+    if game_type == "nfl_bullseye":
+        return nfl_bull.get_game(game_id)
+    if game_type == "nba_bullseye":
+        return nba_bull.get_game(game_id)
+    if game_type == "starting6":
+        return starting6_game_mod.get_game(game_id)
+    if game_type == "nba_starting5":
+        return nba_starting5_game_mod.get_game(game_id)
+    return None
 
 def get_db():
     return sqlite3.connect(DB_PATH)
@@ -54,9 +91,116 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/multiplayer/<game_type>")
+def multiplayer_create_page(game_type):
+    config = SUPPORTED_GAMES.get(game_type)
+    if not config:
+        return "Game not supported for multiplayer", 404
+    return render_template("lobby.html", create_mode=True, game_type=game_type, game_label=config["label"])
+
+
+@app.route("/lobbies/<room_id>")
+def multiplayer_lobby_page(room_id):
+    room = get_room(room_id)
+    if room is None:
+        return "Lobby not found", 404
+    return render_template(
+        "lobby.html",
+        create_mode=False,
+        game_type=room["game_type"],
+        game_label=SUPPORTED_GAMES[room["game_type"]]["label"],
+        room_id=room_id,
+    )
+
+
 @app.route("/starting6")
 def starting6():
     return render_template("starting6.html")
+
+
+@app.route("/api/lobbies/create", methods=["POST"])
+def create_lobby_api():
+    data = request.get_json(force=True) or {}
+    try:
+        room = create_room(data.get("game_type", ""), data.get("player_name", "Host"), data.get("token", ""))
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"room": room_payload(room, data.get("token")), "room_url": f"/lobbies/{room['room_id']}"})
+
+
+@app.route("/api/lobbies/<room_id>")
+def lobby_state_api(room_id):
+    room = get_room(room_id)
+    if room is None:
+        return jsonify({"error": "Lobby not found"}), 404
+    token = request.args.get("token", "")
+    return jsonify({"room": room_payload(room, token)})
+
+
+@app.route("/api/lobbies/<room_id>/claim-seat", methods=["POST"])
+def lobby_claim_seat_api(room_id):
+    data = request.get_json(force=True) or {}
+    try:
+        room = claim_seat(room_id, data.get("token", ""), data.get("player_name", ""), int(data.get("seat_number", 0)))
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"room": room_payload(room, data.get("token"))})
+
+
+@app.route("/api/lobbies/<room_id>/leave-seat", methods=["POST"])
+def lobby_leave_seat_api(room_id):
+    data = request.get_json(force=True) or {}
+    try:
+        room = leave_seat(room_id, data.get("token", ""))
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"room": room_payload(room, data.get("token"))})
+
+
+@app.route("/api/lobbies/<room_id>/start", methods=["POST"])
+def lobby_start_api(room_id):
+    room = get_room(room_id)
+    if room is None:
+        return jsonify({"error": "Lobby not found"}), 404
+    data = request.get_json(force=True) or {}
+    token = data.get("token", "")
+    if token != room.get("host_token"):
+        return jsonify({"error": "Only the host can start the game"}), 400
+    filled = occupied_seats(room)
+    if len(filled) < 2:
+        return jsonify({"error": "Need at least 2 seated players to start"}), 400
+    if room.get("status") != "lobby":
+        return jsonify({"error": "Lobby has already started"}), 400
+
+    player_names = [seat["name"] for _, seat in filled]
+    player_tokens = [seat["token"] for _, seat in filled]
+    conn = get_db()
+    try:
+        if room["game_type"] == "nfl_bullseye":
+            game_id, _ = nfl_bull.start_game(conn, player_names, player_tokens=player_tokens)
+        elif room["game_type"] == "nba_bullseye":
+            game_id, _ = nba_bull.start_game(conn, player_names, player_tokens=player_tokens)
+        elif room["game_type"] == "starting6":
+            game_id, _ = starting6_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
+        elif room["game_type"] == "nba_starting5":
+            game_id, _ = nba_starting5_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
+        else:
+            return jsonify({"error": "Unsupported game type"}), 400
+        conn.commit()
+    finally:
+        conn.close()
+
+    room = set_started(room_id, game_id, _build_room_redirect(room_id, room["game_type"]))
+    return jsonify({"room": room_payload(room, token)})
+
+
+@app.route("/api/lobbies/<room_id>/game-state")
+def lobby_game_state_api(room_id):
+    room = get_room(room_id)
+    if room is None:
+        return jsonify({"error": "Lobby not found"}), 404
+    state = _room_game_state(room)
+    return jsonify({"room": room_payload(room, request.args.get("token", "")), "state": state})
 
 
 @app.route("/dungeon_adventure")
@@ -96,6 +240,13 @@ def random_team():
 @app.route("/api/starting6/years")
 def starting6_years():
     player = request.args.get("player", "").strip()
+    game_id = request.args.get("game_id", "").strip()
+    if game_id:
+        conn = get_db()
+        try:
+            return jsonify({"years": starting6_game_mod.get_years(conn, game_id, player)})
+        finally:
+            conn.close()
     team = request.args.get("team", "").strip()
     conn = get_db()
     rows = conn.execute(
@@ -109,6 +260,13 @@ def starting6_years():
 @app.route("/api/starting6/search")
 def starting6_search():
     term = request.args.get("q", "").strip()
+    game_id = request.args.get("game_id", "").strip()
+    if game_id:
+        conn = get_db()
+        try:
+            return jsonify({"results": starting6_game_mod.search_players(conn, term, game_id)})
+        finally:
+            conn.close()
     if not term:
         return jsonify({"results": []})
     conn = get_db()
@@ -123,6 +281,16 @@ def starting6_search():
 @app.route("/api/starting6/validate")
 def starting6_validate():
     player = request.args.get("player", "").strip()
+    game_id = request.args.get("game_id", "").strip()
+    if game_id:
+        season = request.args.get("season", "").strip()
+        conn = get_db()
+        try:
+            state, err = starting6_game_mod.submit_pick(conn, game_id, player, int(season), player_token=request.args.get("token", ""))
+            conn.commit()
+            return jsonify({"valid": err is None, "state": state, "msg": err or ""})
+        finally:
+            conn.close()
     team = request.args.get("team", "").strip()
     season = request.args.get("season", "").strip()
     conn = get_db()
@@ -170,6 +338,27 @@ def get_team_players():
         {"player": r[0], "season": r[1], "pos": r[2], "ppr": r[3], "team": r[4]}
         for r in rows
     ]})
+
+
+@app.route("/api/starting6/state")
+def starting6_state():
+    game_id = request.args.get("game_id", "").strip()
+    state = starting6_game_mod.get_game(game_id)
+    if state is None:
+        return jsonify({"error": "Game not found"}), 404
+    return jsonify({"state": state})
+
+
+@app.route("/api/starting6/pass", methods=["POST"])
+def starting6_pass():
+    data = request.get_json(force=True) or {}
+    conn = get_db()
+    try:
+        state, err = starting6_game_mod.pass_turn(conn, data.get("game_id", ""), player_token=data.get("token", ""))
+        conn.commit()
+        return jsonify({"ok": err is None, "state": state, "msg": err or ""})
+    finally:
+        conn.close()
 
 
 @app.route("/api/dungeon/rewards", methods=["POST"])
@@ -592,6 +781,13 @@ def nba_random_team():
 @app.route("/api/nba_starting5/search")
 def nba_starting5_search():
     term = request.args.get("q", "").strip()
+    game_id = request.args.get("game_id", "").strip()
+    if game_id:
+        conn = get_db()
+        try:
+            return jsonify({"results": nba_starting5_game_mod.search_players(conn, term, game_id)})
+        finally:
+            conn.close()
     if not term:
         return jsonify({"results": []})
     conn = get_db()
@@ -606,6 +802,13 @@ def nba_starting5_search():
 @app.route("/api/nba_starting5/years")
 def nba_starting5_years():
     player = request.args.get("player", "").strip()
+    game_id = request.args.get("game_id", "").strip()
+    if game_id:
+        conn = get_db()
+        try:
+            return jsonify({"years": nba_starting5_game_mod.get_years(conn, game_id, player)})
+        finally:
+            conn.close()
     team = request.args.get("team", "").strip()
     conn = get_db()
     team_in, team_codes = _nba_teams_in(team)
@@ -620,6 +823,16 @@ def nba_starting5_years():
 @app.route("/api/nba_starting5/validate")
 def nba_starting5_validate():
     player = request.args.get("player", "").strip()
+    game_id = request.args.get("game_id", "").strip()
+    if game_id:
+        season = request.args.get("season", "").strip()
+        conn = get_db()
+        try:
+            state, err = nba_starting5_game_mod.submit_pick(conn, game_id, player, int(season), player_token=request.args.get("token", ""))
+            conn.commit()
+            return jsonify({"valid": err is None, "state": state, "msg": err or ""})
+        finally:
+            conn.close()
     team = request.args.get("team", "").strip()
     season = request.args.get("season", "").strip()
     conn = get_db()
@@ -669,6 +882,27 @@ def nba_get_team_players():
         {"player": r[0], "season": r[1], "pos": r[2], "ppr": r[3], "team": r[4]}
         for r in rows
     ]})
+
+
+@app.route("/api/nba_starting5/state")
+def nba_starting5_state():
+    game_id = request.args.get("game_id", "").strip()
+    state = nba_starting5_game_mod.get_game(game_id)
+    if state is None:
+        return jsonify({"error": "Game not found"}), 404
+    return jsonify({"state": state})
+
+
+@app.route("/api/nba_starting5/pass", methods=["POST"])
+def nba_starting5_pass():
+    data = request.get_json(force=True) or {}
+    conn = get_db()
+    try:
+        state, err = nba_starting5_game_mod.pass_turn(conn, data.get("game_id", ""), player_token=data.get("token", ""))
+        conn.commit()
+        return jsonify({"ok": err is None, "state": state, "msg": err or ""})
+    finally:
+        conn.close()
 
 
 # ── NFL Balatro routes ────────────────────────────────────────────────────────
@@ -1185,6 +1419,188 @@ def api_nba_start_infinity():
     if err:
         return jsonify({"error": err}), 400
     return jsonify(result)
+
+
+# ── NBA Bullseye routes ───────────────────────────────────────────────────────
+
+@app.route("/nba_bullseye")
+def nba_bullseye_page():
+    return render_template("nba_bullseye.html")
+
+
+@app.route("/api/nba_bullseye/start", methods=["POST"])
+def nba_bullseye_start():
+    data = request.get_json(force=True) or {}
+    player_names = data.get("player_names", [])
+    player_tokens = data.get("player_tokens")
+    conn = get_db()
+    try:
+        game_id, state = nba_bull.start_game(conn, player_names, player_tokens=player_tokens)
+        conn.commit()
+        return jsonify({"game_id": game_id, "state": state})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        conn.close()
+
+
+@app.route("/api/nba_bullseye/search")
+def nba_bullseye_search():
+    query = request.args.get("q", "").strip()
+    prompt_idx = int(request.args.get("prompt_idx", 0))
+    game_id = request.args.get("game_id", "")
+    conn = get_db()
+    try:
+        results = nba_bull.search_players(conn, query, prompt_idx, game_id)
+        return jsonify({"results": results})
+    finally:
+        conn.close()
+
+
+@app.route("/api/nba_bullseye/pick", methods=["POST"])
+def nba_bullseye_pick():
+    data = request.get_json(force=True) or {}
+    conn = get_db()
+    try:
+        state, err = nba_bull.submit_pick(
+            conn, data["game_id"], data["player_name"], data["season"],
+            prompt_idx=data.get("prompt_idx"), player_idx=data.get("player_idx"), actor_token=data.get("token")
+        )
+        ok = err is None
+        conn.commit()
+        return jsonify({"ok": ok, "state": state, "msg": err or ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        conn.close()
+
+
+@app.route("/api/nba_bullseye/years")
+def nba_bullseye_years():
+    game_id = request.args.get("game_id", "")
+    prompt_idx = int(request.args.get("prompt_idx", 0))
+    player_name = request.args.get("player", "").strip()
+    conn = get_db()
+    try:
+        years = nba_bull.get_valid_years(conn, game_id, prompt_idx, player_name)
+        return jsonify({"years": years})
+    except Exception as e:
+        return jsonify({"years": [], "error": str(e)}), 200
+    finally:
+        conn.close()
+
+
+@app.route("/api/nba_bullseye/seasons")
+def nba_bullseye_seasons():
+    game_id = request.args.get("game_id", "")
+    prompt_idx = int(request.args.get("prompt_idx", 0))
+    player_name = request.args.get("player", "").strip()
+    conn = get_db()
+    try:
+        seasons = nba_bull.get_player_seasons(conn, game_id, prompt_idx, player_name)
+        return jsonify({"seasons": seasons})
+    finally:
+        conn.close()
+
+
+@app.route("/api/nba_bullseye/state")
+def nba_bullseye_state():
+    game_id = request.args.get("game_id", "")
+    state = nba_bull.get_game(game_id)
+    if state is None:
+        return jsonify({"error": "Game not found"}), 404
+    return jsonify({"state": state})
+
+
+# ── NFL Bullseye routes ───────────────────────────────────────────────────────
+
+@app.route("/nfl_bullseye")
+def nfl_bullseye_page():
+    return render_template("nfl_bullseye.html")
+
+
+@app.route("/api/nfl_bullseye/start", methods=["POST"])
+def nfl_bullseye_start():
+    data = request.get_json(force=True) or {}
+    player_names = data.get("player_names", [])
+    player_tokens = data.get("player_tokens")
+    conn = get_db()
+    try:
+        game_id, state = nfl_bull.start_game(conn, player_names, player_tokens=player_tokens)
+        conn.commit()
+        return jsonify({"game_id": game_id, "state": state})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        conn.close()
+
+
+@app.route("/api/nfl_bullseye/search")
+def nfl_bullseye_search():
+    query = request.args.get("q", "").strip()
+    prompt_idx = int(request.args.get("prompt_idx", 0))
+    game_id = request.args.get("game_id", "")
+    conn = get_db()
+    try:
+        results = nfl_bull.search_players(conn, query, prompt_idx, game_id)
+        return jsonify({"results": results})
+    finally:
+        conn.close()
+
+
+@app.route("/api/nfl_bullseye/years")
+def nfl_bullseye_years():
+    game_id = request.args.get("game_id", "")
+    prompt_idx = int(request.args.get("prompt_idx", 0))
+    player_name = request.args.get("player", "").strip()
+    conn = get_db()
+    try:
+        years = nfl_bull.get_valid_years(conn, game_id, prompt_idx, player_name)
+        return jsonify({"years": years})
+    except Exception as e:
+        return jsonify({"years": [], "error": str(e)}), 200
+    finally:
+        conn.close()
+
+
+@app.route("/api/nfl_bullseye/seasons")
+def nfl_bullseye_seasons():
+    game_id = request.args.get("game_id", "")
+    prompt_idx = int(request.args.get("prompt_idx", 0))
+    player_name = request.args.get("player", "").strip()
+    conn = get_db()
+    try:
+        seasons = nfl_bull.get_player_seasons(conn, game_id, prompt_idx, player_name)
+        return jsonify({"seasons": seasons})
+    finally:
+        conn.close()
+
+
+@app.route("/api/nfl_bullseye/state")
+def nfl_bullseye_state():
+    game_id = request.args.get("game_id", "")
+    state = nfl_bull.get_game(game_id)
+    if state is None:
+        return jsonify({"error": "Game not found"}), 404
+    return jsonify({"state": state})
+
+
+@app.route("/api/nfl_bullseye/pick", methods=["POST"])
+def nfl_bullseye_pick():
+    data = request.get_json(force=True) or {}
+    conn = get_db()
+    try:
+        state, err = nfl_bull.submit_pick(
+            conn, data["game_id"], data["player_name"], data["season"],
+            prompt_idx=data.get("prompt_idx"), player_idx=data.get("player_idx"), actor_token=data.get("token")
+        )
+        ok = err is None
+        conn.commit()
+        return jsonify({"ok": ok, "state": state, "msg": err or ""})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

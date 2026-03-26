@@ -100,6 +100,60 @@
             color: var(--text-dim);
         }
 
+        .mp-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .mp-card {
+            background: var(--surface);
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--border);
+            padding: 20px;
+        }
+
+        .mp-card h3 {
+            font-family: 'Bebas Neue', Impact, sans-serif;
+            font-size: 1.55rem;
+            letter-spacing: 3px;
+            color: var(--yellow);
+            margin-bottom: 8px;
+        }
+
+        .mp-card p {
+            font-family: 'Barlow Condensed', sans-serif;
+            color: var(--text-dim);
+            font-size: 0.95rem;
+            line-height: 1.45;
+            margin-bottom: 14px;
+        }
+
+        .mp-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mp-link {
+            display: block;
+            text-decoration: none;
+            background: var(--surface-2);
+            border: 2px solid var(--border-dim);
+            color: var(--text);
+            padding: 12px 14px;
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .mp-link:hover {
+            background: rgba(245,199,0,0.1);
+            border-color: var(--yellow);
+        }
+
         /* ── About panel ──────────────────────────────────────────── */
         .about-intro {
             background: var(--surface);
@@ -208,6 +262,7 @@
     <!-- ── Tabs ───────────────────────────────────────────────── -->
     <div id="tab-bar">
         <button class="tab-btn active" onclick="switchTab('about')">About</button>
+        <button class="tab-btn" onclick="switchTab('multiplayer')">Multiplayer</button>
         <button class="tab-btn" onclick="switchTab('nfl')">NFL Games</button>
         <button class="tab-btn" onclick="switchTab('nba')">NBA Games</button>
     </div>
@@ -254,6 +309,31 @@
         </div>
     </div>
 
+    <div id="tab-multiplayer" class="tab-panel">
+        <div class="about-intro">
+            <h2>Online Multiplayer</h2>
+            <p>Create a lobby, claim Player 1-4 seats, and start with any 2-4 players. Right now online play supports Bullseye and Fantasy Duel only.</p>
+        </div>
+        <div class="mp-grid">
+            <div class="mp-card">
+                <h3>Bullseye</h3>
+                <p>Choose a sport, make a lobby, and take turns chasing the target score.</p>
+                <div class="mp-actions">
+                    <a class="mp-link" href="/multiplayer/nfl_bullseye">NFL Bullseye Lobby</a>
+                    <a class="mp-link" href="/multiplayer/nba_bullseye">NBA Bullseye Lobby</a>
+                </div>
+            </div>
+            <div class="mp-card">
+                <h3>Fantasy Duel</h3>
+                <p>Choose a sport, make a lobby, and draft live against the other players in seat order.</p>
+                <div class="mp-actions">
+                    <a class="mp-link" href="/multiplayer/starting6">NFL Fantasy Duel Lobby</a>
+                    <a class="mp-link" href="/multiplayer/nba_starting5">NBA Fantasy Duel Lobby</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ── NFL ────────────────────────────────────────────────── -->
     <div id="tab-nfl" class="tab-panel">
         <img src="/static/img/football_logo.jpg" alt="NFL" class="tab-banner">
@@ -291,6 +371,13 @@
                 <div class="q-card-body">
                     <strong>Balatro</strong>
                     <small>Roguelike card game — draft player-season cards, build combos, beat 8 rounds to win the Super Bowl</small>
+                </div>
+            </a>
+            <a href="/nfl_bullseye" class="q-btn">
+                <div class="q-btn-accent accent-red"></div>
+                <div class="q-card-body">
+                    <strong>Bullseye</strong>
+                    <small>Multiplayer — each player names someone who fits 5 prompts, closest total to the target score wins</small>
                 </div>
             </a>
         </div>
@@ -335,6 +422,13 @@
                     <small>Draft hands of NBA player-season cards — build combos and beat the shot clock!</small>
                 </div>
             </a>
+            <a href="/nba_bullseye" class="q-btn">
+                <div class="q-btn-accent accent-red"></div>
+                <div class="q-card-body">
+                    <strong>Bullseye</strong>
+                    <small>Multiplayer — each player names someone who fits 5 prompts, closest total to the target score wins</small>
+                </div>
+            </a>
         </div>
     </div>
 </div>
@@ -342,7 +436,7 @@
 <script>
     function switchTab(name) {
         document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-            btn.classList.toggle('active', ['about','nfl','nba'][i] === name);
+            btn.classList.toggle('active', ['about','multiplayer','nfl','nba'][i] === name);
         });
         document.querySelectorAll('.tab-panel').forEach(p => {
             p.classList.toggle('active', p.id === 'tab-' + name);
@@ -353,7 +447,7 @@
     // Open the correct tab if ?tab= param is present
     (function () {
         const tab = new URLSearchParams(location.search).get('tab');
-        if (tab === 'nfl' || tab === 'nba') switchTab(tab);
+        if (tab === 'multiplayer' || tab === 'nfl' || tab === 'nba') switchTab(tab);
     })();
 </script>
 

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ game_label }} Lobby</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        #app { max-width: 920px; }
+        .lobby-wrap { padding: 24px; }
+        .lobby-card { background: var(--surface); border: 3px solid var(--border); box-shadow: 6px 6px 0 var(--border); padding: 24px; }
+        .lobby-title { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 2rem; letter-spacing: 4px; color: var(--yellow); margin-bottom: 8px; }
+        .lobby-sub { color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; margin-bottom: 20px; }
+        .lobby-actions, .seat-grid { display: grid; gap: 14px; }
+        .seat-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 20px 0; }
+        .seat-card { background: var(--surface-2); border: 2px solid var(--border-dim); padding: 16px; min-height: 130px; display: flex; flex-direction: column; gap: 10px; }
+        .seat-card.mine { border-color: var(--yellow); }
+        .seat-card.filled { background: rgba(245,199,0,0.06); }
+        .seat-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); }
+        .seat-name { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--text); }
+        .seat-status { color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; }
+        .lobby-btn, .seat-btn { background: var(--yellow); color: var(--text-dark); border: 3px solid var(--border); box-shadow: 4px 4px 0 var(--border); font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; }
+        .lobby-btn { padding: 12px 18px; font-size: 1.2rem; }
+        .seat-btn { padding: 9px 12px; font-size: 0.95rem; }
+        .seat-btn.alt { background: var(--surface-3); color: var(--text); }
+        .seat-btn:disabled, .lobby-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .lobby-topline { display: flex; gap: 14px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .room-code { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 1.5rem; letter-spacing: 3px; color: var(--teal-bright); }
+        .name-field { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .name-field input { background: var(--surface-2); color: var(--text); border: 2px solid var(--border-dim); padding: 10px 12px; font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; }
+        .lobby-note, .lobby-error { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; }
+        .lobby-note { color: var(--text-dim); }
+        .lobby-error { color: var(--red-bright); min-height: 20px; margin-top: 8px; }
+        .back-link { display: inline-block; margin-bottom: 14px; }
+    </style>
+</head>
+<body>
+<div id="app" data-create-mode="{{ '1' if create_mode else '0' }}" data-game-type="{{ game_type }}" data-room-id="{{ room_id or '' }}">
+    <div class="lobby-wrap">
+        <a href="/" class="back-link">&larr; Back</a>
+        <div class="lobby-card">
+            <div class="lobby-title">{{ game_label }} Lobby</div>
+            <div class="lobby-sub">Claim a seat, share the room code, and start when 2-4 players are ready.</div>
+            <div id="lobby-root"></div>
+            <div id="lobby-error" class="lobby-error"></div>
+        </div>
+    </div>
+</div>
+<script src="/static/lobby.js?v=2"></script>
+</body>
+</html>

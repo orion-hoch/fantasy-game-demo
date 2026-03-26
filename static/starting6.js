@@ -10,10 +10,59 @@ const SLOTS = [
 
 const BONUS_POSITIONS = ["QB", "WR", "RB", "TE"];
 const BONUS_DECADES   = [1960, 1970, 1980];
+const ROOM_ID = new URLSearchParams(window.location.search).get("room_id");
+const TOKEN_KEY = "fantasy-multiplayer-token";
 
 let state = {};
 let playerCount = 2;
 let debounceTimer = null;
+let pollTimer = null;
+
+function playerToken() {
+    let value = sessionStorage.getItem(TOKEN_KEY);
+    if (!value) {
+        value = Math.random().toString(36).slice(2) + Date.now().toString(36);
+        sessionStorage.setItem(TOKEN_KEY, value);
+    }
+    return value;
+}
+
+function isOnlineMode() {
+    return !!ROOM_ID;
+}
+
+function hydrateState(nextState) {
+    state = nextState || {};
+    if (!(state.pickedPlayers instanceof Set)) {
+        state.pickedPlayers = new Set(state.pickedPlayers || []);
+    }
+    if (!Array.isArray(state.skipsUsed)) {
+        state.skipsUsed = [];
+    }
+    return state;
+}
+
+function isMyTurn() {
+    if (!isOnlineMode() || !state.players || !state.players.length) return true;
+    const current = state.players[state.currentPlayer];
+    return !!current && current.token === playerToken();
+}
+
+function syncTurnLock() {
+    if (!isOnlineMode()) return;
+    const mine = isMyTurn() && !state.done;
+    const input = document.getElementById("pick-input");
+    const yearWrap = document.getElementById("pick-year-wrap");
+    const yearSelect = document.getElementById("pick-year-select");
+    const confirmBtn = document.getElementById("confirm-year-btn");
+    const passBtn = document.getElementById("pick-pass-wrap").querySelector("button");
+    const results = document.getElementById("pick-results");
+    if (!mine && results) results.innerHTML = "";
+    if (input) input.disabled = !mine || !yearWrap.classList.contains("hidden");
+    if (yearSelect) yearSelect.disabled = !mine;
+    if (confirmBtn) confirmBtn.disabled = !mine || !yearSelect.value;
+    if (passBtn) passBtn.disabled = !mine || (state.skipsUsed[state.currentPlayer] || 0) >= 1;
+}
 
 // ── Setup screen ───────────────────────────────────────────────────────────
 
@@ -85,6 +134,7 @@ function pickCount(roster) { return SLOTS.filter(s => roster[s.key] !== null).le
 // ── Game start ─────────────────────────────────────────────────────────────
 
 function startGame() {
+    if (isOnlineMode()) return;
     const players = Array.from({ length: playerCount }, (_, i) => {
         const val = document.getElementById(`pname-${i}`).value.trim();
         return { name: val || `Player ${i + 1}`, roster: emptyRoster() };
@@ -126,6 +176,18 @@ function buildRosterPanels() {
 // ── Team draw ──────────────────────────────────────────────────────────────
 
 async function drawTeam() {
+    if (isOnlineMode()) {
+        document.getElementById("team-name").textContent = state.currentTeam || "-";
+        updateBanner();
+        if (isMyTurn()) {
+            setStep("name");
+        } else {
+            setStep("loading");
+            document.getElementById("pick-error").textContent = "Waiting for the current player to pick.";
+        }
+        syncTurnLock();
+        return;
+    }
     setStep("loading");
     document.getElementById("team-name").textContent = "Drawing...";
 
@@ -178,11 +240,16 @@ function setStep(step) {
         input.value = state.pendingName;
         input.disabled = true;
     }
+    syncTurnLock();
 }
 
 // ── Name search ────────────────────────────────────────────────────────────
 
 document.getElementById("pick-input").addEventListener("input", (e) => {
+    if (isOnlineMode() && !isMyTurn()) {
+        e.target.value = "";
+        return;
+    }
     clearTimeout(debounceTimer);
     const q = e.target.value.trim();
     document.getElementById("pick-error").textContent = "";
@@ -191,7 +258,9 @@ document.getElementById("pick-input").addEventListener("input", (e) => {
 });
 
 async function searchPlayers(term) {
-    const res = await fetch(`/api/starting6/search?q=${encodeURIComponent(term)}`);
+    if (isOnlineMode() && !isMyTurn()) return;
+    const suffix = isOnlineMode() ? `&game_id=${encodeURIComponent(state.game_id)}` : "";
+    const res = await fetch(`/api/starting6/search?q=${encodeURIComponent(term)}${suffix}`);
     const data = await res.json();
     const container = document.getElementById("pick-results");
     if (!data.results.length) {
@@ -209,6 +278,7 @@ async function searchPlayers(term) {
 }
 
 function showPassButton() {
+    if (isOnlineMode() && !isMyTurn()) return;
     const used = state.skipsUsed[state.currentPlayer] >= 1;
     const btn = document.getElementById("pick-pass-wrap").querySelector("button");
     btn.textContent = used ? "No skips remaining" : "Pass — no valid player available";
@@ -217,12 +287,15 @@ function showPassButton() {
 }
 
 async function selectName(name) {
+    if (isOnlineMode() && !isMyTurn()) return;
     document.getElementById("pick-results").innerHTML = "";
     document.getElementById("pick-error").textContent = "";
     state.pendingName = name;
 
     const res = await fetch(
-        `/api/starting6/years?player=${encodeURIComponent(name)}&team=${encodeURIComponent(state.currentTeam)}`
+        isOnlineMode()
+            ? `/api/starting6/years?player=${encodeURIComponent(name)}&game_id=${encodeURIComponent(state.game_id)}`
+            : `/api/starting6/years?player=${encodeURIComponent(name)}&team=${encodeURIComponent(state.currentTeam)}`
     );
     const data = await res.json();
 
@@ -242,23 +315,45 @@ async function selectName(name) {
 }
 
 document.getElementById("pick-year-select").addEventListener("change", () => {
+    if (isOnlineMode() && !isMyTurn()) {
+        document.getElementById("confirm-year-btn").disabled = true;
+        return;
+    }
     document.getElementById("confirm-year-btn").disabled =
         document.getElementById("pick-year-select").value === "";
 });
 
 async function confirmYear() {
+    if (isOnlineMode() && !isMyTurn()) return;
     const season = document.getElementById("pick-year-select").value;
     if (!season) return;
 
     const res = await fetch(
-        `/api/starting6/validate?player=${encodeURIComponent(state.pendingName)}` +
-        `&team=${encodeURIComponent(state.currentTeam)}&season=${season}`
+        isOnlineMode()
+            ? `/api/starting6/validate?player=${encodeURIComponent(state.pendingName)}&season=${season}&game_id=${encodeURIComponent(state.game_id)}&token=${encodeURIComponent(playerToken())}`
+            : `/api/starting6/validate?player=${encodeURIComponent(state.pendingName)}` +
+              `&team=${encodeURIComponent(state.currentTeam)}&season=${season}`
     );
     const data = await res.json();
 
     if (!data.valid) {
-        document.getElementById("pick-error").textContent = "Something went wrong. Try again.";
+        document.getElementById("pick-error").textContent = data.msg || "Something went wrong. Try again.";
         setStep("name");
+        return;
+    }
+
+    if (isOnlineMode()) {
+        hydrateState(data.state);
+        state.pendingName = null;
+        document.getElementById("pick-year-select").value = "";
+        document.getElementById("confirm-year-btn").disabled = true;
+        renderRosters();
+        if (state.done) {
+            showResults();
+            return;
+        }
+        updateBanner();
+        drawTeam();
         return;
     }
 
@@ -290,6 +385,7 @@ async function confirmYear() {
 }
 
 function backToName() {
+    if (isOnlineMode() && !isMyTurn()) return;
     state.pendingName = null;
     setStep("name");
     document.getElementById("pick-input").focus();
@@ -298,6 +394,30 @@ function backToName() {
 // ── Turn management ────────────────────────────────────────────────────────
 
 function passTurn() {
+    if (isOnlineMode() && !isMyTurn()) return;
+    if (isOnlineMode()) {
+        fetch(`/api/starting6/pass`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ game_id: state.game_id, token: playerToken() })
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) {
+                    document.getElementById("pick-error").textContent = data.msg || "Could not pass.";
+                    return;
+                }
+                hydrateState(data.state);
+                renderRosters();
+                if (state.done) {
+                    showResults();
+                    return;
+                }
+                updateBanner();
+                drawTeam();
+            });
+        return;
+    }
     if (window.SFX) SFX.play('click');
     state.skipsUsed[state.currentPlayer]++;
     state.bonus = randomBonus();
@@ -306,6 +426,7 @@ function passTurn() {
 }
 
 function advanceTurn() {
+    if (isOnlineMode()) return;
     state.pendingName = null;
     const n = state.players.length;
 
@@ -466,3 +587,28 @@ document.addEventListener("click", (e) => {
         document.getElementById("pick-results").innerHTML = "";
     }
 });
+
+async function loadOnlineState() {
+    const res = await fetch(`/api/lobbies/${encodeURIComponent(ROOM_ID)}/game-state?token=${encodeURIComponent(playerToken())}`);
+    const data = await res.json();
+    if (!res.ok || !data.state) return;
+    hydrateState(data.state);
+    document.getElementById("setup-panel").classList.add("hidden");
+    document.getElementById("game-panel").classList.remove("hidden");
+    buildRosterPanels();
+    renderRosters();
+    if (state.done) {
+        showResults();
+        return;
+    }
+    updateBanner();
+    drawTeam();
+}
+
+if (isOnlineMode()) {
+    loadOnlineState();
+    pollTimer = window.setInterval(() => {
+        if (isMyTurn()) return;
+        loadOnlineState();
+    }, 2500);
+}

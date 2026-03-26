@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NBA Bullseye</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/starting6.css">
+    <link rel="stylesheet" href="/static/bullseye.css?v=3">
+</head>
+<body>
+<div id="app">
+    <header>
+        <div class="header-inner">
+            <a href="/?tab=nba" class="back-link">← Back</a>
+            <h1>NBA Bullseye</h1>
+        </div>
+    </header>
+
+    <div id="setup-panel"></div>
+    <div id="game-panel" style="display:none">
+        <div id="game-header"></div>
+        <div id="prompt-table"></div>
+        <div id="pick-area" style="display:none">
+            <div id="active-prompt-bar">
+                <div id="active-prompt-label"></div>
+                <button id="pick-close-btn" type="button" onclick="bsClosePick()" aria-label="Close pick overlay">&times;</button>
+            </div>
+            <div id="pick-search-wrap">
+                <input id="pick-input" type="text" placeholder="Type a player name..." autocomplete="off" spellcheck="false" />
+                <div id="pick-results"></div>
+            </div>
+            <div id="pick-year-wrap" class="hidden">
+                <div id="pick-year-row">
+                    <select id="pick-year-select">
+                        <option value="">— select a season —</option>
+                    </select>
+                    <button id="confirm-year-btn" onclick="bsConfirmYear()" disabled>Confirm</button>
+                    <button id="back-to-name-btn" onclick="bsBackToName()">← Back</button>
+                </div>
+            </div>
+            <div id="pick-error"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SPORT = 'nba';
+</script>
+<script src="/static/bullseye.js?v=4"></script>
+</body>
+</html>
