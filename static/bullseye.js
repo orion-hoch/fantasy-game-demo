@@ -667,7 +667,19 @@
     overlay.innerHTML = resultsHtml;
     panel.appendChild(overlay.firstElementChild);
 
-    $('#play-again-btn').addEventListener('click', () => {
+    $('#play-again-btn').addEventListener('click', async () => {
+      if (roomId) {
+        try {
+          await fetch(`/api/lobbies/${encodeURIComponent(roomId)}/rematch`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: playerToken() })
+          });
+        } finally {
+          window.location.href = `/lobbies/${encodeURIComponent(roomId)}`;
+        }
+        return;
+      }
       gameState = null;
       gameId = null;
       renderSetup();
@@ -692,6 +704,10 @@
     const res = await fetch(`/api/lobbies/${encodeURIComponent(roomId)}/game-state?token=${encodeURIComponent(playerToken())}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not load multiplayer game');
+    if (data.room && data.room.status === 'lobby') {
+      window.location.href = `/lobbies/${encodeURIComponent(roomId)}`;
+      return;
+    }
     if (!data.room || !data.state) throw new Error('Game is not ready yet');
     gameId = data.room.game_id;
     gameState = data.state;

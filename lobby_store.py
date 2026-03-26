@@ -33,6 +33,12 @@ SUPPORTED_GAMES = {
         "min_players": 2,
         "max_players": 4,
     },
+    "chain": {
+        "label": "Chain Game",
+        "route": "/chain",
+        "min_players": 2,
+        "max_players": 4,
+    },
 }
 
 
@@ -104,6 +110,15 @@ def token_seat(room: dict, token: str) -> tuple[int | None, dict | None]:
     return None, None
 
 
+def has_token(room: dict, token: str) -> bool:
+    if not token:
+        return False
+    if room.get("host_token") == token:
+        return True
+    seat_no, _ = token_seat(room, token)
+    return seat_no is not None
+
+
 def claim_seat(room_id: str, token: str, player_name: str, seat_number: int) -> dict:
     room = get_room(room_id)
     if room is None:
@@ -149,6 +164,16 @@ def set_started(room_id: str, game_id: str, redirect_url: str) -> dict:
     room["status"] = "in_game"
     room["game_id"] = game_id
     room["redirect_url"] = redirect_url
+    return save_room(room)
+
+
+def reset_to_lobby(room_id: str) -> dict:
+    room = get_room(room_id)
+    if room is None:
+        raise ValueError("Room not found")
+    room["status"] = "lobby"
+    room["game_id"] = None
+    room["redirect_url"] = None
     return save_room(room)
 
 

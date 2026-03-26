@@ -13,6 +13,7 @@ import nfl_balatro as nb
 import nba_balatro as nba_b
 import nba_bullseye as nba_bull
 import nfl_bullseye as nfl_bull
+import chain_game as chain_game_mod
 import starting6_game as starting6_game_mod
 import nba_starting5_game as nba_starting5_game_mod
 from lobby_store import (
@@ -20,8 +21,10 @@ from lobby_store import (
     claim_seat,
     create_room,
     get_room,
+    has_token,
     leave_seat,
     occupied_seats,
+    reset_to_lobby,
     room_payload,
     save_room,
     set_started,
@@ -50,6 +53,8 @@ def _room_game_state(room: dict):
         return starting6_game_mod.get_game(game_id)
     if game_type == "nba_starting5":
         return nba_starting5_game_mod.get_game(game_id)
+    if game_type == "chain":
+        return chain_game_mod.get_game(game_id)
     return None
 
 def get_db():
@@ -184,6 +189,8 @@ def lobby_start_api(room_id):
             game_id, _ = starting6_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
         elif room["game_type"] == "nba_starting5":
             game_id, _ = nba_starting5_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
+        elif room["game_type"] == "chain":
+            game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
         else:
             return jsonify({"error": "Unsupported game type"}), 400
         conn.commit()
@@ -191,6 +198,19 @@ def lobby_start_api(room_id):
         conn.close()
 
     room = set_started(room_id, game_id, _build_room_redirect(room_id, room["game_type"]))
+    return jsonify({"room": room_payload(room, token)})
+
+
+@app.route("/api/lobbies/<room_id>/rematch", methods=["POST"])
+def lobby_rematch_api(room_id):
+    room = get_room(room_id)
+    if room is None:
+        return jsonify({"error": "Lobby not found"}), 404
+    data = request.get_json(force=True) or {}
+    token = data.get("token", "")
+    if not has_token(room, token):
+        return jsonify({"error": "Only lobby players can restart this room"}), 400
+    room = reset_to_lobby(room_id)
     return jsonify({"room": room_payload(room, token)})
 
 
@@ -487,6 +507,17 @@ def chain_start():
 @app.route("/api/chain/guess", methods=["POST"])
 def chain_guess():
     data = request.get_json(force=True)
+    game_id = (data.get("game_id") or "").strip()
+    if game_id:
+        player_guess = (data.get("player") or "").strip()
+        conn = get_db()
+        try:
+            state, err = chain_game_mod.submit_guess(conn, game_id, player_guess, player_token=data.get("token"))
+            conn.commit()
+            return jsonify({"ok": err is None, "state": state, "error": err})
+        finally:
+            conn.close()
+
     player_guess = (data.get("player") or "").strip()
     chain = data.get("chain", [])  # list of {id, value}
 
@@ -552,12 +583,22 @@ def chain_teammate_start():
 @app.route("/api/chain/search")
 def chain_search():
     term = request.args.get("q", "").strip()
+    game_id = request.args.get("game_id", "").strip()
     if not term:
         return jsonify({"results": []})
     conn = get_db()
-    names = cc.search_players(conn, term)
+    names = chain_game_mod.search_players(conn, game_id, term) if game_id else cc.search_players(conn, term)
     conn.close()
     return jsonify({"results": [{"name": n} for n in names]})
+
+
+@app.route("/api/chain/state")
+def chain_state():
+    game_id = request.args.get("game_id", "").strip()
+    state = chain_game_mod.get_game(game_id)
+    if state is None:
+        return jsonify({"error": "Game not found"}), 404
+    return jsonify({"state": state})
 
 
 # ── Ticking Time Bomb routes ─────────────────────────────────────────────────

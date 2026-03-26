@@ -262,9 +262,9 @@
     <!-- ── Tabs ───────────────────────────────────────────────── -->
     <div id="tab-bar">
         <button class="tab-btn active" onclick="switchTab('about')">About</button>
-        <button class="tab-btn" onclick="switchTab('multiplayer')">Multiplayer</button>
         <button class="tab-btn" onclick="switchTab('nfl')">NFL Games</button>
         <button class="tab-btn" onclick="switchTab('nba')">NBA Games</button>
+        <button class="tab-btn" onclick="switchTab('multiplayer')">Multiplayer</button>
     </div>
 
     <!-- ── About ──────────────────────────────────────────────── -->
@@ -274,37 +274,31 @@
             <p>Hey, my name is Orion, I am a student at Cornell and I make sports trivia games in my free time. I like to store them here so random people can get a chance to play them! I hope to add a wide catalogue of a lot of fun stuff. A big thank you to all my friends at WVBR 93.5 for giving me the motivation to finally commit to storing some of these games. If it wasn't for them theres zero chance I would have had as much fun making these.</p>
         </div>
 
-        <div class="blog-label">Game Guide</div>
+        <div class="blog-label">General Updates</div>
         <div class="blog-list">
             <div class="blog-post">
-                <div class="blog-post-date">NFL + NBA</div>
-                <div class="blog-post-title">Chain Game</div>
-                <p>Each round builds a live chain of filters, and every answer has to satisfy every clue currently on the board. A correct answer extends the chain, removes itself from future use, and keeps the run going until the valid player pool runs dry or you miss.</p>
-                <p>Under the hood, Chain Game works like an intersection puzzle. The game samples team, era, division, conference, college, award, and franchise relationships from the database, then checks each guess against the entire active ruleset before scoring the chain length.</p>
+                <div class="blog-post-date">Mar 2026</div>
+                <div class="blog-post-title">Multiplayer Lobby Update</div>
+                <p>The site now has a dedicated Multiplayer tab with room-based lobbies for Bullseye, Fantasy Duel, and Chain Game. You can create a lobby, claim Player 1-4 seats, and start once at least two players are in.</p>
+                <p>These online modes are polling-based for now, so they are meant for simple shared sessions and turn-based play rather than ultra-fast real-time action.</p>
             </div>
             <div class="blog-post">
-                <div class="blog-post-date">NFL + NBA</div>
-                <div class="blog-post-title">Ticking Time Bomb</div>
-                <p>You get a mystery player and a bomb fuse. Every wrong guess or skip reveals another teammate clue, and you only get a handful of mistakes before the round explodes. Different toggles like vintage, defense, and hard mode change the eligible pool and clue style.</p>
-                <p>The implementation is a shrinking search problem. The server picks a player, assembles ordered teammate hints from the stats tables, and the client reveals one clue at a time while tracking wrong guesses, skips, and end-state explosions.</p>
+                <div class="blog-post-date">Mar 2026</div>
+                <div class="blog-post-title">Chain Multiplayer Added</div>
+                <p>Chain Game now has a multiplayer version where everyone gets the same live chain. Correct answers are banned globally for the rest of the game, and turns rotate through the seated players.</p>
+                <p>This mode keeps the same core chain logic, but moves state to the server so the whole room stays synced.</p>
             </div>
             <div class="blog-post">
-                <div class="blog-post-date">NFL + NBA</div>
-                <div class="blog-post-title">Fantasy Duel / Starting 6 / Starting 5</div>
-                <p>These are local multiplayer draft games. A random franchise appears, players search for someone who played there, then lock in a season to draft that version of the player. NFL uses a full fantasy-style lineup with QB, RB, WR, TE, and UTIL spots, while NBA uses guards, forwards, center, and a utility slot.</p>
-                <p>Implementation-wise, each pick is a two-step lookup: first validate the player-team relationship, then load the valid seasons for that player on that franchise. Once a season is chosen, the app drops the card into the correct roster slot and blocks duplicates across every player in the room.</p>
+                <div class="blog-post-date">Mar 2026</div>
+                <div class="blog-post-title">Turn Lock Fixes</div>
+                <p>Online Fantasy Duel and Bullseye now use session-based player identity, which fixes the issue where two browser tabs could look like the same active player.</p>
+                <p>Play Again in multiplayer now returns everyone to the same lobby so the host can quickly run another match with the same group.</p>
             </div>
             <div class="blog-post">
-                <div class="blog-post-date">NFL + NBA</div>
-                <div class="blog-post-title">Dungeon Adventure</div>
-                <p>Dungeon Adventure is a roguelike trivia crawl. You choose a class, enter a run, and fight through themed encounters by naming players that satisfy the current room prompt plus every relic filter you have collected. Correct answers deal damage, bad answers cost health, and bosses cap each floor.</p>
-                <p>The game is built like a stateful run generator. The backend stores your class, health, relics, floor progression, and current encounter, while the frontend renders the run map, combat log, and reward screens like a lightweight sports-trivia RPG.</p>
-            </div>
-            <div class="blog-post">
-                <div class="blog-post-date">NFL + NBA</div>
-                <div class="blog-post-title">Balatro</div>
-                <p>Balatro turns player seasons into a deckbuilder. You start each run with a pool of player cards, draw hands, and score combinations based on position patterns and special hand types. Winning fights earns coins, reward choices, jokers, upgrades, packs, and shop access before the next round or boss fight.</p>
-                <p>The implementation mixes card-game logic with sports data. The backend builds deck pools from the database, scores hands, applies joker modifiers, boss effects, and item upgrades, then persists run state between requests. The frontend handles hand selection, reward flow, shop UI, overlays, and deck viewing like a full roguelike card game.</p>
+                <div class="blog-post-date">Next Up</div>
+                <div class="blog-post-title">What Is Still Experimental</div>
+                <p>The new multiplayer features are still in MVP form. Lobby flow, turn ownership, and shared state are in place, but the online modes will keep getting polish as more edge cases are tested.</p>
+                <p>For now, the safest way to test is with separate tabs or a normal window plus incognito so each player gets a unique session token.</p>
             </div>
         </div>
     </div>
@@ -312,9 +306,16 @@
     <div id="tab-multiplayer" class="tab-panel">
         <div class="about-intro">
             <h2>Online Multiplayer</h2>
-            <p>Create a lobby, claim Player 1-4 seats, and start with any 2-4 players. Right now online play supports Bullseye and Fantasy Duel only.</p>
+            <p>Create a lobby, claim Player 1-4 seats, and start with any 2-4 players. Right now online play supports Chain Game, Bullseye, and Fantasy Duel.</p>
         </div>
         <div class="mp-grid">
+            <div class="mp-card">
+                <h3>Chain Game</h3>
+                <p>Share one live chain across the room, rotate turns, and remove every correct answer from the rest of the game.</p>
+                <div class="mp-actions">
+                    <a class="mp-link" href="/multiplayer/chain">NFL Chain Game Lobby</a>
+                </div>
+            </div>
             <div class="mp-card">
                 <h3>Bullseye</h3>
                 <p>Choose a sport, make a lobby, and take turns chasing the target score.</p>
@@ -436,7 +437,7 @@
 <script>
     function switchTab(name) {
         document.querySelectorAll('.tab-btn').forEach((btn, i) => {
-            btn.classList.toggle('active', ['about','multiplayer','nfl','nba'][i] === name);
+            btn.classList.toggle('active', ['about','nfl','nba','multiplayer'][i] === name);
         });
         document.querySelectorAll('.tab-panel').forEach(p => {
             p.classList.toggle('active', p.id === 'tab-' + name);

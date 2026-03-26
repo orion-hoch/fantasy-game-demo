@@ -16,6 +16,10 @@
     let gameMode = "classic"; // "classic" | "infinite"
     let usedPlayers = new Set(); // players already guessed correctly this game
     let chainGuesses = []; // [{player, pts}, ...] for current chain
+    const params = new URLSearchParams(window.location.search);
+    const roomId = params.get("room_id");
+    const TOKEN_KEY = "fantasy-multiplayer-token";
+    let pollTimer = null;
 
     // ── DOM references ────────────────────────────────────────────────────────
     const scoreEl = document.getElementById("score-display");
@@ -33,12 +37,32 @@
     const pointsFlash = document.getElementById("points-flash");
     const guessesArea = document.getElementById("guesses-area");
     const guessesList = document.getElementById("guesses-list");
+    const modeToggle = document.getElementById("mode-toggle");
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     function setScore(n) {
         score = n;
         scoreEl.textContent = score;
+    }
+
+    function isOnlineMode() {
+        return !!roomId;
+    }
+
+    function playerToken() {
+        let value = sessionStorage.getItem(TOKEN_KEY);
+        if (!value) {
+            value = Math.random().toString(36).slice(2) + Date.now().toString(36);
+            sessionStorage.setItem(TOKEN_KEY, value);
+        }
+        return value;
+    }
+
+    function isMyTurn() {
+        if (!isOnlineMode() || !window.chainState || !window.chainState.players) return true;
+        const current = window.chainState.players[window.chainState.currentPlayer];
+        return !!current && current.token === playerToken();
     }
 
     function setValidCount(n) {
@@ -69,11 +93,11 @@
 
     function unlockInput() {
         inputLocked = false;
-        chainInput.disabled = false;
-        submitBtn.disabled = false;
+        chainInput.disabled = isOnlineMode() ? !isMyTurn() : false;
+        submitBtn.disabled = isOnlineMode() ? !isMyTurn() : false;
         chainInput.value = "";
         currentGuess = "";
-        chainInput.focus();
+        if (!chainInput.disabled) chainInput.focus();
     }
 
     function closeSearchResults() {
@@ -107,10 +131,61 @@
             row.className = "guess-row";
             row.innerHTML =
                 "<span class=\"guess-num\">" + (i + 1) + ".</span>" +
-                "<span class=\"guess-name\">" + escapeHtml(g.player) + "</span>" +
+                "<span class=\"guess-name\">" + escapeHtml(g.player) + (g.by ? " <small>(" + escapeHtml(g.by) + ")</small>" : "") + "</span>" +
                 "<span class=\"guess-pts\">+" + g.pts + " pt" + (g.pts !== 1 ? "s" : "") + "</span>";
             guessesList.appendChild(row);
         });
+    }
+
+    function renderOnlineStats() {
+        if (!isOnlineMode() || !window.chainState || !window.chainState.players) return;
+        const current = window.chainState.players[window.chainState.currentPlayer];
+        scoreEl.textContent = current ? current.score : 0;
+        const statsBar = document.getElementById("stats-bar");
+        let board = statsBar.querySelector(".mp-chain-board");
+        if (!board) {
+            board = document.createElement("div");
+            board.className = "mp-chain-board";
+            board.style.display = "flex";
+            board.style.gap = "8px";
+            board.style.flexWrap = "wrap";
+            board.style.marginLeft = "12px";
+            statsBar.appendChild(board);
+        }
+        board.innerHTML = window.chainState.players.map(function (player, idx) {
+            const active = idx === window.chainState.currentPlayer;
+            return '<div style="padding:8px 12px;border:2px solid ' + (active ? 'var(--yellow)' : 'var(--border-dim)') + ';background:' + (active ? 'rgba(245,199,0,0.08)' : 'var(--surface-2)') + ';font-family:Barlow Condensed,sans-serif;">' +
+                '<strong>' + escapeHtml(player.name) + '</strong>: ' + player.score + '</div>';
+        }).join("");
+    }
+
+    function hydrateOnlineState(state) {
+        window.chainState = state;
+        chain = state.chain || [];
+        usedPlayers = new Set(state.usedPlayers || []);
+        chainGuesses = state.chainGuesses || [];
+        setValidCount(state.validCount || 0);
+        renderChain();
+        renderGuesses();
+        renderOnlineStats();
+        promptText.innerHTML = state.players && state.players.length
+            ? "Current turn: <strong>" + escapeHtml(state.players[state.currentPlayer].name) + "</strong>"
+            : "Multiplayer Chain";
+        if (state.feedback) {
+            let html = escapeHtml(state.feedback.message || "");
+            if (state.feedback.link_results && state.feedback.link_results.length) {
+                html += "<ul class=\"link-breakdown\">" + state.feedback.link_results.map(function (r) {
+                    return "<li class=\"" + (r.passed ? "link-pass" : "link-fail") + "\">" + (r.passed ? "&#x2713;" : "&#x2717;") + " " + escapeHtml(r.label) + "</li>";
+                }).join("") + "</ul>";
+            }
+            if (state.feedback.examples && state.feedback.examples.length) {
+                html += "<div class=\"examples\">Valid answers included: <strong>" + state.feedback.examples.map(escapeHtml).join(", ") + "</strong></div>";
+            }
+            showFeedback(state.feedback.type || "wrong", html);
+        } else {
+            clearFeedback();
+        }
+        if (isMyTurn()) unlockInput(); else lockInput();
     }
 
     function resetGuesses() {
@@ -186,6 +261,7 @@
     // ── Game flow ─────────────────────────────────────────────────────────────
 
     window.startGame = function () {
+        if (isOnlineMode()) return;
         clearAdvanceTimer();
         clearFeedback();
         chain = [];
@@ -223,6 +299,7 @@
     };
 
     window.startNewChain = function () {
+        if (isOnlineMode()) return;
         clearAdvanceTimer();
         clearFeedback();
         newChainBtn.classList.add("hidden");
@@ -258,6 +335,7 @@
     };
 
     function startTeammateChain(playerName) {
+        if (isOnlineMode()) return;
         clearAdvanceTimer();
         clearFeedback();
         newChainBtn.classList.add("hidden");
@@ -302,6 +380,30 @@
 
     function doGuess(playerName) {
         if (inputLocked || chain.length === 0) return;
+
+        if (isOnlineMode()) {
+            closeSearchResults();
+            lockInput();
+            fetch("/api/chain/guess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ game_id: window.chainState.game_id, player: playerName, token: playerToken() }),
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.ok) {
+                        showFeedback("wrong", escapeHtml(data.error || "Could not submit answer"));
+                        if (isMyTurn()) unlockInput();
+                        return;
+                    }
+                    hydrateOnlineState(data.state);
+                })
+                .catch(function () {
+                    showFeedback("wrong", "Network error. Please try again.");
+                    if (isMyTurn()) unlockInput();
+                });
+            return;
+        }
 
         // Reject already-used players immediately
         if (usedPlayers.has(playerName)) {
@@ -437,6 +539,10 @@
     // ── Search autocomplete ───────────────────────────────────────────────────
 
     chainInput.addEventListener("input", function () {
+        if (isOnlineMode() && !isMyTurn()) {
+            chainInput.value = "";
+            return;
+        }
         currentGuess = "";
         const term = chainInput.value.trim();
         if (!term) {
@@ -450,7 +556,7 @@
     });
 
     function fetchSearch(term) {
-        fetch("/api/chain/search?q=" + encodeURIComponent(term))
+        fetch("/api/chain/search?q=" + encodeURIComponent(term) + (isOnlineMode() ? "&game_id=" + encodeURIComponent(window.chainState.game_id) : ""))
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 renderSearchResults(data.results || []);
@@ -476,6 +582,7 @@
     }
 
     function selectPlayer(name) {
+        if (isOnlineMode() && !isMyTurn()) return;
         chainInput.value = name;
         currentGuess = name;
         closeSearchResults();
@@ -484,6 +591,7 @@
 
     // Keyboard navigation
     chainInput.addEventListener("keydown", function (e) {
+        if (isOnlineMode() && !isMyTurn()) return;
         const items = searchResults.querySelectorAll(".chain-result-item");
         if (e.key === "ArrowDown") {
             e.preventDefault();
@@ -535,7 +643,34 @@
 
     // ── Init ──────────────────────────────────────────────────────────────────
     // Show the start button, everything else is in ready state
-    startBtn.classList.remove("hidden");
-    renderChain();
-    updatePrompt();
+    if (isOnlineMode()) {
+        if (modeToggle) modeToggle.style.display = "none";
+        startBtn.classList.add("hidden");
+        newChainBtn.classList.add("hidden");
+        fetch("/api/lobbies/" + encodeURIComponent(roomId) + "/game-state?token=" + encodeURIComponent(playerToken()))
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.room && data.room.status === "lobby") {
+                    window.location.href = "/lobbies/" + encodeURIComponent(roomId);
+                    return;
+                }
+                if (data.state) hydrateOnlineState(data.state);
+            });
+        pollTimer = setInterval(function () {
+            if (isMyTurn()) return;
+            fetch("/api/lobbies/" + encodeURIComponent(roomId) + "/game-state?token=" + encodeURIComponent(playerToken()))
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (data.room && data.room.status === "lobby") {
+                        window.location.href = "/lobbies/" + encodeURIComponent(roomId);
+                        return;
+                    }
+                    if (data.state) hydrateOnlineState(data.state);
+                });
+        }, 2500);
+    } else {
+        startBtn.classList.remove("hidden");
+        renderChain();
+        updatePrompt();
+    }
 })();

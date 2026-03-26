@@ -534,7 +534,23 @@ function showResults() {
     }).join("");
 }
 
+async function resetMultiplayerGame() {
+    try {
+        await fetch(`/api/lobbies/${encodeURIComponent(ROOM_ID)}/rematch`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: playerToken() })
+        });
+    } finally {
+        window.location.href = `/lobbies/${encodeURIComponent(ROOM_ID)}`;
+    }
+}
+
 function resetGame() {
+    if (isOnlineMode()) {
+        resetMultiplayerGame();
+        return;
+    }
     document.getElementById("results-panel").classList.add("hidden");
     document.getElementById("setup-panel").classList.remove("hidden");
 }
@@ -550,7 +566,12 @@ document.addEventListener("click", (e) => {
 async function loadOnlineState() {
     const res = await fetch(`/api/lobbies/${encodeURIComponent(ROOM_ID)}/game-state?token=${encodeURIComponent(playerToken())}`);
     const data = await res.json();
-    if (!res.ok || !data.state) return;
+    if (!res.ok) return;
+    if (data.room && data.room.status === "lobby") {
+        window.location.href = `/lobbies/${encodeURIComponent(ROOM_ID)}`;
+        return;
+    }
+    if (!data.state) return;
     hydrateState(data.state);
     document.getElementById("setup-panel").classList.add("hidden");
     document.getElementById("game-panel").classList.remove("hidden");
