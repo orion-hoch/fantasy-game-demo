@@ -55,6 +55,11 @@
     return labels[stat] || stat;
   }
 
+  function seasonLabel(season) {
+    if (season === null || season === undefined || season === '') return '';
+    return SPORT === 'nba' ? String(Number(season) + 1) : String(season);
+  }
+
   function teamFilterLabel(prompt) {
     const tf = prompt.team_filter_label || prompt.team_filter;
     if (!tf || tf === 'any' || tf === null) return 'Any Team';
@@ -325,7 +330,7 @@
           tableHtml += `
             <div class="bs-td bs-td-pick filled">
               <div class="bs-pick-player">${escapeHtml(pick.player)}</div>
-              <div class="bs-pick-season">${escapeHtml(pick.team)} · ${pick.season}</div>
+              <div class="bs-pick-season">${escapeHtml(pick.team)} · ${escapeHtml(seasonLabel(pick.season))}</div>
               <div class="bs-pick-val">${pick.stat_val.toLocaleString()}</div>
             </div>`;
         } else if (isCurrentTurnCell) {
@@ -534,7 +539,7 @@
         if (!sel) return;
         sel.innerHTML = '<option value="">— select a season —</option>' +
           seasons.map(function(season) {
-            var label = season.season + ' · ' + season.team;
+            var label = seasonLabel(season.season) + ' · ' + season.team;
             return '<option value="' + season.season + '">' + label + '</option>';
           }).join('');
         document.getElementById('confirm-year-btn').disabled = true;

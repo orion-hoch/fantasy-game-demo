@@ -106,6 +106,10 @@
             gap: 16px;
         }
 
+        .mp-join-grid-card {
+            grid-column: span 2;
+        }
+
         .mp-card {
             background: var(--surface);
             border: 3px solid var(--border);
@@ -152,6 +156,68 @@
         .mp-link:hover {
             background: rgba(245,199,0,0.1);
             border-color: var(--yellow);
+        }
+
+        .mp-join-card {
+            background: var(--surface);
+            border: 3px solid var(--border);
+            box-shadow: 4px 4px 0 var(--border);
+            padding: 18px;
+            width: 100%;
+            min-height: 100%;
+        }
+
+        .mp-join-card h3 {
+            font-family: 'Bebas Neue', Impact, sans-serif;
+            font-size: 1.35rem;
+            letter-spacing: 3px;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .mp-join-card p {
+            font-family: 'Barlow Condensed', sans-serif;
+            color: var(--text-dim);
+            font-size: 0.92rem;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .mp-join-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mp-join-input {
+            flex: 1;
+            min-width: 0;
+            background: var(--surface-2);
+            border: 2px solid var(--border-dim);
+            color: var(--text);
+            padding: 12px;
+            font-family: 'Bebas Neue', Impact, sans-serif;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            text-transform: uppercase;
+        }
+
+        .mp-join-btn {
+            border: 2px solid var(--border);
+            background: var(--yellow);
+            color: var(--text-dark);
+            padding: 0 16px;
+            font-family: 'Bebas Neue', Impact, sans-serif;
+            letter-spacing: 2px;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        .mp-join-error {
+            min-height: 18px;
+            margin-top: 10px;
+            font-family: 'Barlow Condensed', sans-serif;
+            color: var(--red-bright);
+            font-size: 0.92rem;
         }
 
         /* ── About panel ──────────────────────────────────────────── */
@@ -247,6 +313,7 @@
             #tab-bar { padding: 12px 14px 0; }
             .tab-panel { padding: 16px 14px 32px; }
             .tab-btn { font-size: 0.74rem; letter-spacing: 1px; padding: 10px 10px; }
+            .mp-join-grid-card { grid-column: span 1; }
         }
     </style>
 </head>
@@ -339,6 +406,17 @@
                 <div class="mp-actions">
                     <a class="mp-link" href="/multiplayer/starting6">NFL Fantasy Duel Lobby</a>
                     <a class="mp-link" href="/multiplayer/nba_starting5">NBA Fantasy Duel Lobby</a>
+                </div>
+            </div>
+            <div class="mp-join-grid-card">
+                <div class="mp-join-card">
+                <h3>Join Lobby</h3>
+                <p>Already have a room code? Enter it here and jump straight into the lobby.</p>
+                <div class="mp-join-row">
+                    <input id="join-lobby-code" class="mp-join-input" type="text" maxlength="6" placeholder="ABC123">
+                    <button id="join-lobby-btn" class="mp-join-btn" type="button" onclick="joinLobbyByCode()">Join</button>
+                </div>
+                <div id="join-lobby-error" class="mp-join-error"></div>
                 </div>
             </div>
         </div>
@@ -453,6 +531,26 @@
         });
         history.replaceState(null, '', name === 'about' ? '/' : '/?tab=' + name);
     }
+
+    function joinLobbyByCode() {
+        const input = document.getElementById('join-lobby-code');
+        const error = document.getElementById('join-lobby-error');
+        const code = (input.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!code) {
+            error.textContent = 'Enter a lobby code.';
+            return;
+        }
+        error.textContent = '';
+        window.location.href = '/lobbies/' + encodeURIComponent(code);
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        const input = document.getElementById('join-lobby-code');
+        if (input && document.activeElement === input) {
+            joinLobbyByCode();
+        }
+    });
 
     // Open the correct tab if ?tab= param is present
     (function () {

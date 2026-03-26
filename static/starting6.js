@@ -164,9 +164,10 @@ function startGame() {
 function buildRosterPanels() {
     const row = document.getElementById("rosters-row");
     row.innerHTML = state.players.map((p, i) => `
-        <div class="roster-panel" id="roster-p${i}">
+        <div class="roster-panel${isOnlineMode() && p.token === playerToken() ? " my-roster" : ""}" id="roster-p${i}">
             <div class="roster-header">
                 <span class="player-name">${p.name}</span>
+                ${isOnlineMode() && p.token === playerToken() ? '<span class="roster-you">You</span>' : ''}
             </div>
             <div class="roster-slots" id="slots-p${i}"></div>
         </div>
@@ -627,6 +628,7 @@ async function loadOnlineState() {
 }
 
 if (isOnlineMode()) {
+    document.body.classList.add("online-mode-starting6");
     loadOnlineState();
     pollTimer = window.setInterval(() => {
         if (isMyTurn()) return;
