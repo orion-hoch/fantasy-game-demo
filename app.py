@@ -53,7 +53,7 @@ def _room_game_state(room: dict):
         return starting6_game_mod.get_game(game_id)
     if game_type == "nba_starting5":
         return nba_starting5_game_mod.get_game(game_id)
-    if game_type == "chain":
+    if game_type in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
         return chain_game_mod.get_game(game_id)
     return None
 
@@ -189,8 +189,10 @@ def lobby_start_api(room_id):
             game_id, _ = starting6_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
         elif room["game_type"] == "nba_starting5":
             game_id, _ = nba_starting5_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
-        elif room["game_type"] == "chain":
-            game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
+        elif room["game_type"] in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
+            sport = "nba" if room["game_type"].startswith("nba_") else "nfl"
+            mode = "comp" if room["game_type"].endswith("_comp") else "coop"
+            game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens, sport=sport, mode=mode)
         else:
             return jsonify({"error": "Unsupported game type"}), 400
         conn.commit()
@@ -689,6 +691,17 @@ def nba_chain_start():
 @app.route("/api/nba_chain/guess", methods=["POST"])
 def nba_chain_guess():
     data = request.get_json(force=True)
+    game_id = (data.get("game_id") or "").strip()
+    if game_id:
+        player_guess = (data.get("player") or "").strip()
+        conn = get_db()
+        try:
+            state, err = chain_game_mod.submit_guess(conn, game_id, player_guess, player_token=data.get("token"))
+            conn.commit()
+            return jsonify({"ok": err is None, "state": state, "error": err})
+        finally:
+            conn.close()
+
     player_guess = (data.get("player") or "").strip()
     chain = data.get("chain", [])
 
@@ -753,10 +766,11 @@ def nba_chain_teammate_start():
 @app.route("/api/nba_chain/search")
 def nba_chain_search():
     term = request.args.get("q", "").strip()
+    game_id = request.args.get("game_id", "").strip()
     if not term:
         return jsonify({"results": []})
     conn = get_db()
-    names = nba_cc.search_players(conn, term)
+    names = chain_game_mod.search_players(conn, game_id, term) if game_id else nba_cc.search_players(conn, term)
     conn.close()
     return jsonify({"results": [{"name": n} for n in names]})
 

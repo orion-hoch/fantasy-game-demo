@@ -3,9 +3,13 @@
 (function () {
     "use strict";
 
-    // ── State ─────────────────────────────────────────────────────────────────
+    const API_PREFIX = window.CHAIN_API_PREFIX || "/api/chain";
+    const params = new URLSearchParams(window.location.search);
+    const ROOM_ID = params.get("room_id");
+    const TOKEN_KEY = "fantasy-multiplayer-token";
+
     let score = 0;
-    let chain = [];           // [{id, value, label}, ...]
+    let chain = [];
     let validCount = 0;
     let gameActive = false;
     let inputLocked = false;
@@ -13,15 +17,12 @@
     let selectedIndex = -1;
     let searchDebounce = null;
     let currentGuess = "";
-    let gameMode = "classic"; // "classic" | "infinite"
-    let usedPlayers = new Set(); // players already guessed correctly this game
-    let chainGuesses = []; // [{player, pts}, ...] for current chain
-    const params = new URLSearchParams(window.location.search);
-    const roomId = params.get("room_id");
-    const TOKEN_KEY = "fantasy-multiplayer-token";
+    let gameMode = "classic";
+    let usedPlayers = new Set();
+    let chainGuesses = [];
+    let onlineState = null;
     let pollTimer = null;
 
-    // ── DOM references ────────────────────────────────────────────────────────
     const scoreEl = document.getElementById("score-display");
     const chainLengthEl = document.getElementById("chain-length-display");
     const validCountEl = document.getElementById("valid-count-display");
@@ -38,16 +39,10 @@
     const guessesArea = document.getElementById("guesses-area");
     const guessesList = document.getElementById("guesses-list");
     const modeToggle = document.getElementById("mode-toggle");
-
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    function setScore(n) {
-        score = n;
-        scoreEl.textContent = score;
-    }
+    const statsBar = document.getElementById("stats-bar");
 
     function isOnlineMode() {
-        return !!roomId;
+        return !!ROOM_ID;
     }
 
     function playerToken() {
@@ -59,10 +54,41 @@
         return value;
     }
 
+    function currentOnlinePlayer() {
+        if (!onlineState || !onlineState.players || !onlineState.players.length) return null;
+        return onlineState.players[onlineState.currentPlayer];
+    }
+
     function isMyTurn() {
-        if (!isOnlineMode() || !window.chainState || !window.chainState.players) return true;
-        const current = window.chainState.players[window.chainState.currentPlayer];
+        if (!isOnlineMode()) return true;
+        const current = currentOnlinePlayer();
         return !!current && current.token === playerToken();
+    }
+
+    function displayedChain() {
+        if (!isOnlineMode() || !onlineState) return chain;
+        if (onlineState.mode === "coop") return onlineState.chain || [];
+        const current = currentOnlinePlayer();
+        return current ? (current.chain || []) : [];
+    }
+
+    function displayedGuesses() {
+        if (!isOnlineMode() || !onlineState) return chainGuesses;
+        if (onlineState.mode === "coop") return onlineState.chainGuesses || [];
+        const current = currentOnlinePlayer();
+        return current ? (current.chainGuesses || []) : [];
+    }
+
+    function displayedValidCount() {
+        if (!isOnlineMode() || !onlineState) return validCount;
+        if (onlineState.mode === "coop") return onlineState.validCount || 0;
+        const current = currentOnlinePlayer();
+        return current ? (current.validCount || 0) : 0;
+    }
+
+    function setScore(n) {
+        score = n;
+        scoreEl.textContent = score;
     }
 
     function setValidCount(n) {
@@ -80,7 +106,7 @@
     }
 
     function showFeedback(type, html) {
-        feedbackEl.className = type;  // "correct" or "wrong"
+        feedbackEl.className = type;
         feedbackEl.innerHTML = html;
     }
 
@@ -93,11 +119,12 @@
 
     function unlockInput() {
         inputLocked = false;
-        chainInput.disabled = isOnlineMode() ? !isMyTurn() : false;
-        submitBtn.disabled = isOnlineMode() ? !isMyTurn() : false;
+        const enabled = !isOnlineMode() || isMyTurn();
+        chainInput.disabled = !enabled;
+        submitBtn.disabled = !enabled;
         chainInput.value = "";
         currentGuess = "";
-        if (!chainInput.disabled) chainInput.focus();
+        if (enabled) chainInput.focus();
     }
 
     function closeSearchResults() {
@@ -108,7 +135,6 @@
     function showPointsFlash(pts) {
         pointsFlash.textContent = "+" + pts + " pt" + (pts !== 1 ? "s" : "");
         pointsFlash.classList.remove("hidden");
-        // Force reflow then show
         void pointsFlash.offsetWidth;
         pointsFlash.classList.add("show");
         setTimeout(function () {
@@ -119,14 +145,43 @@
         }, 900);
     }
 
+    function renderOnlineBoard() {
+        let board = statsBar.querySelector(".mp-chain-board");
+        if (!isOnlineMode() || !onlineState || !onlineState.players) {
+            if (board) board.remove();
+            return;
+        }
+        if (!board) {
+            board = document.createElement("div");
+            board.className = "mp-chain-board";
+            board.style.display = "flex";
+            board.style.flexWrap = "wrap";
+            board.style.gap = "10px";
+            board.style.marginLeft = "12px";
+            statsBar.appendChild(board);
+        }
+        board.innerHTML = onlineState.players.map(function (player, idx) {
+            const active = idx === onlineState.currentPlayer;
+            const lives = onlineState.mode === "comp"
+                ? `<div style="font-size:0.8rem;color:var(--text-dim);">Lives: ${player.lives_left}</div>`
+                : "";
+            return `<div style="padding:8px 12px;border:2px solid ${active ? 'var(--yellow)' : 'var(--border-dim)'};background:${active ? 'rgba(245,199,0,0.08)' : 'var(--surface-2)'};min-width:120px;">
+                <div style="font-family:'Bebas Neue',Impact,sans-serif;letter-spacing:2px;">${escapeHtml(player.name)}</div>
+                <div style="font-family:'Barlow Condensed',sans-serif;">Score: ${player.score}</div>
+                ${lives}
+            </div>`;
+        }).join("");
+    }
+
     function renderGuesses() {
         guessesList.innerHTML = "";
-        if (chainGuesses.length === 0) {
+        const guesses = displayedGuesses();
+        if (guesses.length === 0) {
             guessesArea.classList.add("hidden");
             return;
         }
         guessesArea.classList.remove("hidden");
-        chainGuesses.forEach(function (g, i) {
+        guesses.forEach(function (g, i) {
             const row = document.createElement("div");
             row.className = "guess-row";
             row.innerHTML =
@@ -137,40 +192,87 @@
         });
     }
 
-    function renderOnlineStats() {
-        if (!isOnlineMode() || !window.chainState || !window.chainState.players) return;
-        const current = window.chainState.players[window.chainState.currentPlayer];
-        scoreEl.textContent = current ? current.score : 0;
-        const statsBar = document.getElementById("stats-bar");
-        let board = statsBar.querySelector(".mp-chain-board");
-        if (!board) {
-            board = document.createElement("div");
-            board.className = "mp-chain-board";
-            board.style.display = "flex";
-            board.style.gap = "8px";
-            board.style.flexWrap = "wrap";
-            board.style.marginLeft = "12px";
-            statsBar.appendChild(board);
-        }
-        board.innerHTML = window.chainState.players.map(function (player, idx) {
-            const active = idx === window.chainState.currentPlayer;
-            return '<div style="padding:8px 12px;border:2px solid ' + (active ? 'var(--yellow)' : 'var(--border-dim)') + ';background:' + (active ? 'rgba(245,199,0,0.08)' : 'var(--surface-2)') + ';font-family:Barlow Condensed,sans-serif;">' +
-                '<strong>' + escapeHtml(player.name) + '</strong>: ' + player.score + '</div>';
-        }).join("");
+    function resetGuesses() {
+        chainGuesses = [];
+        renderGuesses();
     }
 
+    function renderChain() {
+        const activeChain = displayedChain();
+        chainBar.innerHTML = "";
+        if (activeChain.length === 0) {
+            chainBar.appendChild(chainEmptyMsg);
+            chainEmptyMsg.style.display = "";
+            setChainLength(0);
+            return;
+        }
+
+        chainEmptyMsg.style.display = "none";
+        setChainLength(activeChain.length);
+
+        activeChain.forEach(function (link, i) {
+            if (i > 0) {
+                const arrow = document.createElement("span");
+                arrow.className = "chain-arrow";
+                arrow.textContent = "→";
+                chainBar.appendChild(arrow);
+            }
+            const pill = document.createElement("div");
+            pill.className = "chain-link" + (i === activeChain.length - 1 ? " active" : "");
+            const num = document.createElement("span");
+            num.className = "link-num";
+            num.textContent = (i + 1) + ".";
+            pill.appendChild(num);
+            pill.appendChild(document.createTextNode(link.label));
+            chainBar.appendChild(pill);
+        });
+        chainBar.scrollLeft = chainBar.scrollWidth;
+    }
+
+    function updatePrompt() {
+        if (isOnlineMode() && onlineState) {
+            if (onlineState.done) {
+                const winner = onlineState.winner;
+                promptText.innerHTML = winner.winner_names.length === 1
+                    ? `<strong>${escapeHtml(winner.winner_names[0])}</strong> wins the match!`
+                    : `Tie game: <strong>${winner.winner_names.map(escapeHtml).join(" & ")}</strong>`;
+                return;
+            }
+            const current = currentOnlinePlayer();
+            if (onlineState.mode === "coop") {
+                promptText.innerHTML = `Co-op: <strong>${escapeHtml(current.name)}</strong>'s turn. Team lives left: <strong>${onlineState.lives_left}</strong>`;
+            } else {
+                promptText.innerHTML = `Comp: <strong>${escapeHtml(current.name)}</strong>'s chain. Lives left: <strong>${current.lives_left}</strong>`;
+            }
+            return;
+        }
+
+        if (chain.length === 0) {
+            promptText.textContent = "Press Start to begin.";
+            return;
+        }
+        const active = chain[chain.length - 1];
+        if (chain.length === 1) promptText.innerHTML = "Name a player who <strong>" + escapeHtml(active.label) + "</strong>";
+        else promptText.innerHTML = "Fits all " + chain.length + " links — latest: <strong>" + escapeHtml(active.label) + "</strong>";
+    }
+
+    window.setMode = function (mode) {
+        gameMode = mode;
+        document.getElementById("mode-classic").classList.toggle("active", mode === "classic");
+        document.getElementById("mode-infinite").classList.toggle("active", mode === "infinite");
+    };
+
     function hydrateOnlineState(state) {
-        window.chainState = state;
-        chain = state.chain || [];
+        onlineState = state;
         usedPlayers = new Set(state.usedPlayers || []);
-        chainGuesses = state.chainGuesses || [];
-        setValidCount(state.validCount || 0);
+        setValidCount(displayedValidCount());
+        if (state.mode === "coop") setScore(state.players.reduce(function (sum, p) { return sum + (p.score || 0); }, 0));
+        else setScore(currentOnlinePlayer() ? currentOnlinePlayer().score : 0);
+        renderOnlineBoard();
         renderChain();
         renderGuesses();
-        renderOnlineStats();
-        promptText.innerHTML = state.players && state.players.length
-            ? "Current turn: <strong>" + escapeHtml(state.players[state.currentPlayer].name) + "</strong>"
-            : "Multiplayer Chain";
+        updatePrompt();
+
         if (state.feedback) {
             let html = escapeHtml(state.feedback.message || "");
             if (state.feedback.link_results && state.feedback.link_results.length) {
@@ -185,80 +287,20 @@
         } else {
             clearFeedback();
         }
+
+        if (state.done) {
+            lockInput();
+            return;
+        }
         if (isMyTurn()) unlockInput(); else lockInput();
     }
 
-    function resetGuesses() {
-        chainGuesses = [];
-        renderGuesses();
-    }
-
-    // ── Chain rendering ───────────────────────────────────────────────────────
-
-    function renderChain() {
-        // Clear
-        chainBar.innerHTML = "";
-
-        if (chain.length === 0) {
-            chainBar.appendChild(chainEmptyMsg);
-            chainEmptyMsg.style.display = "";
-            setChainLength(0);
-            return;
-        }
-
-        chainEmptyMsg.style.display = "none";
-        setChainLength(chain.length);
-
-        chain.forEach(function (link, i) {
-            // Arrow between links
-            if (i > 0) {
-                const arrow = document.createElement("span");
-                arrow.className = "chain-arrow";
-                arrow.textContent = "→";
-                chainBar.appendChild(arrow);
-            }
-
-            const pill = document.createElement("div");
-            pill.className = "chain-link" + (i === chain.length - 1 ? " active" : "");
-
-            const num = document.createElement("span");
-            num.className = "link-num";
-            num.textContent = (i + 1) + ".";
-
-            const text = document.createTextNode(link.label);
-
-            pill.appendChild(num);
-            pill.appendChild(text);
-            chainBar.appendChild(pill);
-        });
-
-        // Scroll to end
-        chainBar.scrollLeft = chainBar.scrollWidth;
-    }
-
-    function updatePrompt() {
-        if (chain.length === 0) {
-            promptText.textContent = "Press Start to begin.";
-            return;
-        }
-        const active = chain[chain.length - 1];
-        if (chain.length === 1) {
-            promptText.innerHTML = "Name a player who <strong>" + escapeHtml(active.label) + "</strong>";
-        } else {
-            promptText.innerHTML =
-                "Fits all " + chain.length + " links — latest: <strong>" + escapeHtml(active.label) + "</strong>";
+    function clearAdvanceTimer() {
+        if (advanceTimer) {
+            clearTimeout(advanceTimer);
+            advanceTimer = null;
         }
     }
-
-    // ── Mode toggle ───────────────────────────────────────────────────────────
-
-    window.setMode = function (mode) {
-        gameMode = mode;
-        document.getElementById("mode-classic").classList.toggle("active", mode === "classic");
-        document.getElementById("mode-infinite").classList.toggle("active", mode === "infinite");
-    };
-
-    // ── Game flow ─────────────────────────────────────────────────────────────
 
     window.startGame = function () {
         if (isOnlineMode()) return;
@@ -277,7 +319,7 @@
         lockInput();
         promptText.innerHTML = "Loading…";
 
-        fetch("/api/chain/start", { method: "POST" })
+        fetch(API_PREFIX + "/start", { method: "POST" })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.error) {
@@ -303,17 +345,14 @@
         clearAdvanceTimer();
         clearFeedback();
         newChainBtn.classList.add("hidden");
-        newChainBtn.textContent = "Start New Chain";
-        newChainBtn.onclick = window.startNewChain;
         chain = [];
-        usedPlayers = new Set(); // reset used players for a fresh classic chain
+        usedPlayers = new Set();
         chainGuesses = [];
         renderChain();
         resetGuesses();
         lockInput();
         promptText.innerHTML = "Loading next chain…";
-
-        fetch("/api/chain/start", { method: "POST" })
+        fetch(API_PREFIX + "/start", { method: "POST" })
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.error) {
@@ -346,7 +385,7 @@
         lockInput();
         promptText.innerHTML = "Finding teammates of <strong>" + escapeHtml(playerName) + "</strong>…";
 
-        fetch("/api/chain/teammate_start", {
+        fetch(API_PREFIX + "/teammate_start", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ player: playerName }),
@@ -354,7 +393,6 @@
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.error) {
-                    // Fallback to fresh chain if no teammates found
                     promptText.innerHTML = "No teammates found for " + escapeHtml(playerName) + ". Starting fresh…";
                     setTimeout(window.startNewChain, 1500);
                     return;
@@ -374,73 +412,11 @@
 
     window.submitCurrentGuess = function () {
         const guess = currentGuess || chainInput.value.trim();
-        if (!guess || inputLocked || !gameActive) return;
+        if (!guess || inputLocked || (!gameActive && !isOnlineMode())) return;
         doGuess(guess);
     };
 
-    function doGuess(playerName) {
-        if (inputLocked || chain.length === 0) return;
-
-        if (isOnlineMode()) {
-            closeSearchResults();
-            lockInput();
-            fetch("/api/chain/guess", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ game_id: window.chainState.game_id, player: playerName, token: playerToken() }),
-            })
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (!data.ok) {
-                        showFeedback("wrong", escapeHtml(data.error || "Could not submit answer"));
-                        if (isMyTurn()) unlockInput();
-                        return;
-                    }
-                    hydrateOnlineState(data.state);
-                })
-                .catch(function () {
-                    showFeedback("wrong", "Network error. Please try again.");
-                    if (isMyTurn()) unlockInput();
-                });
-            return;
-        }
-
-        // Reject already-used players immediately
-        if (usedPlayers.has(playerName)) {
-            showFeedback("wrong", "&#x2717; <strong>" + escapeHtml(playerName) +
-                "</strong> has already been used this game!");
-            chainInput.value = "";
-            currentGuess = "";
-            closeSearchResults();
-            setTimeout(clearFeedback, 2000);
-            return;
-        }
-
-        closeSearchResults();
-        lockInput();
-
-        const payload = {
-            player: playerName,
-            chain: chain.map(function (c) { return { id: c.id, value: c.value }; }),
-            used_players: Array.from(usedPlayers),
-        };
-
-        fetch("/api/chain/guess", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-        })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                handleGuessResult(playerName, data);
-            })
-            .catch(function () {
-                showFeedback("wrong", "Network error. Please try again.");
-                unlockInput();
-            });
-    }
-
-    function handleGuessResult(playerName, data) {
+    function handleSoloGuessResult(playerName, data) {
         if (data.correct) {
             if (window.SFX) SFX.play('correct');
             usedPlayers.add(playerName);
@@ -451,73 +427,46 @@
             renderGuesses();
 
             if (data.last_player) {
-                // Exactly 1 player left in the pool — bonus + start teammate chain
                 const BONUS = 10;
                 setScore(score + BONUS);
-                showFeedback(
-                    "correct",
-                    "&#x2713; Correct! +" + pts + " pts — " +
-                    "BONUS — Last player standing! +" + BONUS + " pts! " +
-                    "Next chain: teammates of <strong>" + escapeHtml(data.last_player) + "</strong>"
-                );
+                showFeedback("correct", "&#x2713; Correct! +" + pts + " pts — BONUS — Last player standing! +" + BONUS + " pts! Next chain: teammates of <strong>" + escapeHtml(data.last_player) + "</strong>");
                 setValidCount(1);
                 gameActive = false;
-                advanceTimer = setTimeout(function () {
-                    startTeammateChain(data.last_player);
-                }, 3000);
+                advanceTimer = setTimeout(function () { startTeammateChain(data.last_player); }, 3000);
                 newChainBtn.textContent = "Continue with " + escapeHtml(data.last_player) + "'s teammates →";
                 newChainBtn.onclick = function () { startTeammateChain(data.last_player); };
                 newChainBtn.classList.remove("hidden");
             } else if (!data.next_category) {
-                // No more valid categories (chain exhausted)
-                showFeedback(
-                    "correct",
-                    "&#x2713; Correct! +" + pts + " point" + (pts !== 1 ? "s" : "") +
-                    " — Chain complete! No more valid categories."
-                );
+                showFeedback("correct", "&#x2713; Correct! +" + pts + " point" + (pts !== 1 ? "s" : "") + " — Chain complete! No more valid categories.");
                 setValidCount(data.valid_count);
                 gameActive = false;
                 newChainBtn.textContent = "Start New Chain";
                 newChainBtn.onclick = window.startNewChain;
                 newChainBtn.classList.remove("hidden");
             } else {
-                showFeedback(
-                    "correct",
-                    "&#x2713; Correct! +" + pts + " point" + (pts !== 1 ? "s" : "") + " — chain grows!"
-                );
+                showFeedback("correct", "&#x2713; Correct! +" + pts + " point" + (pts !== 1 ? "s" : "") + " — chain grows!");
                 chain.push(data.next_category);
                 setValidCount(data.next_category.valid_count);
                 renderChain();
                 updatePrompt();
-                setTimeout(function () {
-                    clearFeedback();
-                    unlockInput();
-                }, 1200);
+                setTimeout(function () { clearFeedback(); unlockInput(); }, 1200);
             }
         } else {
-            // Wrong answer — show per-link breakdown
             let html = "&#x2717; <strong>" + escapeHtml(playerName) + "</strong> doesn't fit the full chain:";
             if (data.link_results && data.link_results.length > 0) {
                 html += "<ul class=\"link-breakdown\">";
                 data.link_results.forEach(function (r) {
-                    html += "<li class=\"" + (r.passed ? "link-pass" : "link-fail") + "\">" +
-                        (r.passed ? "&#x2713;" : "&#x2717;") + " " + escapeHtml(r.label) +
-                        "</li>";
+                    html += "<li class=\"" + (r.passed ? "link-pass" : "link-fail") + "\">" + (r.passed ? "&#x2713;" : "&#x2717;") + " " + escapeHtml(r.label) + "</li>";
                 });
                 html += "</ul>";
             }
-            if (data.examples && data.examples.length > 0) {
-                html += "<div class=\"examples\">Valid answers included: <strong>" +
-                    data.examples.map(escapeHtml).join(", ") + "</strong></div>";
-            }
+            if (data.examples && data.examples.length > 0) html += "<div class=\"examples\">Valid answers included: <strong>" + data.examples.map(escapeHtml).join(", ") + "</strong></div>";
             if (window.SFX) SFX.play('wrong');
             showFeedback("wrong", html);
             gameActive = false;
-
             if (gameMode === "infinite") {
                 newChainBtn.textContent = "Continue with " + escapeHtml(playerName) + "'s teammates →";
                 newChainBtn.classList.remove("hidden");
-                // Store wrong player for the teammate chain
                 newChainBtn.onclick = function () { startTeammateChain(playerName); };
                 advanceTimer = setTimeout(function () { startTeammateChain(playerName); }, 4000);
             } else {
@@ -529,14 +478,61 @@
         }
     }
 
-    function clearAdvanceTimer() {
-        if (advanceTimer) {
-            clearTimeout(advanceTimer);
-            advanceTimer = null;
+    function doGuess(playerName) {
+        if (inputLocked || displayedChain().length === 0) return;
+        if (usedPlayers.has(playerName)) {
+            showFeedback("wrong", "&#x2717; <strong>" + escapeHtml(playerName) + "</strong> has already been used this game!");
+            chainInput.value = "";
+            currentGuess = "";
+            closeSearchResults();
+            setTimeout(clearFeedback, 2000);
+            return;
         }
-    }
 
-    // ── Search autocomplete ───────────────────────────────────────────────────
+        closeSearchResults();
+        lockInput();
+
+        if (isOnlineMode()) {
+            fetch(API_PREFIX + "/guess", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ game_id: onlineState.game_id, player: playerName, token: playerToken() }),
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data.ok) {
+                        showFeedback("wrong", escapeHtml(data.error || "Could not submit answer"));
+                        if (isMyTurn()) unlockInput();
+                        return;
+                    }
+                    if (window.SFX) SFX.play(data.state.feedback && data.state.feedback.type === "correct" ? "correct" : "wrong");
+                    hydrateOnlineState(data.state);
+                    if (data.state.feedback && data.state.feedback.type === "correct") showPointsFlash(displayedChain().length ? displayedChain().length - 1 || 1 : 1);
+                })
+                .catch(function () {
+                    showFeedback("wrong", "Network error. Please try again.");
+                    if (isMyTurn()) unlockInput();
+                });
+            return;
+        }
+
+        const payload = {
+            player: playerName,
+            chain: chain.map(function (c) { return { id: c.id, value: c.value }; }),
+            used_players: Array.from(usedPlayers),
+        };
+        fetch(API_PREFIX + "/guess", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { handleSoloGuessResult(playerName, data); })
+            .catch(function () {
+                showFeedback("wrong", "Network error. Please try again.");
+                unlockInput();
+            });
+    }
 
     chainInput.addEventListener("input", function () {
         if (isOnlineMode() && !isMyTurn()) {
@@ -545,22 +541,15 @@
         }
         currentGuess = "";
         const term = chainInput.value.trim();
-        if (!term) {
-            closeSearchResults();
-            return;
-        }
+        if (!term) { closeSearchResults(); return; }
         clearTimeout(searchDebounce);
-        searchDebounce = setTimeout(function () {
-            fetchSearch(term);
-        }, 200);
+        searchDebounce = setTimeout(function () { fetchSearch(term); }, 200);
     });
 
     function fetchSearch(term) {
-        fetch("/api/chain/search?q=" + encodeURIComponent(term) + (isOnlineMode() ? "&game_id=" + encodeURIComponent(window.chainState.game_id) : ""))
+        fetch(API_PREFIX + "/search?q=" + encodeURIComponent(term) + (isOnlineMode() ? "&game_id=" + encodeURIComponent(onlineState.game_id) : ""))
             .then(function (r) { return r.json(); })
-            .then(function (data) {
-                renderSearchResults(data.results || []);
-            })
+            .then(function (data) { renderSearchResults(data.results || []); })
             .catch(function () { closeSearchResults(); });
     }
 
@@ -568,15 +557,11 @@
         searchResults.innerHTML = "";
         selectedIndex = -1;
         if (!results.length) return;
-
-        results.forEach(function (r, i) {
+        results.forEach(function (r) {
             const item = document.createElement("div");
             item.className = "chain-result-item";
             item.textContent = r.name;
-            item.addEventListener("mousedown", function (e) {
-                e.preventDefault();
-                selectPlayer(r.name);
-            });
+            item.addEventListener("mousedown", function (e) { e.preventDefault(); selectPlayer(r.name); });
             searchResults.appendChild(item);
         });
     }
@@ -589,7 +574,6 @@
         doGuess(name);
     }
 
-    // Keyboard navigation
     chainInput.addEventListener("keydown", function (e) {
         if (isOnlineMode() && !isMyTurn()) return;
         const items = searchResults.querySelectorAll(".chain-result-item");
@@ -603,9 +587,8 @@
             updateHighlight(items);
         } else if (e.key === "Enter") {
             e.preventDefault();
-            if (selectedIndex >= 0 && items[selectedIndex]) {
-                selectPlayer(items[selectedIndex].textContent);
-            } else {
+            if (selectedIndex >= 0 && items[selectedIndex]) selectPlayer(items[selectedIndex].textContent);
+            else {
                 const val = chainInput.value.trim();
                 if (val) doGuess(val);
             }
@@ -615,22 +598,13 @@
     });
 
     function updateHighlight(items) {
-        items.forEach(function (item, i) {
-            item.classList.toggle("highlighted", i === selectedIndex);
-        });
-        if (selectedIndex >= 0 && items[selectedIndex]) {
-            chainInput.value = items[selectedIndex].textContent;
-        }
+        items.forEach(function (item, i) { item.classList.toggle("highlighted", i === selectedIndex); });
+        if (selectedIndex >= 0 && items[selectedIndex]) chainInput.value = items[selectedIndex].textContent;
     }
 
-    // Close results when clicking outside
     document.addEventListener("click", function (e) {
-        if (!document.getElementById("search-wrapper").contains(e.target)) {
-            closeSearchResults();
-        }
+        if (!document.getElementById("search-wrapper").contains(e.target)) closeSearchResults();
     });
-
-    // ── Utility ───────────────────────────────────────────────────────────────
 
     function escapeHtml(str) {
         return String(str)
@@ -641,32 +615,26 @@
             .replace(/'/g, "&#39;");
     }
 
-    // ── Init ──────────────────────────────────────────────────────────────────
-    // Show the start button, everything else is in ready state
-    if (isOnlineMode()) {
-        if (modeToggle) modeToggle.style.display = "none";
-        startBtn.classList.add("hidden");
-        newChainBtn.classList.add("hidden");
-        fetch("/api/lobbies/" + encodeURIComponent(roomId) + "/game-state?token=" + encodeURIComponent(playerToken()))
+    function loadRoomState() {
+        fetch("/api/lobbies/" + encodeURIComponent(ROOM_ID) + "/game-state?token=" + encodeURIComponent(playerToken()))
             .then(function (r) { return r.json(); })
             .then(function (data) {
                 if (data.room && data.room.status === "lobby") {
-                    window.location.href = "/lobbies/" + encodeURIComponent(roomId);
+                    window.location.href = "/lobbies/" + encodeURIComponent(ROOM_ID);
                     return;
                 }
                 if (data.state) hydrateOnlineState(data.state);
             });
+    }
+
+    if (isOnlineMode()) {
+        if (modeToggle) modeToggle.style.display = "none";
+        startBtn.classList.add("hidden");
+        newChainBtn.classList.add("hidden");
+        loadRoomState();
         pollTimer = setInterval(function () {
             if (isMyTurn()) return;
-            fetch("/api/lobbies/" + encodeURIComponent(roomId) + "/game-state?token=" + encodeURIComponent(playerToken()))
-                .then(function (r) { return r.json(); })
-                .then(function (data) {
-                    if (data.room && data.room.status === "lobby") {
-                        window.location.href = "/lobbies/" + encodeURIComponent(roomId);
-                        return;
-                    }
-                    if (data.state) hydrateOnlineState(data.state);
-                });
+            loadRoomState();
         }, 2500);
     } else {
         startBtn.classList.remove("hidden");

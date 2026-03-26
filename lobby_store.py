@@ -33,11 +33,29 @@ SUPPORTED_GAMES = {
         "min_players": 2,
         "max_players": 4,
     },
-    "chain": {
-        "label": "Chain Game",
+    "chain_coop": {
+        "label": "Chain Game Co-op (NFL)",
         "route": "/chain",
         "min_players": 2,
         "max_players": 4,
+    },
+    "chain_comp": {
+        "label": "Chain Game Comp (NFL)",
+        "route": "/chain",
+        "min_players": 2,
+        "max_players": 2,
+    },
+    "nba_chain_coop": {
+        "label": "Chain Game Co-op (NBA)",
+        "route": "/nba_chain",
+        "min_players": 2,
+        "max_players": 4,
+    },
+    "nba_chain_comp": {
+        "label": "Chain Game Comp (NBA)",
+        "route": "/nba_chain",
+        "min_players": 2,
+        "max_players": 2,
     },
 }
 
@@ -128,7 +146,8 @@ def claim_seat(room_id: str, token: str, player_name: str, seat_number: int) -> 
     if not token:
         raise ValueError("Missing player token")
     seat_key = str(int(seat_number))
-    if seat_key not in room["seats"]:
+    max_players = SUPPORTED_GAMES[room["game_type"]]["max_players"]
+    if seat_key not in room["seats"] or int(seat_key) > max_players:
         raise ValueError("Invalid seat")
     if room["seats"][seat_key] is not None and room["seats"][seat_key].get("token") != token:
         raise ValueError("Seat is already taken")
@@ -184,6 +203,8 @@ def room_payload(room: dict, token: str | None = None) -> dict:
         for seat_no, seat in room["seats"].items()
     }
     payload["game_label"] = SUPPORTED_GAMES[room["game_type"]]["label"]
+    payload["min_players"] = SUPPORTED_GAMES[room["game_type"]]["min_players"]
+    payload["max_players"] = SUPPORTED_GAMES[room["game_type"]]["max_players"]
     payload["my_seat"] = token_seat(room, token)[0] if token else None
     payload["is_host"] = bool(token and token == room.get("host_token"))
     payload["filled_seat_count"] = len(occupied_seats(room))

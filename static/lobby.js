@@ -142,10 +142,10 @@
         <input id="lobby-name-input" type="text" value="${escapeHtml(getNameFallback())}" maxlength="24">
       </div>
       <div class="seat-grid">
-        ${[1,2,3,4].map(function (seatNo) { return seatCard(seatNo, room.seats[String(seatNo)], room); }).join('')}
+        ${Array.from({ length: room.max_players }, function (_, idx) { return idx + 1; }).map(function (seatNo) { return seatCard(seatNo, room.seats[String(seatNo)], room); }).join('')}
       </div>
       <div class="lobby-topline">
-        <div class="lobby-note">${room.filled_seat_count} player${room.filled_seat_count === 1 ? '' : 's'} seated. Host can start with any 2-4.</div>
+        <div class="lobby-note">${room.filled_seat_count} player${room.filled_seat_count === 1 ? '' : 's'} seated. Host can start with any ${room.min_players}-${room.max_players}.</div>
         ${room.is_host ? `<button id="start-room-btn" class="lobby-btn" ${room.filled_seat_count < 2 ? 'disabled' : ''}>Start Game</button>` : ''}
       </div>
     `;
