@@ -763,6 +763,655 @@ def load_nba_allstars(db_path="fantasy.db", csv_path="NBA_AllStars.csv"):
     conn.close()
 
 
+LOCKOUT_GAMES = {
+    "1998-99": 50,
+    "2011-12": 66,
+    "2019-20": 72,
+}
+
+# Maps sportsref download file number → award name
+_AWARD_FILE_MAP = {
+    1: "MVP",
+    2: "ABA_MVP",
+    3: "ROY",
+    4: "ABA_ROY",
+    5: "DPOY",
+    6: "6MOY",
+    7: "MIP",
+    8: "SMOTY",   # Twyman-Stokes Teammate of the Year
+    9: "FMVP",    # Finals MVP
+}
+
+
+def _read_sportsref_xls(path):
+    """Read a Sports Reference XLS (HTML table) and flatten MultiIndex columns."""
+    try:
+        df = pd.read_html(path)[0]
+    except Exception:
+        df = pd.read_excel(path, engine="xlrd")
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [" ".join(str(c) for c in col).strip() for col in df.columns]
+    return df
+
+
+def _strip_pos_suffix(name):
+    """Strip trailing position tag from All-NBA player names, e.g. 'Nikola Jokić C' → 'Nikola Jokić'."""
+    import re
+    if not isinstance(name, str):
+        return name
+    return re.sub(r"\s+[CFG]$", "", name.strip())
+
+
+def load_new_nba_data(new_data_dir="new_data", db_path="fantasy.db"):
+    """Load all supplemental NBA data from new_data/ into the database.
+
+    Tables created/replaced:
+      nba_awards          – MVP/ROY/DPOY/6MOY/MIP/FMVP/SMOTY voting results
+      nba_allnba          – All-NBA 1st/2nd/3rd team selections
+      nba_allrookie       – All-Rookie 1st/2nd team selections
+      nba_alldefensive    – All-Defensive 1st/2nd team selections
+      nba_allstar_games   – All-Star game totals per player per season
+      nba_contracts       – Current player contracts (2025-26 season)
+      nba_team_wins       – Team win totals per season (long format)
+      nba_team_index      – Franchise all-time records
+      nba_recruiting      – RSCI recruiting rankings (top-100 per draft class)
+      nba_ncaa_poty       – NCAA Player of the Year award
+      nba_olympic_teams   – USA Olympic basketball rosters and stats
+    """
+    conn = sqlite3.connect(db_path)
+
+    # ── 1. Award voting (files 1–9) ──────────────────────────────────────────
+    award_rows = []
+    for fnum, award in _AWARD_FILE_MAP.items():
+        path = os.path.join(new_data_dir, f"sportsref_download ({fnum}).xls")
+        if not os.path.exists(path):
+            continue
+        df = _read_sportsref_xls(path)
+        season_col = next((c for c in df.columns if "Season" in c), None)
+        player_col = next((c for c in df.columns if "Player" in c), None)
+        voting_col = next((c for c in df.columns if "Voting" in c), None)
+        if not season_col or not player_col:
+            continue
+
+        df = df[df[player_col].notna()]
+        df = df[df[player_col] != "Player"]
+        df = _clean_text_columns(df, [player_col])
+
+        for season_val, grp in df.groupby(season_col, sort=False):
+            season_str = str(season_val)[:4]
+            if not season_str.isdigit():
+                continue
+            season = int(season_str)
+            # Check if any row in this group has "(V)" — if not, fall back to rank==1
+            group_has_voting = voting_col and any(
+                str(r).strip() == "(V)" for r in grp[voting_col]
+            )
+            for rank, (_, row) in enumerate(grp.iterrows(), 1):
+                player = row[player_col]
+                if not isinstance(player, str) or not player.strip():
+                    continue
+                if voting_col and group_has_voting:
+                    is_winner = str(row[voting_col]).strip() == "(V)"
+                else:
+                    is_winner = rank == 1
+                award_rows.append({
+                    "player": player.strip(),
+                    "season": season,
+                    "award": award,
+                    "vote_rank": rank,
+                    "is_winner": 1 if is_winner else 0,
+                })
+
+    if award_rows:
+        awards_df = pd.DataFrame(award_rows)
+        awards_df.to_sql("nba_awards", conn, if_exists="replace", index=False)
+        winners = awards_df["is_winner"].sum()
+        print(f"nba_awards: {len(awards_df)} rows ({winners} winners) loaded.")
+
+    # ── 2. All-NBA / All-Rookie / All-Defensive teams ────────────────────────
+    team_tables = {
+        12: "nba_allnba",
+        13: "nba_allrookie",
+        14: "nba_alldefensive",
+    }
+    for fnum, table_name in team_tables.items():
+        path = os.path.join(new_data_dir, f"sportsref_download ({fnum}).xls")
+        if not os.path.exists(path):
+            continue
+        df = _read_sportsref_xls(path)
+        season_col = next((c for c in df.columns if "Season" in c), None)
+        tm_col = next((c for c in df.columns if df.columns.tolist().index(c) > 0
+                       and ("Tm" in c or c == "Tm") and "Season" not in c), None)
+        # Player name columns are the 5 unnamed trailing columns
+        skip = {season_col, tm_col,
+                next((c for c in df.columns if "Lg" in c), ""),
+                next((c for c in df.columns if "Voting" in c), "")}
+        player_cols = [c for c in df.columns if c not in skip and c]
+
+        rows = []
+        for _, row in df.iterrows():
+            season_str = str(row[season_col])[:4] if season_col else ""
+            if not season_str.isdigit():
+                continue
+            season = int(season_str)
+            team_num = {"1st": 1, "2nd": 2, "3rd": 3}.get(str(row[tm_col]), None)
+            if team_num is None:
+                continue
+            for pc in player_cols:
+                val = row[pc]
+                if not isinstance(val, str) or not val.strip():
+                    continue
+                player = _strip_pos_suffix(val)
+                if player:
+                    rows.append({"player": player, "season": season, "team_num": team_num})
+
+        if rows:
+            result = pd.DataFrame(rows)
+            result = _clean_text_columns(result, ["player"])
+            result.to_sql(table_name, conn, if_exists="replace", index=False)
+            print(f"{table_name}: {len(result)} rows loaded.")
+
+    # ── 3. All-Star game totals per player per season (file 11) ──────────────
+    path = os.path.join(new_data_dir, "sportsref_download (11).xls")
+    if os.path.exists(path):
+        df = _read_sportsref_xls(path)
+        season_col = next((c for c in df.columns if "Season" in c), None)
+        player_col = next((c for c in df.columns if "Player" in c), None)
+        pts_col = next((c for c in df.columns if "PTS" in c), None)
+        trb_col = next((c for c in df.columns if "TRB" in c), None)
+        ast_col = next((c for c in df.columns if "AST" in c), None)
+        stl_col = next((c for c in df.columns if "STL" in c), None)
+        blk_col = next((c for c in df.columns if "BLK" in c), None)
+        fg_col = next((c for c in df.columns if "FG%" in c), None)
+        threep_col = next((c for c in df.columns if "3P%" in c), None)
+        ft_col = next((c for c in df.columns if "FT%" in c), None)
+
+        df = df[df[player_col].notna()]
+        df = df[df[player_col] != "Player"]
+        df = _clean_text_columns(df, [player_col])
+        df["season"] = pd.to_numeric(df[season_col].astype(str).str[:4], errors="coerce")
+
+        for col in [pts_col, trb_col, ast_col, stl_col, blk_col, fg_col, threep_col, ft_col]:
+            if col:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+
+        agg = df.groupby([player_col, "season"]).agg(
+            appearances=(season_col, "count"),
+            pts=(pts_col, "sum"),
+            trb=(trb_col, "sum"),
+            ast=(ast_col, "sum"),
+            stl=(stl_col, "sum"),
+            blk=(blk_col, "sum"),
+            fg_pct=(fg_col, "mean"),
+            threep_pct=(threep_col, "mean"),
+            ft_pct=(ft_col, "mean"),
+        ).reset_index().rename(columns={player_col: "player"})
+
+        agg.to_sql("nba_allstar_games", conn, if_exists="replace", index=False)
+        print(f"nba_allstar_games: {len(agg)} rows loaded.")
+
+    # ── 4. Contracts ─────────────────────────────────────────────────────────
+    path = os.path.join(new_data_dir, "Contracts.xls")
+    if os.path.exists(path):
+        df = _read_sportsref_xls(path)
+        player_col = next((c for c in df.columns if "Player" in c), None)
+        team_col = next((c for c in df.columns if "Tm" in c and "Player" not in c), None)
+
+        def _parse_salary(val):
+            if not isinstance(val, str):
+                return None
+            cleaned = val.replace("$", "").replace(",", "").strip()
+            return pd.to_numeric(cleaned, errors="coerce")
+
+        out = pd.DataFrame({
+            "player": df[player_col],
+            "team": df[team_col] if team_col else None,
+        })
+        for col in df.columns:
+            if "Salary" in col:
+                year_tag = col.replace("Salary ", "").replace("-", "_")
+                out[f"salary_{year_tag}"] = df[col].apply(_parse_salary)
+        guar_col = next((c for c in df.columns if "Guaranteed" in c), None)
+        if guar_col:
+            out["guaranteed"] = df[guar_col].apply(_parse_salary)
+
+        out = out[out["player"].notna() & (out["player"] != "Player")]
+        out = _clean_text_columns(out, ["player"])
+        out.to_sql("nba_contracts", conn, if_exists="replace", index=False)
+        print(f"nba_contracts: {len(out)} rows loaded.")
+
+    # ── 5. Team wins per season ───────────────────────────────────────────────
+    path = os.path.join(new_data_dir, "Team_wins.xls")
+    if os.path.exists(path):
+        df = _read_sportsref_xls(path)
+        season_col = next((c for c in df.columns if "Season" in c), None)
+        skip = {season_col, "Rk", "Lg", "rk", "lg"}
+        team_cols = [c for c in df.columns if c not in skip]
+
+        rows = []
+        for _, row in df.iterrows():
+            season = str(row[season_col]) if season_col else None
+            if not isinstance(season, str) or not season:
+                continue
+            gp = LOCKOUT_GAMES.get(season, 82)
+            for team in team_cols:
+                wins = row[team]
+                if pd.notna(wins):
+                    rows.append({"season": season, "team": team,
+                                 "wins": int(wins), "games_played": gp})
+
+        if rows:
+            result = pd.DataFrame(rows)
+            result.to_sql("nba_team_wins", conn, if_exists="replace", index=False)
+            print(f"nba_team_wins: {len(result)} rows loaded.")
+
+    # ── 6. Team franchise index ───────────────────────────────────────────────
+    path = os.path.join(new_data_dir, "Team_index.xls")
+    if os.path.exists(path):
+        df = _read_sportsref_xls(path)
+        df.columns = [
+            c.lower().replace("/", "_").replace("%", "pct").replace(" ", "_").replace(".", "")
+            for c in df.columns
+        ]
+        df = _clean_text_columns(df, ["franchise"])
+        df.to_sql("nba_team_index", conn, if_exists="replace", index=False)
+        print(f"nba_team_index: {len(df)} rows loaded.")
+
+    # ── 7. RSCI recruiting rankings (files 16–42) ─────────────────────────────
+    rsci_dfs = []
+    for fnum in range(16, 43):
+        path = os.path.join(new_data_dir, f"sportsref_download ({fnum}).xls")
+        if not os.path.exists(path):
+            continue
+        df = _read_sportsref_xls(path)
+        rsci_col = next((c for c in df.columns if "RSCI" in c), None)
+        player_col = next((c for c in df.columns if "Player" in c), None)
+        draft_col = next((c for c in df.columns if "Draft" in c), None)
+        rd_col = next((c for c in df.columns if c.endswith(" Rd") or c == "Rd"), None)
+        pk_col = next((c for c in df.columns if c.endswith(" Pk") or c == "Pk"), None)
+        college_col = next((c for c in df.columns if "College" in c), None)
+        team_col = next((c for c in df.columns if c.endswith(" Tm") or c == "Tm"), None)
+        from_col = next((c for c in df.columns if "From" in c), None)
+        to_col = next((c for c in df.columns if c.endswith(" To") or c == "To"), None)
+        ws_col = next((c for c in df.columns if c.endswith(" WS") or c == "WS"), None)
+        if not player_col:
+            continue
+
+        df = df[df[player_col].notna()]
+        df = df[df[player_col] != "Player"]
+        df = _clean_text_columns(df, [player_col])
+        # Strip "(college)" suffix added by Sports Reference
+        df[player_col] = df[player_col].str.replace(r"\s*\(college\)\s*$", "", regex=True).str.strip()
+
+        row_df = pd.DataFrame({
+            "rsci_rank": pd.to_numeric(df[rsci_col], errors="coerce") if rsci_col else None,
+            "player": df[player_col],
+            "draft_year": pd.to_numeric(df[draft_col], errors="coerce") if draft_col else None,
+            "round": pd.to_numeric(df[rd_col], errors="coerce") if rd_col else None,
+            "pick": pd.to_numeric(df[pk_col], errors="coerce") if pk_col else None,
+            "college": df[college_col] if college_col else None,
+            "nba_team": df[team_col] if team_col else None,
+            "from_year": pd.to_numeric(df[from_col], errors="coerce") if from_col else None,
+            "to_year": pd.to_numeric(df[to_col], errors="coerce") if to_col else None,
+            "win_shares": pd.to_numeric(df[ws_col], errors="coerce") if ws_col else None,
+        })
+        rsci_dfs.append(row_df)
+
+    if rsci_dfs:
+        rsci = pd.concat(rsci_dfs, ignore_index=True)
+        rsci.drop_duplicates(subset=["player", "draft_year"], inplace=True)
+        rsci.to_sql("nba_recruiting", conn, if_exists="replace", index=False)
+        print(f"nba_recruiting: {len(rsci)} rows loaded.")
+
+    # ── 8. NCAA Player of the Year ────────────────────────────────────────────
+    # Layout: row 0 = section labels (Totals/Shooting/Per Game), row 1 = field names.
+    # Per Game fields (last 4 cols) duplicate earlier names, so we use iloc by position.
+    path = os.path.join(new_data_dir, "NCAA_POTY.xlsx")
+    if os.path.exists(path):
+        raw = pd.read_excel(path, engine="openpyxl", header=None)
+        # Assign unique positional names
+        # Known layout: Year, Player, College, G, MP, FG, FGA, 3P, 3PA, FT, FTA,
+        #   ORB, TRB, AST, STL, BLK, TOV, PF, PTS, FG%, 3P%, FT%, MP_pg, PTS_pg, TRB_pg, AST_pg
+        raw = raw.iloc[2:].reset_index(drop=True)
+        raw.columns = range(len(raw.columns))
+
+        out = pd.DataFrame({
+            "year":        pd.to_numeric(raw[0], errors="coerce"),
+            "player":      raw[1].astype(str),
+            "college":     raw[2].astype(str),
+            "g":           pd.to_numeric(raw[3], errors="coerce"),
+            "pts_pg":      pd.to_numeric(raw[23], errors="coerce"),
+            "trb_pg":      pd.to_numeric(raw[24], errors="coerce"),
+            "ast_pg":      pd.to_numeric(raw[25], errors="coerce"),
+            "fg_pct":      pd.to_numeric(raw[19], errors="coerce"),
+            "threep_pct":  pd.to_numeric(raw[20], errors="coerce"),
+            "ft_pct":      pd.to_numeric(raw[21], errors="coerce"),
+        })
+        out = out[out["player"].notna() & (out["player"] != "nan")]
+        out = _clean_text_columns(out, ["player", "college"])
+        out.to_sql("nba_ncaa_poty", conn, if_exists="replace", index=False)
+        print(f"nba_ncaa_poty: {len(out)} rows loaded.")
+
+    # ── 9a. NBA Hall of Fame ──────────────────────────────────────────────────
+    path = os.path.join(new_data_dir, "HallofFameNBA.xlsx")
+    if os.path.exists(path):
+        raw = pd.read_excel(path, engine="openpyxl", header=None)
+        # Row 0 = section groupings, row 1 = column names, data starts row 2
+        raw = raw.iloc[2:].reset_index(drop=True)
+        raw.columns = range(len(raw.columns))
+        out = pd.DataFrame({
+            "induction_year": pd.to_numeric(raw[0], errors="coerce"),
+            "player":         raw[1].astype(str),
+            "category":       raw[2].astype(str) if len(raw.columns) > 2 else None,
+            "g":              pd.to_numeric(raw[3], errors="coerce") if len(raw.columns) > 3 else None,
+            "pts_pg":         pd.to_numeric(raw[4], errors="coerce") if len(raw.columns) > 4 else None,
+            "trb_pg":         pd.to_numeric(raw[5], errors="coerce") if len(raw.columns) > 5 else None,
+            "ast_pg":         pd.to_numeric(raw[6], errors="coerce") if len(raw.columns) > 6 else None,
+            "ws":             pd.to_numeric(raw[12], errors="coerce") if len(raw.columns) > 12 else None,
+        })
+        # Only keep Player inductees (not coaches/contributors/teams)
+        out = out[out["player"].notna() & (out["player"] != "nan")]
+        out = out[out["category"].str.contains("Player", na=False, case=False)]
+        # Clean player names (may contain role suffixes like "Player / Int'l / CBB player")
+        out["player"] = out["player"].str.replace(r"\s+Player.*$", "", regex=True).str.strip()
+        out["player"] = out["player"].str.replace(r"\s+WNBA.*$", "", regex=True).str.strip()
+        out = _clean_text_columns(out, ["player"])
+        out = out[out["player"].str.len() > 1]
+        out.to_sql("nba_hof", conn, if_exists="replace", index=False)
+        print(f"nba_hof: {len(out)} rows loaded.")
+
+    # ── 9. USA Olympic Teams ──────────────────────────────────────────────────
+    # Layout: row 0 = section labels (Totals/Per Game), row 1 = field names.
+    # Known layout: Year, Player, G, PTS, TRB, AST, STL, BLK, TOV,
+    #               PTS_pg, TRB_pg, AST_pg, STL_pg, BLK_pg, TOV_pg
+    path = os.path.join(new_data_dir, "USA_Olympic_Teams.xlsx")
+    if os.path.exists(path):
+        raw = pd.read_excel(path, engine="openpyxl", header=None)
+        raw = raw.iloc[2:].reset_index(drop=True)
+        raw.columns = range(len(raw.columns))
+
+        out = pd.DataFrame({
+            "year":    pd.to_numeric(raw[0], errors="coerce"),
+            "player":  raw[1].astype(str),
+            "g":       pd.to_numeric(raw[2], errors="coerce"),
+            "pts":     pd.to_numeric(raw[3], errors="coerce"),
+            "trb":     pd.to_numeric(raw[4], errors="coerce"),
+            "ast":     pd.to_numeric(raw[5], errors="coerce"),
+            "stl":     pd.to_numeric(raw[6], errors="coerce"),
+            "blk":     pd.to_numeric(raw[7], errors="coerce") if len(raw.columns) > 7 else None,
+            "pts_pg":  pd.to_numeric(raw[9], errors="coerce") if len(raw.columns) > 9 else None,
+            "trb_pg":  pd.to_numeric(raw[10], errors="coerce") if len(raw.columns) > 10 else None,
+            "ast_pg":  pd.to_numeric(raw[11], errors="coerce") if len(raw.columns) > 11 else None,
+        })
+        out = out[out["player"].notna() & (out["player"] != "nan")]
+        out = _clean_text_columns(out, ["player"])
+        out.to_sql("nba_olympic_teams", conn, if_exists="replace", index=False)
+        print(f"nba_olympic_teams: {len(out)} rows loaded.")
+
+    conn.close()
+
+
+_NFL_AWARD_FILE_MAP = {
+    2: "NFL_MVP",
+    3: "AP_OPOY",    # AP Offensive Player of the Year
+    4: "AP_DPOY",    # AP Defensive Player of the Year
+    5: "AP_OROY",    # AP Offensive Rookie of the Year
+    6: "AP_DROY",    # AP Defensive Rookie of the Year
+    7: "Comeback",   # Comeback Player of the Year
+    8: "SB_MVP",     # Super Bowl MVP
+}
+
+# All-Rookie team: file N covers season year = 2034 - N  (file 9 → 2025, file 60 → 1974)
+# Kicking stats: 2 files per season, season = 2025 - (N - 2) // 2
+_SB_RESULT_RE = (
+    r"Super Bowl [\w]+:\s+"          # handles Roman numerals AND "50"
+    r"(.+?)\s+\((\w+),([\d-]+)\)\s+defeated\s+"
+    r"(.+?)\s+\((\w+),([\d-]+)\),\s+Score:\s+(\d+)-(\d+)"
+)
+# Pre-Super Bowl era: "Winner (League,record), Loser (League,record)" or just "Winner (League,record)"
+_CHAMP_BOTH_RE = r"^(.+?)\s+\((\w+),[\d-]+\),\s+(.+?)\s+\((\w+),[\d-]+\)$"
+_CHAMP_ONE_RE  = r"^(.+?)\s+\((\w+),[\d-]+\)$"
+
+
+def load_new_nfl_data(new_data_dir="new_data_nfl", db_path="fantasy.db"):
+    """Load supplemental NFL data from new_data_nfl/ into the database.
+
+    Tables created/replaced:
+      nfl_superbowl   – Super Bowl results (year, teams, score)
+      nfl_awards      – Individual awards: MVP/OPOY/DPOY/OROY/DROY/Comeback/SB MVP
+      nfl_hof         – Hall of Fame inductees with career stats (2017–2026 classes)
+      nfl_allrookie   – All-Rookie team per season with full rookie stats (1974–2025)
+      nfl_kicking     – Kicker season stats by distance range (1977–2025)
+    """
+    import re as _re
+    conn = sqlite3.connect(db_path)
+
+    # ── 1. Super Bowl results ─────────────────────────────────────────────────
+    path = os.path.join(new_data_dir, "sportsref_download (1).xls")
+    if os.path.exists(path):
+        df = _read_sportsref_xls(path)
+        rows = []
+        for _, row in df.iterrows():
+            year = row.get("Year") or row.iloc[0]
+            desc = row.iloc[2] if len(row) > 2 else ""
+            if not isinstance(desc, str) or not isinstance(year, (int, float)):
+                continue
+            # Modern Super Bowl with score
+            m = _re.search(_SB_RESULT_RE, desc)
+            if m:
+                winner, winner_conf, winner_rec, loser, loser_conf, loser_rec, wscore, lscore = m.groups()
+                rows.append({
+                    "year": int(year), "game_type": "Super Bowl",
+                    "winner": winner.strip(), "winner_conf": winner_conf,
+                    "loser": loser.strip(), "loser_conf": loser_conf,
+                    "winner_score": int(wscore), "loser_score": int(lscore),
+                })
+                continue
+            # Pre-SB era: two-team championship game
+            m2 = _re.match(_CHAMP_BOTH_RE, desc.strip())
+            if m2:
+                winner, w_lg, loser, l_lg = m2.groups()
+                rows.append({
+                    "year": int(year), "game_type": "Championship",
+                    "winner": winner.strip(), "winner_conf": w_lg,
+                    "loser": loser.strip(), "loser_conf": l_lg,
+                    "winner_score": None, "loser_score": None,
+                })
+                continue
+            # Pre-SB era: single champion listed
+            m3 = _re.match(_CHAMP_ONE_RE, desc.strip())
+            if m3:
+                winner, w_lg = m3.groups()
+                rows.append({
+                    "year": int(year), "game_type": "Championship",
+                    "winner": winner.strip(), "winner_conf": w_lg,
+                    "loser": None, "loser_conf": None,
+                    "winner_score": None, "loser_score": None,
+                })
+        if rows:
+            pd.DataFrame(rows).to_sql("nfl_superbowl", conn, if_exists="replace", index=False)
+            print(f"nfl_superbowl: {len(rows)} rows loaded.")
+
+    # ── 2. Individual awards ──────────────────────────────────────────────────
+    award_rows = []
+    for fnum, award in _NFL_AWARD_FILE_MAP.items():
+        path = os.path.join(new_data_dir, f"sportsref_download ({fnum}).xls")
+        if not os.path.exists(path):
+            continue
+        df = _read_sportsref_xls(path)
+        player_col = next((c for c in df.columns if c == "Player"), None)
+        year_col = next((c for c in df.columns if c == "Year"), None)
+        pos_col = next((c for c in df.columns if c == "Pos"), None)
+        team_col = next((c for c in df.columns if c == "Tm"), None)
+        if not player_col or not year_col:
+            continue
+        df = df[df[player_col].notna() & (df[player_col] != "Player")]
+        df = _clean_text_columns(df, [player_col])
+        for _, row in df.iterrows():
+            year = row[year_col]
+            player = row[player_col]
+            if not isinstance(player, str) or not str(year).isdigit() if not isinstance(year, (int, float)) else False:
+                pass
+            try:
+                yr = int(year)
+            except (ValueError, TypeError):
+                continue
+            award_rows.append({
+                "player": str(player).strip(),
+                "year": yr,
+                "award": award,
+                "pos": str(row[pos_col]).strip() if pos_col else None,
+                "team": str(row[team_col]).strip() if team_col else None,
+            })
+    if award_rows:
+        awards_df = pd.DataFrame(award_rows)
+        awards_df.to_sql("nfl_awards", conn, if_exists="replace", index=False)
+        print(f"nfl_awards: {len(awards_df)} rows ({awards_df['award'].nunique()} award types) loaded.")
+
+    # ── 3. Hall of Fame ───────────────────────────────────────────────────────
+    path = os.path.join(new_data_dir, "HallofFameNFL.xls")
+    if os.path.exists(path):
+        df = _read_sportsref_xls(path)
+        col_map = {
+            "Unnamed: 1_level_0 Player": "player",
+            "Unnamed: 2_level_0 Pos":    "pos",
+            "Unnamed: 3_level_0 Indct":  "induction_year",
+            "Unnamed: 4_level_0 From":   "from_year",
+            "Unnamed: 5_level_0 To":     "to_year",
+            "Unnamed: 6_level_0 AP1":    "all_pro1",
+            "Unnamed: 7_level_0 PB":     "pro_bowls",
+            "Unnamed: 9_level_0 wAV":    "wav",
+            "Unnamed: 10_level_0 G":     "games",
+            "Passing Yds":               "pass_yds",
+            "Passing TD":                "pass_td",
+            "Rushing Yds":               "rush_yds",
+            "Rushing TD":                "rush_td",
+            "Receiving Yds":             "rec_yds",
+            "Receiving TD":              "rec_td",
+            "Defense Comb":              "def_tackles",
+            "Defense Sk":                "def_sacks",
+            "Defense Int":               "def_int",
+        }
+        df.rename(columns=col_map, inplace=True)
+        keep = [c for c in col_map.values() if c in df.columns]
+        df = df[keep].copy()
+        df = df[df["player"].notna() & (df["player"] != "Player")]
+        df = _clean_text_columns(df, ["player", "pos"])
+        for col in ["induction_year", "from_year", "to_year", "all_pro1",
+                    "pro_bowls", "wav", "games"]:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
+        df.to_sql("nfl_hof", conn, if_exists="replace", index=False)
+        print(f"nfl_hof: {len(df)} rows loaded.")
+
+    # ── 4. All-Rookie team per season (files 9–60) ────────────────────────────
+    rookie_dfs = []
+    for fnum in range(9, 61):
+        path = os.path.join(new_data_dir, f"sportsref_download ({fnum}).xls")
+        if not os.path.exists(path):
+            continue
+        season_year = 2034 - fnum
+        df = _read_sportsref_xls(path)
+        pos_col    = next((c for c in df.columns if "Pos" in c), None)
+        player_col = next((c for c in df.columns if "Player" in c), None)
+        team_col   = next((c for c in df.columns if c.endswith(" Tm") or c == "Tm"), None)
+        g_col      = next((c for c in df.columns if c.endswith(" G") and "GS" not in c), None)
+        gs_col     = next((c for c in df.columns if "GS" in c), None)
+        # Offensive stat columns
+        pass_yds = next((c for c in df.columns if "Passing Yds" in c), None)
+        pass_td  = next((c for c in df.columns if "Passing TD" in c), None)
+        pass_int = next((c for c in df.columns if "Passing Int" in c), None)
+        rush_yds = next((c for c in df.columns if "Rushing Yds" in c), None)
+        rush_td  = next((c for c in df.columns if "Rushing TD" in c), None)
+        rec_rec  = next((c for c in df.columns if "Receiving Rec" in c), None)
+        rec_yds  = next((c for c in df.columns if "Receiving Yds" in c), None)
+        rec_td   = next((c for c in df.columns if "Receiving TD" in c), None)
+        def_solo = next((c for c in df.columns if "Solo" in c), None)
+        def_sk   = next((c for c in df.columns if "Sk" in c and "Passing" not in c), None)
+        def_int  = next((c for c in df.columns if df.columns.tolist().index(c) > (df.columns.tolist().index(def_sk) if def_sk else 0)
+                         and "Int" in c), None) if def_sk else next((c for c in df.columns if "Int" in c), None)
+        if not player_col:
+            continue
+        df = df[df[player_col].notna() & (df[player_col] != "Player")]
+        df = _clean_text_columns(df, [player_col])
+
+        rdf = pd.DataFrame({"player": df[player_col], "season": season_year})
+        for src, dst in [(pos_col,"pos"), (team_col,"team"), (g_col,"games"), (gs_col,"games_started"),
+                         (pass_yds,"pass_yds"), (pass_td,"pass_td"), (pass_int,"pass_int"),
+                         (rush_yds,"rush_yds"), (rush_td,"rush_td"),
+                         (rec_rec,"rec_rec"), (rec_yds,"rec_yds"), (rec_td,"rec_td"),
+                         (def_solo,"def_solo"), (def_sk,"def_sacks"), (def_int,"def_int")]:
+            if src:
+                rdf[dst] = pd.to_numeric(df[src], errors="coerce") if dst != "pos" and dst != "team" else df[src].astype(str)
+        rookie_dfs.append(rdf)
+
+    if rookie_dfs:
+        allrookie = pd.concat(rookie_dfs, ignore_index=True)
+        allrookie = allrookie[allrookie["player"].notna()]
+        allrookie.drop_duplicates(subset=["player", "season"], inplace=True)
+        allrookie.to_sql("nfl_allrookie", conn, if_exists="replace", index=False)
+        print(f"nfl_allrookie: {len(allrookie)} rows loaded ({allrookie['season'].nunique()} seasons).")
+
+    # ── 5. Kicker season stats (Kicking folder, files 2–99, 2 per season) ─────
+    kicking_dir = os.path.join(new_data_dir, "Kicking")
+    kick_dfs = []
+    for fnum in range(2, 100):
+        path = os.path.join(kicking_dir, f"sportsref_download ({fnum}).xls")
+        if not os.path.exists(path):
+            continue
+        season_year = 2025 - (fnum - 2) // 2
+        df = _read_sportsref_xls(path)
+        player_col = next((c for c in df.columns if "Player" in c), None)
+        team_col   = next((c for c in df.columns if "Team" in c), None)
+        age_col    = next((c for c in df.columns if "Age" in c), None)
+        g_col      = next((c for c in df.columns if c.endswith(" G") and "GS" not in c), None)
+        if not player_col:
+            continue
+        df = df[df[player_col].notna() & (df[player_col] != "Player")]
+        df = _clean_text_columns(df, [player_col])
+
+        kdf = pd.DataFrame({"player": df[player_col], "season": season_year})
+        col_map_k = {
+            team_col:               "team",
+            age_col:                "age",
+            g_col:                  "games",
+            "Scoring FGA":         "fga",
+            "Scoring FGM":         "fgm",
+            "Scoring Lng":         "fg_long",
+            "Scoring FG%":         "fg_pct",
+            "Scoring XPA":         "xpa",
+            "Scoring XPM":         "xpm",
+            "Scoring XP%":         "xp_pct",
+            "0-19 FGM":            "fg_0_19",
+            "20-29 FGM":           "fg_20_29",
+            "30-39 FGM":           "fg_30_39",
+            "40-49 FGM":           "fg_40_49",
+            "50+ FGM":             "fg_50plus",
+            "0-19 FGA":            "fga_0_19",
+            "20-29 FGA":           "fga_20_29",
+            "30-39 FGA":           "fga_30_39",
+            "40-49 FGA":           "fga_40_49",
+            "50+ FGA":             "fga_50plus",
+        }
+        for src, dst in col_map_k.items():
+            if src and src in df.columns:
+                if dst in ("team",):
+                    kdf[dst] = df[src].astype(str)
+                else:
+                    kdf[dst] = pd.to_numeric(df[src], errors="coerce")
+        kick_dfs.append(kdf)
+
+    if kick_dfs:
+        kicking = pd.concat(kick_dfs, ignore_index=True)
+        kicking = kicking[kicking["player"].notna()]
+        kicking.drop_duplicates(subset=["player", "season", "team"], inplace=True)
+        kicking.to_sql("nfl_kicking", conn, if_exists="replace", index=False)
+        seasons = kicking["season"].nunique()
+        print(f"nfl_kicking: {len(kicking)} rows loaded ({seasons} seasons).")
+
+    conn.close()
+
+
 def build_db(folders, db_path="fantasy.db"):
     conn = sqlite3.connect(db_path)
     all_dfs = []

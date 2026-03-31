@@ -53,6 +53,17 @@ ERA_RANGES = {
 
 NBA_POSITIONS = ["C", "G", "F"]
 
+# NBA award code → display label mapping
+_NBA_AWARD_OPTIONS = [
+    ("MVP", "the NBA MVP Award"),
+    ("DPOY", "the Defensive Player of the Year"),
+    ("ROY", "the Rookie of the Year"),
+    ("6MOY", "the Sixth Man of the Year"),
+    ("FMVP", "the NBA Finals MVP"),
+    ("MIP", "the Most Improved Player Award"),
+]
+_NBA_AWARD_DISPLAY_TO_CODE = {display: code for code, display in _NBA_AWARD_OPTIONS}
+
 
 # ── Helper: run a query and return a frozenset of player names ────────────────
 
@@ -233,6 +244,46 @@ def _players_allstar_count(conn, value):
     )
 
 
+def _players_all_nba(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_allnba")
+
+
+def _players_all_nba_first(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_allnba WHERE team_num = 1")
+
+
+def _players_all_defensive(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_alldefensive")
+
+
+def _players_all_rookie_nba(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_allrookie")
+
+
+def _players_olympic_team(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_olympic_teams")
+
+
+def _pick_nba_award(conn, current_players=None):
+    _, display = random.choice(_NBA_AWARD_OPTIONS)
+    return display
+
+
+def _players_nba_award(conn, value):
+    code = _NBA_AWARD_DISPLAY_TO_CODE.get(value)
+    if not code:
+        return frozenset()
+    return _query_set(
+        conn,
+        "SELECT DISTINCT player FROM nba_awards WHERE award=? AND is_winner=1",
+        (code,),
+    )
+
+
+def _players_ncaa_poty(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_ncaa_poty")
+
+
 def _pick_teammate(conn, current_players=None):
     if not current_players:
         return None
@@ -357,6 +408,55 @@ CATEGORIES = [
         "players": _players_allstar_count,
         "is_teammate": False,
     },
+    {
+        "id": "all_nba",
+        "label": "Made an All-NBA Team",
+        "pick": _pick_static,
+        "players": _players_all_nba,
+        "is_teammate": False,
+    },
+    {
+        "id": "all_nba_first",
+        "label": "Made the All-NBA First Team",
+        "pick": _pick_static,
+        "players": _players_all_nba_first,
+        "is_teammate": False,
+    },
+    {
+        "id": "all_defensive",
+        "label": "Made an All-Defensive Team",
+        "pick": _pick_static,
+        "players": _players_all_defensive,
+        "is_teammate": False,
+    },
+    {
+        "id": "all_rookie_nba",
+        "label": "Made the NBA All-Rookie Team",
+        "pick": _pick_static,
+        "players": _players_all_rookie_nba,
+        "is_teammate": False,
+    },
+    {
+        "id": "olympic_team",
+        "label": "Played on a USA Olympic Basketball Team",
+        "pick": _pick_static,
+        "players": _players_olympic_team,
+        "is_teammate": False,
+    },
+    {
+        "id": "nba_award",
+        "label": "Won {value}",
+        "pick": _pick_nba_award,
+        "players": _players_nba_award,
+        "is_teammate": False,
+    },
+    {
+        "id": "ncaa_poty",
+        "label": "Won the NCAA Player of the Year Award",
+        "pick": _pick_static,
+        "players": _players_ncaa_poty,
+        "is_teammate": False,
+    },
 ]
 
 # Index for fast lookup
@@ -368,6 +468,7 @@ _CONFLICT_GROUPS = [
     {"team", "division"},          # knowing the team tells you the division
     {"team", "conference"},        # knowing the team tells you the conference
     {"division", "conference"},    # knowing the division tells you the conference
+    {"all_nba", "all_nba_first"},  # first team is a subset of all-nba
 ]
 
 

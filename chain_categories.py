@@ -42,6 +42,55 @@ DIVISIONS = {
     "NFC West": {"ARI", "LAR", "SEA", "SFO"},
 }
 
+# Extended team name mapping for Super Bowl/Championship teams (including historical)
+SB_TEAM_NAME_TO_CODE = {
+    "Arizona Cardinals": "ARI", "St. Louis Cardinals": "ARI",
+    "Atlanta Falcons": "ATL",
+    "Baltimore Ravens": "BAL",
+    "Buffalo Bills": "BUF",
+    "Carolina Panthers": "CAR",
+    "Chicago Bears": "CHI",
+    "Cincinnati Bengals": "CIN",
+    "Cleveland Browns": "CLE",
+    "Dallas Cowboys": "DAL",
+    "Denver Broncos": "DEN",
+    "Detroit Lions": "DET",
+    "Green Bay Packers": "GNB",
+    "Houston Texans": "HOU", "Houston Oilers": "TEN",
+    "Indianapolis Colts": "IND", "Baltimore Colts": "IND",
+    "Jacksonville Jaguars": "JAX",
+    "Kansas City Chiefs": "KAN",
+    "Los Angeles Chargers": "LAC", "San Diego Chargers": "LAC",
+    "Los Angeles Rams": "LAR", "St. Louis Rams": "LAR",
+    "Las Vegas Raiders": "LVR", "Oakland Raiders": "LVR", "Los Angeles Raiders": "LVR",
+    "Miami Dolphins": "MIA",
+    "Minnesota Vikings": "MIN",
+    "New England Patriots": "NWE",
+    "New Orleans Saints": "NOR",
+    "New York Giants": "NYG",
+    "New York Jets": "NYJ",
+    "Philadelphia Eagles": "PHI",
+    "Pittsburgh Steelers": "PIT",
+    "Seattle Seahawks": "SEA",
+    "San Francisco 49ers": "SFO",
+    "Tampa Bay Buccaneers": "TAM",
+    "Tennessee Titans": "TEN",
+    "Washington Commanders": "WAS", "Washington Redskins": "WAS",
+    "Washington Football Team": "WAS",
+}
+
+# NFL award code → display label mapping
+_NFL_AWARD_OPTIONS = [
+    ("NFL_MVP", "the NFL MVP Award"),
+    ("AP_DPOY", "the Defensive Player of the Year"),
+    ("AP_OPOY", "the Offensive Player of the Year"),
+    ("SB_MVP", "the Super Bowl MVP"),
+    ("AP_OROY", "the Offensive Rookie of the Year"),
+    ("AP_DROY", "the Defensive Rookie of the Year"),
+    ("Comeback", "the Comeback Player of the Year"),
+]
+_NFL_AWARD_DISPLAY_TO_CODE = {display: code for code, display in _NFL_AWARD_OPTIONS}
+
 CONFERENCE_SCHOOLS = {
     "SEC": {
         "Alabama", "Georgia", "LSU", "Florida", "Tennessee", "Auburn",
@@ -372,6 +421,88 @@ def _players_high_ppr(conn, value):
     )
 
 
+def _players_hof(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nfl_hof")
+
+
+def _get_sb_team_seasons(conn, include_loser=False):
+    """Return set of (team_code, season) tuples for Super Bowl participants."""
+    rows = conn.execute(
+        "SELECT winner, loser, year FROM nfl_superbowl WHERE game_type='Super Bowl'"
+    ).fetchall()
+    pairs = set()
+    for (winner, loser, year) in rows:
+        season = year - 1
+        for name in ([winner, loser] if include_loser else [winner]):
+            code = SB_TEAM_NAME_TO_CODE.get(name)
+            if code:
+                pairs.add((code, season))
+    return pairs
+
+
+def _players_sb_champion(conn, value):
+    pairs = _get_sb_team_seasons(conn, include_loser=False)
+    results = set()
+    for (code, season) in pairs:
+        players = _query_set(
+            conn,
+            """SELECT DISTINCT player FROM stats WHERE team=? AND season=?
+               UNION
+               SELECT DISTINCT player FROM def_stats WHERE team=? AND season=?""",
+            (code, season, code, season),
+        )
+        results |= players
+    return frozenset(results)
+
+
+def _players_sb_appearance(conn, value):
+    pairs = _get_sb_team_seasons(conn, include_loser=True)
+    results = set()
+    for (code, season) in pairs:
+        players = _query_set(
+            conn,
+            """SELECT DISTINCT player FROM stats WHERE team=? AND season=?
+               UNION
+               SELECT DISTINCT player FROM def_stats WHERE team=? AND season=?""",
+            (code, season, code, season),
+        )
+        results |= players
+    return frozenset(results)
+
+
+def _pick_nfl_award(conn, current_players=None):
+    _, display = random.choice(_NFL_AWARD_OPTIONS)
+    return display
+
+
+def _players_nfl_award(conn, value):
+    code = _NFL_AWARD_DISPLAY_TO_CODE.get(value)
+    if not code:
+        return frozenset()
+    return _query_set(
+        conn,
+        "SELECT DISTINCT player FROM nfl_awards WHERE award=?",
+        (code,),
+    )
+
+
+def _players_all_rookie_nfl(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nfl_allrookie")
+
+
+def _pick_kicker_fg(conn, current_players=None):
+    return str(random.choice([85, 88, 90]))
+
+
+def _players_kicker_fg(conn, value):
+    threshold = float(value)
+    return _query_set(
+        conn,
+        "SELECT DISTINCT player FROM nfl_kicking WHERE fg_pct >= ?",
+        (threshold,),
+    )
+
+
 # ── CATEGORIES list ───────────────────────────────────────────────────────────
 
 CATEGORIES = [
@@ -515,6 +646,48 @@ CATEGORIES = [
         "players": _players_ints,
         "is_teammate": False,
     },
+    {
+        "id": "hof",
+        "label": "Is in the Pro Football Hall of Fame",
+        "pick": _pick_static,
+        "players": _players_hof,
+        "is_teammate": False,
+    },
+    {
+        "id": "sb_champion",
+        "label": "Won a Super Bowl",
+        "pick": _pick_static,
+        "players": _players_sb_champion,
+        "is_teammate": False,
+    },
+    {
+        "id": "sb_appearance",
+        "label": "Played in a Super Bowl",
+        "pick": _pick_static,
+        "players": _players_sb_appearance,
+        "is_teammate": False,
+    },
+    {
+        "id": "nfl_award",
+        "label": "Won {value}",
+        "pick": _pick_nfl_award,
+        "players": _players_nfl_award,
+        "is_teammate": False,
+    },
+    {
+        "id": "all_rookie_nfl",
+        "label": "Made the NFL All-Rookie Team",
+        "pick": _pick_static,
+        "players": _players_all_rookie_nfl,
+        "is_teammate": False,
+    },
+    {
+        "id": "kicker_fg",
+        "label": "Made {value}%+ of field goals in a season",
+        "pick": _pick_kicker_fg,
+        "players": _players_kicker_fg,
+        "is_teammate": False,
+    },
 ]
 
 # Index for fast lookup
@@ -529,6 +702,7 @@ _CONFLICT_GROUPS = [
     {"team", "afc_nfc"},          # knowing the team tells you AFC/NFC
     {"division", "afc_nfc"},      # knowing the division tells you AFC/NFC
     {"college", "conference"},    # knowing the college tells you the conference
+    {"sb_champion", "sb_appearance"},  # champion implies appeared in SB
 ]
 
 
