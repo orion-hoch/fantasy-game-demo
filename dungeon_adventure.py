@@ -23,6 +23,11 @@ ITEM_CATEGORY_IDS = [
     "high_ppr",
     "sacks",
     "interceptions",
+    "hof",
+    "sb_champion",
+    "sb_appearance",
+    "nfl_award",
+    "all_rookie_nfl",
 ]
 
 QUESTION_CATEGORY_IDS = [
@@ -44,6 +49,11 @@ QUESTION_CATEGORY_IDS = [
     "high_ppr",
     "sacks",
     "interceptions",
+    "hof",
+    "sb_champion",
+    "sb_appearance",
+    "nfl_award",
+    "all_rookie_nfl",
 ]
 
 ENEMY_NAMES = [
@@ -88,6 +98,11 @@ ITEM_SYMBOLS = {
     "high_ppr": "$",
     "sacks": "x",
     "interceptions": "?",
+    "hof": "@",
+    "sb_champion": "W",
+    "sb_appearance": "S",
+    "nfl_award": "A",
+    "all_rookie_nfl": "R",
 }
 ITEM_ICON_KEYS = {
     "position": "position",
@@ -109,6 +124,11 @@ ITEM_ICON_KEYS = {
     "high_ppr": "award",
     "sacks": "defense",
     "interceptions": "defense",
+    "hof": "award",
+    "sb_champion": "award",
+    "sb_appearance": "award",
+    "nfl_award": "award",
+    "all_rookie_nfl": "draft",
 }
 
 TIER_RULES = {
@@ -136,7 +156,7 @@ FLOOR_THEMES = {
         "name": "Archive Of Brass",
         "scene": "archive",
         "enemy": "Crypt Wolf",
-        "categories": ["conference", "college", "round_1", "top_10", "pro_bowl"],
+        "categories": ["conference", "college", "round_1", "top_10", "pro_bowl", "all_rookie_nfl"],
         "prompt": "The records shift toward draft and pedigree clues.",
     },
     3: {
@@ -150,21 +170,21 @@ FLOOR_THEMES = {
         "name": "Flooded Reliquary",
         "scene": "river",
         "enemy": "Ash Serpent",
-        "categories": ["rush_yds", "rec_yds", "rec_100", "college", "division", "pro_bowl"],
+        "categories": ["rush_yds", "rec_yds", "rec_100", "college", "division", "pro_bowl", "sb_appearance"],
         "prompt": "The water hall leans into skill-position production.",
     },
     5: {
         "name": "Storm Bastion",
         "scene": "storm",
         "enemy": "Iron Minotaur",
-        "categories": ["sacks", "interceptions", "all_pro", "era", "conference", "team", "division"],
+        "categories": ["sacks", "interceptions", "all_pro", "era", "conference", "team", "division", "nfl_award", "sb_champion"],
         "prompt": "The upper keep demands sharper recall and defense-heavy answers.",
     },
     6: {
         "name": "Throne Of Names",
         "scene": "boss",
         "enemy": "Depth Tyrant",
-        "categories": ["top_10", "all_pro", "conference", "pass_td", "pass_yds", "rec_yds", "rush_yds", "sacks", "interceptions", "high_ppr", "pro_bowl", "era"],
+        "categories": ["top_10", "all_pro", "conference", "pass_td", "pass_yds", "rec_yds", "rush_yds", "sacks", "interceptions", "high_ppr", "pro_bowl", "era", "hof", "nfl_award", "sb_champion"],
         "prompt": "The boss fight cycles through three themed questions before it breaks.",
         "boss": True,
         "phase_goal": 3,
@@ -369,8 +389,9 @@ def _question_prompt(label):
 
 
 def _canonicalize_answer(answer, valid_players):
-    answer_key = " ".join((answer or "").strip().lower().split())
-    lookup = {" ".join(name.lower().split()): name for name in valid_players}
+    from name_utils import normalize_name
+    answer_key = normalize_name(answer)
+    lookup = {normalize_name(name): name for name in valid_players}
     return lookup.get(answer_key)
 
 
@@ -459,19 +480,16 @@ def check_answer(conn, question, current_items, answer):
 
 
 def search_answers(conn, query, current_items, question=None, limit=8):
-    query = " ".join((query or "").strip().lower().split())
-    if not query:
+    from name_utils import normalize_name
+    key = normalize_name(query)
+    if not key:
         return []
     pool = _all_players(conn)
-
-    starts = []
-    contains = []
+    starts, contains = [], []
     for player in sorted(pool):
-        key = " ".join(player.lower().split())
-        if key.startswith(query):
+        nk = normalize_name(player)
+        if nk.startswith(key):
             starts.append(player)
-        elif query in key:
+        elif key in nk:
             contains.append(player)
-        if len(starts) + len(contains) >= limit * 2:
-            break
     return (starts + contains)[:limit]

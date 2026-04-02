@@ -3,8 +3,8 @@ import random
 import nba_chain_categories as cc
 
 
-ITEM_CATEGORY_IDS = ["position", "team", "college", "era", "conference", "division", "first_round", "top_10", "pts_season", "reb_season", "ast_season"]
-QUESTION_CATEGORY_IDS = ["team", "college", "era", "conference", "division", "first_round", "top_10", "pts_season", "reb_season", "ast_season"]
+ITEM_CATEGORY_IDS = ["position", "team", "college", "era", "conference", "division", "first_round", "top_10", "pts_season", "reb_season", "ast_season", "allstar_count", "all_nba", "all_nba_first", "all_defensive", "all_rookie_nba", "olympic_team", "nba_award", "nba_hof"]
+QUESTION_CATEGORY_IDS = ["team", "college", "era", "conference", "division", "first_round", "top_10", "pts_season", "reb_season", "ast_season", "allstar_count", "all_nba", "all_nba_first", "all_defensive", "all_rookie_nba", "olympic_team", "nba_award", "nba_hof"]
 ITEM_PREFIXES = ["Bronze", "Dust", "Stone", "Runed", "Royal", "Obsidian", "Ancient"]
 ITEM_NOUNS = ["Band", "Key", "Medal", "Mask", "Charm", "Tablet", "Token"]
 CUSTOM_VALUE_OPTIONS = {
@@ -24,6 +24,14 @@ ITEM_SYMBOLS = {
     "pts_season": ">",
     "reb_season": "=",
     "ast_season": "<",
+    "allstar_count": "*",
+    "all_nba": "A",
+    "all_nba_first": "@",
+    "all_defensive": "D",
+    "all_rookie_nba": "R",
+    "olympic_team": "O",
+    "nba_award": "W",
+    "nba_hof": "H",
 }
 ITEM_ICON_KEYS = {
     "position": "position",
@@ -37,6 +45,14 @@ ITEM_ICON_KEYS = {
     "pts_season": "scoring",
     "reb_season": "rebound",
     "ast_season": "assist",
+    "allstar_count": "award",
+    "all_nba": "award",
+    "all_nba_first": "award",
+    "all_defensive": "award",
+    "all_rookie_nba": "draft",
+    "olympic_team": "award",
+    "nba_award": "award",
+    "nba_hof": "award",
 }
 TIER_RULES = {
     "starter": {"label": "Starter", "min_count": 250, "max_count": 1200, "bonus": 1, "min_projected": 80},
@@ -46,11 +62,11 @@ TIER_RULES = {
 REWARD_PLANS = {0: ["starter", "starter", "starter"], 1: ["starter", "medium", "medium"], 2: ["medium", "medium", "hard"], 3: ["medium", "hard", "hard"]}
 FLOOR_THEMES = {
     1: {"name": "Backcourt Gate", "enemy": "Gym Shade", "categories": ["team", "conference", "division", "position"], "prompt": "Early floors focus on broad NBA roster memory."},
-    2: {"name": "Draft Gallery", "enemy": "Lottery Hound", "categories": ["college", "first_round", "top_10", "era"], "prompt": "The route shifts toward draft history and school roots."},
-    3: {"name": "Scoring Vault", "enemy": "Shot Wraith", "categories": ["pts_season", "team", "era", "conference", "top_10"], "prompt": "Scorers rule this section of the dungeon."},
-    4: {"name": "Glass Chamber", "enemy": "Rim Serpent", "categories": ["reb_season", "position", "division", "college", "first_round"], "prompt": "Bigs and rebounders dominate the chamber."},
-    5: {"name": "Passing Court", "enemy": "Assist Lich", "categories": ["ast_season", "team", "conference", "era", "college"], "prompt": "Playmakers and table-setters take over here."},
-    6: {"name": "Hall Of Legends", "enemy": "Crown Titan", "categories": ["top_10", "first_round", "pts_season", "reb_season", "ast_season", "college", "conference", "division", "era"], "prompt": "The boss cycles through three NBA prompts before it breaks.", "boss": True, "phase_goal": 3},
+    2: {"name": "Draft Gallery", "enemy": "Lottery Hound", "categories": ["college", "first_round", "top_10", "era", "all_rookie_nba"], "prompt": "The route shifts toward draft history and school roots."},
+    3: {"name": "Scoring Vault", "enemy": "Shot Wraith", "categories": ["pts_season", "team", "era", "conference", "top_10", "allstar_count"], "prompt": "Scorers rule this section of the dungeon."},
+    4: {"name": "Glass Chamber", "enemy": "Rim Serpent", "categories": ["reb_season", "position", "division", "college", "first_round", "all_defensive", "olympic_team"], "prompt": "Bigs and rebounders dominate the chamber."},
+    5: {"name": "Passing Court", "enemy": "Assist Lich", "categories": ["ast_season", "team", "conference", "era", "college", "all_nba", "nba_award"], "prompt": "Playmakers and table-setters take over here."},
+    6: {"name": "Hall Of Legends", "enemy": "Crown Titan", "categories": ["top_10", "first_round", "pts_season", "reb_season", "ast_season", "college", "conference", "division", "era", "nba_hof", "all_nba_first", "nba_award", "allstar_count"], "prompt": "The boss cycles through three NBA prompts before it breaks.", "boss": True, "phase_goal": 3},
 }
 
 
@@ -225,8 +241,9 @@ def _question_prompt(label):
 
 
 def _canonicalize_answer(answer, valid_players):
-    answer_key = " ".join((answer or "").strip().lower().split())
-    lookup = {" ".join(name.lower().split()): name for name in valid_players}
+    from name_utils import normalize_name
+    answer_key = normalize_name(answer)
+    lookup = {normalize_name(name): name for name in valid_players}
     return lookup.get(answer_key)
 
 
@@ -289,18 +306,16 @@ def check_answer(conn, question, current_items, answer):
 
 
 def search_answers(conn, query, current_items, question=None, limit=8):
-    query = " ".join((query or "").strip().lower().split())
-    if not query:
+    from name_utils import normalize_name
+    key = normalize_name(query)
+    if not key:
         return []
     pool = _all_players(conn)
-    starts = []
-    contains = []
+    starts, contains = [], []
     for player in sorted(pool):
-        key = " ".join(player.lower().split())
-        if key.startswith(query):
+        nk = normalize_name(player)
+        if nk.startswith(key):
             starts.append(player)
-        elif query in key:
+        elif key in nk:
             contains.append(player)
-        if len(starts) + len(contains) >= limit * 2:
-            break
     return (starts + contains)[:limit]

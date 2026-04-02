@@ -142,18 +142,21 @@ def _validate_actor(state: dict, player_token: str | None):
 
 
 def search_players(conn, query: str, game_id: str) -> list:
+    from name_utils import normalize_name
     state = get_game(game_id)
     if state is None:
         return []
-    term = (query or "").strip()
-    if not term:
+    key = normalize_name(query)
+    if not key:
         return []
     rows = conn.execute(
-        "SELECT DISTINCT player FROM nba_stats WHERE player LIKE ? ORDER BY player LIMIT 20",
-        (f"%{term}%",),
+        "SELECT DISTINCT player FROM nba_stats WHERE player IS NOT NULL AND player != '' ORDER BY player",
     ).fetchall()
     taken = set(state.get("pickedPlayers") or [])
-    return [row[0] for row in rows if row[0] not in taken]
+    candidates = [row[0] for row in rows if row[0] not in taken]
+    starts = [p for p in candidates if normalize_name(p).startswith(key)]
+    contains = [p for p in candidates if not normalize_name(p).startswith(key) and key in normalize_name(p)]
+    return (starts + contains)[:20]
 
 
 def get_years(conn, game_id: str, player: str) -> list:

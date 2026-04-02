@@ -71,6 +71,22 @@ def _accolade_sql(accolade: str) -> str:
         return "EXISTS (SELECT 1 FROM nba_draft d WHERE d.player = s.player AND d.draft_pick <= 10)"
     elif accolade == "top5_draft":
         return "EXISTS (SELECT 1 FROM nba_draft d WHERE d.player = s.player AND d.draft_pick <= 5)"
+    elif accolade == "nba_hof":
+        return "EXISTS (SELECT 1 FROM nba_hof h WHERE h.player = s.player)"
+    elif accolade == "all_nba":
+        return "EXISTS (SELECT 1 FROM nba_allnba an WHERE an.player = s.player)"
+    elif accolade == "all_defensive":
+        return "EXISTS (SELECT 1 FROM nba_alldefensive ad WHERE ad.player = s.player)"
+    elif accolade == "all_rookie_nba":
+        return "EXISTS (SELECT 1 FROM nba_allrookie ar WHERE ar.player = s.player)"
+    elif accolade == "olympic_team":
+        return "EXISTS (SELECT 1 FROM nba_olympic_teams ot WHERE ot.player = s.player)"
+    elif accolade == "nba_mvp":
+        return "EXISTS (SELECT 1 FROM nba_awards a WHERE a.player = s.player AND a.award = 'MVP' AND a.is_winner = 1)"
+    elif accolade == "nba_fmvp":
+        return "EXISTS (SELECT 1 FROM nba_awards a WHERE a.player = s.player AND a.award = 'FMVP' AND a.is_winner = 1)"
+    elif accolade == "nba_dpoy":
+        return "EXISTS (SELECT 1 FROM nba_awards a WHERE a.player = s.player AND a.award = 'DPOY' AND a.is_winner = 1)"
     return None
 
 
@@ -161,7 +177,9 @@ def _generate_prompts(conn, stat: str) -> list:
     random.shuffle(year_ranges)
 
     # Accolades — more variety
-    accolade_pool = [None, None, "allstar", "top10_draft", "top5_draft"]
+    accolade_pool = [None, None, "allstar", "top10_draft", "top5_draft",
+                     "nba_hof", "all_nba", "all_defensive", "all_rookie_nba",
+                     "olympic_team", "nba_mvp", "nba_fmvp", "nba_dpoy"]
     random.shuffle(accolade_pool)
 
     prompts = []
@@ -431,37 +449,30 @@ def get_player_seasons(conn, game_id: str, prompt_idx: int, player_name: str) ->
 
 
 def search_players(conn, query: str, prompt_idx: int, game_id: str) -> list:
+    from name_utils import normalize_name
     state = _GAMES.get(game_id)
     if state is None:
         return []
 
     used_players = _used_players(state)
 
-    query = (query or "").strip()
-    if query:
-        rows = conn.execute(
-            """
-            SELECT DISTINCT s.player
-            FROM nba_stats s
-            WHERE s.player LIKE ?
-            ORDER BY CASE WHEN s.player LIKE ? THEN 0 ELSE 1 END, s.player
-            LIMIT 40
-            """,
-            [f"%{query}%", f"{query}%"],
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            """
-            SELECT DISTINCT s.player
-            FROM nba_stats s
-            WHERE s.player IS NOT NULL AND s.player != ''
-            ORDER BY s.player
-            LIMIT 40
-            """
-        ).fetchall()
+    rows = conn.execute(
+        """
+        SELECT DISTINCT s.player
+        FROM nba_stats s
+        WHERE s.player IS NOT NULL AND s.player != ''
+        ORDER BY s.player
+        """
+    ).fetchall()
 
-    return [
-        {"player": row[0], "season": None, "team": None, "stat_val": 0}
-        for row in rows
-        if row[0] not in used_players
-    ]
+    key = normalize_name(query)
+    candidates = [row[0] for row in rows if row[0] not in used_players]
+
+    if key:
+        starts = [p for p in candidates if normalize_name(p).startswith(key)]
+        contains = [p for p in candidates if not normalize_name(p).startswith(key) and key in normalize_name(p)]
+        candidates = (starts + contains)[:40]
+    else:
+        candidates = candidates[:40]
+
+    return [{"player": p, "season": None, "team": None, "stat_val": 0} for p in candidates]

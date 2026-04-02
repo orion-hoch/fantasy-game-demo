@@ -804,20 +804,29 @@ def get_chain_category(conn, current_players, exclude_ids=None):
 
 
 def search_players(conn, term):
-    """Search player names across all tables."""
-    like = f"%{term}%"
+    """Search player names across all tables, with normalized matching."""
+    from name_utils import normalize_name
+    key = normalize_name(term)
+    if not key:
+        return []
     rows = conn.execute(
-        """SELECT DISTINCT player FROM stats WHERE player LIKE ?
+        """SELECT DISTINCT player FROM stats
            UNION
-           SELECT DISTINCT player FROM season_stats WHERE player LIKE ?
+           SELECT DISTINCT player FROM season_stats
            UNION
-           SELECT DISTINCT player FROM draft WHERE player LIKE ?
+           SELECT DISTINCT player FROM draft
            UNION
-           SELECT DISTINCT player FROM def_stats WHERE player LIKE ?
-           ORDER BY player LIMIT 20""",
-        (like, like, like, like),
+           SELECT DISTINCT player FROM def_stats
+           ORDER BY player"""
     ).fetchall()
-    return [r[0] for r in rows]
+    starts, contains = [], []
+    for (name,) in rows:
+        nk = normalize_name(name)
+        if nk.startswith(key):
+            starts.append(name)
+        elif key in nk:
+            contains.append(name)
+    return (starts + contains)[:20]
 
 
 def check_player_against_chain(conn, player, chain):

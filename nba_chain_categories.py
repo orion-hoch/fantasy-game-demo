@@ -284,6 +284,10 @@ def _players_ncaa_poty(conn, value):
     return _query_set(conn, "SELECT DISTINCT player FROM nba_ncaa_poty")
 
 
+def _players_nba_hof(conn, value):
+    return _query_set(conn, "SELECT DISTINCT player FROM nba_hof")
+
+
 def _pick_teammate(conn, current_players=None):
     if not current_players:
         return None
@@ -457,6 +461,13 @@ CATEGORIES = [
         "players": _players_ncaa_poty,
         "is_teammate": False,
     },
+    {
+        "id": "nba_hof",
+        "label": "Is in the Basketball Hall of Fame",
+        "pick": _pick_static,
+        "players": _players_nba_hof,
+        "is_teammate": False,
+    },
 ]
 
 # Index for fast lookup
@@ -568,16 +579,25 @@ def get_chain_category(conn, current_players, exclude_ids=None):
 
 
 def search_players(conn, term):
-    """Search player names across NBA tables."""
-    like = f"%{term}%"
+    """Search player names across NBA tables, with normalized matching."""
+    from name_utils import normalize_name
+    key = normalize_name(term)
+    if not key:
+        return []
     rows = conn.execute(
-        """SELECT DISTINCT player FROM nba_stats WHERE player LIKE ?
+        """SELECT DISTINCT player FROM nba_stats
            UNION
-           SELECT DISTINCT player FROM nba_draft WHERE player LIKE ?
-           ORDER BY player LIMIT 20""",
-        (like, like),
+           SELECT DISTINCT player FROM nba_draft
+           ORDER BY player"""
     ).fetchall()
-    return [r[0] for r in rows]
+    starts, contains = [], []
+    for (name,) in rows:
+        nk = normalize_name(name)
+        if nk.startswith(key):
+            starts.append(name)
+        elif key in nk:
+            contains.append(name)
+    return (starts + contains)[:20]
 
 
 def check_player_against_chain(conn, player, chain):

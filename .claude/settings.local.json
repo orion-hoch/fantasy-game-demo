@@ -18,7 +18,8 @@
       "Bash(head -30 grep -rn \"SELECT\\\\|FROM \" /Users/orionhoch/fantasy_game_demo/nba_starting5_game.py)",
       "Bash(ls -la /Users/orionhoch/fantasy_game_demo/*.py)",
       "Bash(grep -l \"category\\\\|categories\" /Users/orionhoch/fantasy_game_demo/static/*.js)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(python:*)"
     ]
   }
 }

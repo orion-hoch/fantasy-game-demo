@@ -128,6 +128,14 @@ def _accolade_sql(accolade: str) -> str:
         return "EXISTS (SELECT 1 FROM draft d WHERE d.player = s.player AND d.all_pro > 0)"
     elif accolade == "1st_round":
         return "EXISTS (SELECT 1 FROM draft d WHERE d.player = s.player AND d.draft_round = 1)"
+    elif accolade == "hof":
+        return "EXISTS (SELECT 1 FROM nfl_hof h WHERE h.player = s.player)"
+    elif accolade == "all_rookie_nfl":
+        return "EXISTS (SELECT 1 FROM nfl_allrookie r WHERE r.player = s.player)"
+    elif accolade == "nfl_mvp":
+        return "EXISTS (SELECT 1 FROM nfl_awards a WHERE a.player = s.player AND a.award = 'NFL_MVP')"
+    elif accolade == "nfl_dpoy":
+        return "EXISTS (SELECT 1 FROM nfl_awards a WHERE a.player = s.player AND a.award = 'AP_DPOY')"
     return None
 
 
@@ -211,7 +219,8 @@ def _generate_prompts(conn, stat: str) -> list:
     ]
     random.shuffle(year_ranges)
 
-    accolade_pool = [None, None, "pro_bowl", "1st_round", "all_pro"]
+    accolade_pool = [None, None, "pro_bowl", "1st_round", "all_pro",
+                     "hof", "all_rookie_nfl", "nfl_mvp", "nfl_dpoy"]
     random.shuffle(accolade_pool)
 
     prompts = []
@@ -466,6 +475,7 @@ def get_player_seasons(conn, game_id: str, prompt_idx: int, player_name: str) ->
 
 
 def search_players(conn, query: str, prompt_idx: int, game_id: str) -> list:
+    from name_utils import normalize_name
     state = _GAMES.get(game_id)
     if state is None:
         return []
@@ -476,34 +486,25 @@ def search_players(conn, query: str, prompt_idx: int, game_id: str) -> list:
     table = _stat_table(stat)
     stat_expr = _stat_expr(stat)
     pos_frag, pos_params = _pos_filter_clause(stat)
-    query = (query or "").strip()
 
-    if query:
-        rows = conn.execute(
-            f"""
-            SELECT DISTINCT s.player
-            FROM {table} s
-            WHERE {stat_expr} > 0 {pos_frag}
-            AND s.player LIKE ?
-            ORDER BY CASE WHEN s.player LIKE ? THEN 0 ELSE 1 END, s.player
-            LIMIT 40
-            """,
-            pos_params + [f"%{query}%", f"{query}%"],
-        ).fetchall()
+    rows = conn.execute(
+        f"""
+        SELECT DISTINCT s.player
+        FROM {table} s
+        WHERE {stat_expr} > 0 {pos_frag}
+        ORDER BY s.player
+        """,
+        pos_params,
+    ).fetchall()
+
+    key = normalize_name(query)
+    candidates = [row[0] for row in rows if row[0] not in used_players]
+
+    if key:
+        starts = [p for p in candidates if normalize_name(p).startswith(key)]
+        contains = [p for p in candidates if not normalize_name(p).startswith(key) and key in normalize_name(p)]
+        candidates = (starts + contains)[:40]
     else:
-        rows = conn.execute(
-            f"""
-            SELECT DISTINCT s.player
-            FROM {table} s
-            WHERE {stat_expr} > 0 {pos_frag}
-            ORDER BY s.player
-            LIMIT 40
-            """,
-            pos_params,
-        ).fetchall()
+        candidates = candidates[:40]
 
-    return [
-        {"player": row[0], "season": None, "team": None, "stat_val": 0}
-        for row in rows
-        if row[0] not in used_players
-    ]
+    return [{"player": p, "season": None, "team": None, "stat_val": 0} for p in candidates]
