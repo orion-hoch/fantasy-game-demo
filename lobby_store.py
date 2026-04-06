@@ -57,6 +57,18 @@ SUPPORTED_GAMES = {
         "min_players": 2,
         "max_players": 2,
     },
+    "nfl_codewords": {
+        "label": "NFL Code Words",
+        "route": "/nfl_codewords",
+        "min_players": 4,
+        "max_players": 4,
+    },
+    "nba_codewords": {
+        "label": "NBA Code Words",
+        "route": "/nba_codewords",
+        "min_players": 4,
+        "max_players": 4,
+    },
 }
 
 
@@ -159,7 +171,33 @@ def claim_seat(room_id: str, token: str, player_name: str, seat_number: int) -> 
     room["seats"][seat_key] = {
         "name": (player_name or f"Player {seat_key}").strip() or f"Player {seat_key}",
         "token": token,
+        "meta": {},
     }
+    return save_room(room)
+
+
+def update_seat_meta(room_id: str, token: str, meta_updates: dict) -> dict:
+    """Merge arbitrary metadata onto the seat owned by `token`.
+
+    Used today by Code Words for picking team + role in the lobby. Other game
+    types simply ignore the meta dict.
+    """
+    room = get_room(room_id)
+    if room is None:
+        raise ValueError("Room not found")
+    if room["status"] != "lobby":
+        raise ValueError("Game has already started")
+    seat_no, seat = token_seat(room, token)
+    if seat_no is None or seat is None:
+        raise ValueError("You are not seated in this room")
+    existing = dict(seat.get("meta") or {})
+    for k, v in (meta_updates or {}).items():
+        if v is None:
+            existing.pop(k, None)
+        else:
+            existing[k] = v
+    seat["meta"] = existing
+    room["seats"][str(seat_no)] = seat
     return save_room(room)
 
 
@@ -199,7 +237,10 @@ def reset_to_lobby(room_id: str) -> dict:
 def room_payload(room: dict, token: str | None = None) -> dict:
     payload = dict(room)
     payload["seats"] = {
-        seat_no: ({"name": seat["name"]} if seat else None)
+        seat_no: (
+            {"name": seat["name"], "meta": dict(seat.get("meta") or {})}
+            if seat else None
+        )
         for seat_no, seat in room["seats"].items()
     }
     payload["game_label"] = SUPPORTED_GAMES[room["game_type"]]["label"]

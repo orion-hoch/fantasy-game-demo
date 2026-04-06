@@ -32,6 +32,15 @@
         .lobby-note { color: var(--text-dim); }
         .lobby-error { color: var(--red-bright); min-height: 20px; margin-top: 8px; }
         .back-link { display: inline-block; margin-bottom: 14px; }
+        .seat-cw-block { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+        .seat-cw-summary { font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+        .seat-cw-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.62rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
+        .seat-cw-row { display: flex; gap: 6px; }
+        .seat-cw-btn { flex: 1; background: var(--surface-3); color: var(--text); border: 2px solid var(--border-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; padding: 6px 4px; cursor: pointer; transition: filter 0.1s; }
+        .seat-cw-btn:hover { filter: brightness(1.15); }
+        .seat-cw-btn.selected { background: var(--yellow); color: var(--text-dark); border-color: var(--border); }
+        .seat-cw-btn.team-a.selected { background: #d62828; color: #fff; }
+        .seat-cw-btn.team-b.selected { background: var(--yellow); color: var(--text-dark); }
     </style>
 </head>
 <body>
@@ -46,6 +55,6 @@
         </div>
     </div>
 </div>
-<script src="/static/lobby.js?v=2"></script>
+<script src="/static/lobby.js?v=3"></script>
 </body>
 </html>

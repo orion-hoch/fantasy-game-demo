@@ -16,6 +16,7 @@ import nfl_bullseye as nfl_bull
 import chain_game as chain_game_mod
 import starting6_game as starting6_game_mod
 import nba_starting5_game as nba_starting5_game_mod
+import codewords_game as codewords_mod
 from lobby_store import (
     SUPPORTED_GAMES,
     claim_seat,
@@ -28,6 +29,7 @@ from lobby_store import (
     room_payload,
     save_room,
     set_started,
+    update_seat_meta,
 )
 
 app = Flask(__name__)
@@ -55,6 +57,8 @@ def _room_game_state(room: dict):
         return nba_starting5_game_mod.get_game(game_id)
     if game_type in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
         return chain_game_mod.get_game(game_id)
+    if game_type in {"nfl_codewords", "nba_codewords"}:
+        return codewords_mod.get_game(game_id)
     return None
 
 def get_db():
@@ -162,6 +166,16 @@ def lobby_leave_seat_api(room_id):
     return jsonify({"room": room_payload(room, data.get("token"))})
 
 
+@app.route("/api/lobbies/<room_id>/seat-meta", methods=["POST"])
+def lobby_seat_meta_api(room_id):
+    data = request.get_json(force=True) or {}
+    try:
+        room = update_seat_meta(room_id, data.get("token", ""), data.get("meta", {}) or {})
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
+    return jsonify({"room": room_payload(room, data.get("token"))})
+
+
 @app.route("/api/lobbies/<room_id>/start", methods=["POST"])
 def lobby_start_api(room_id):
     room = get_room(room_id)
@@ -193,6 +207,21 @@ def lobby_start_api(room_id):
             sport = "nba" if room["game_type"].startswith("nba_") else "nfl"
             mode = "comp" if room["game_type"].endswith("_comp") else "coop"
             game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens, sport=sport, mode=mode)
+        elif room["game_type"] in {"nfl_codewords", "nba_codewords"}:
+            sport = "nba" if room["game_type"] == "nba_codewords" else "nfl"
+            cw_players = []
+            for _, seat in filled:
+                meta = seat.get("meta") or {}
+                cw_players.append({
+                    "name": seat["name"],
+                    "token": seat["token"],
+                    "team": meta.get("team"),
+                    "role": meta.get("role"),
+                })
+            try:
+                game_id, _ = codewords_mod.start_game(conn, cw_players, sport=sport)
+            except ValueError as exc:
+                return jsonify({"error": str(exc)}), 400
         else:
             return jsonify({"error": "Unsupported game type"}), 400
         conn.commit()
@@ -1656,6 +1685,81 @@ def nfl_bullseye_pick():
         return jsonify({"error": str(e)}), 400
     finally:
         conn.close()
+
+
+# ── Twenty-Four card game ────────────────────────────────────────────────────
+
+@app.route("/twenty_four")
+def twenty_four_page():
+    return render_template("twenty_four.html")
+
+
+# ── Code Words (multiplayer) ─────────────────────────────────────────────────
+
+@app.route("/nfl_codewords")
+def nfl_codewords_page():
+    return render_template("nfl_codewords.html")
+
+
+@app.route("/nba_codewords")
+def nba_codewords_page():
+    return render_template("nba_codewords.html")
+
+
+def _codewords_state_response(game_id: str, token: str):
+    state = codewords_mod.get_game(game_id)
+    if state is None:
+        return jsonify({"error": "Game not found"}), 404
+    return jsonify({"state": codewords_mod.view_state(state, token)})
+
+
+@app.route("/api/codewords/state")
+def codewords_state_api():
+    game_id = request.args.get("game_id", "")
+    token = request.args.get("token", "")
+    return _codewords_state_response(game_id, token)
+
+
+@app.route("/api/codewords/clue", methods=["POST"])
+def codewords_clue_api():
+    data = request.get_json(force=True) or {}
+    state, err = codewords_mod.submit_clue(
+        data.get("game_id", ""),
+        data.get("token", ""),
+        data.get("clue", ""),
+        data.get("number", 0),
+    )
+    if state is None:
+        return jsonify({"error": err or "Game not found"}), 404
+    if err:
+        return jsonify({"error": err, "state": codewords_mod.view_state(state, data.get("token", ""))}), 400
+    return jsonify({"state": codewords_mod.view_state(state, data.get("token", ""))})
+
+
+@app.route("/api/codewords/guess", methods=["POST"])
+def codewords_guess_api():
+    data = request.get_json(force=True) or {}
+    state, err = codewords_mod.submit_guess(
+        data.get("game_id", ""),
+        data.get("token", ""),
+        data.get("index", -1),
+    )
+    if state is None:
+        return jsonify({"error": err or "Game not found"}), 404
+    if err:
+        return jsonify({"error": err, "state": codewords_mod.view_state(state, data.get("token", ""))}), 400
+    return jsonify({"state": codewords_mod.view_state(state, data.get("token", ""))})
+
+
+@app.route("/api/codewords/end_turn", methods=["POST"])
+def codewords_end_turn_api():
+    data = request.get_json(force=True) or {}
+    state, err = codewords_mod.end_turn(data.get("game_id", ""), data.get("token", ""))
+    if state is None:
+        return jsonify({"error": err or "Game not found"}), 404
+    if err:
+        return jsonify({"error": err, "state": codewords_mod.view_state(state, data.get("token", ""))}), 400
+    return jsonify({"state": codewords_mod.view_state(state, data.get("token", ""))})
 
 
 if __name__ == "__main__":
