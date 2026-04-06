@@ -68,7 +68,11 @@
   }
 
   function isCodewords() {
-    return gameType === 'nfl_codewords' || gameType === 'nba_codewords';
+    return gameType.includes('codewords');
+  }
+
+  function isCodewordsDuel() {
+    return gameType.includes('codewords_duel');
   }
 
   function teamLabel(team) {
@@ -95,26 +99,34 @@
   function codewordsSeatExtras(seatNo, seat, room) {
     const mine = room.my_seat === seatNo;
     const meta = (seat && seat.meta) || {};
+    const duel = isCodewordsDuel();
     if (!seat) return '';
     if (!mine) {
+      if (duel) {
+        const t = meta.team ? teamLabel(meta.team) : 'pick team';
+        return `<div class="seat-cw-summary">${escapeHtml(t)}</div>`;
+      }
       return `<div class="seat-cw-summary">${escapeHtml(codewordsSummary(meta))}</div>`;
     }
     const team = meta.team || '';
     const role = meta.role || '';
-    return `
+    let html = `
       <div class="seat-cw-block">
         <div class="seat-cw-label">Team</div>
         <div class="seat-cw-row">
           <button class="seat-cw-btn team-a${team === 'A' ? ' selected' : ''}" data-cw-team="A">Red</button>
           <button class="seat-cw-btn team-b${team === 'B' ? ' selected' : ''}" data-cw-team="B">Yellow</button>
-        </div>
+        </div>`;
+    if (!duel) {
+      html += `
         <div class="seat-cw-label">Role</div>
         <div class="seat-cw-row">
           <button class="seat-cw-btn${role === 'spymaster' ? ' selected' : ''}" data-cw-role="spymaster">Clue Giver</button>
           <button class="seat-cw-btn${role === 'guesser' ? ' selected' : ''}" data-cw-role="guesser">Guesser</button>
-        </div>
-      </div>
-    `;
+        </div>`;
+    }
+    html += '</div>';
+    return html;
   }
 
   function seatCard(seatNo, seat, room) {
@@ -149,12 +161,30 @@
   function codewordsReady(room) {
     if (!isCodewords()) return { ready: false, reason: '' };
     const seats = room.seats || {};
+    const duel = isCodewordsDuel();
+    const need = duel ? 2 : 4;
+
     const filled = [];
-    for (let i = 1; i <= 4; i++) {
+    for (let i = 1; i <= need; i++) {
       const s = seats[String(i)];
-      if (!s) return { ready: false, reason: 'Need all 4 players seated' };
+      if (!s) return { ready: false, reason: `Need all ${need} players seated` };
       filled.push(s);
     }
+
+    if (duel) {
+      const teams = {};
+      for (const s of filled) {
+        const m = s.meta || {};
+        if (!m.team) return { ready: false, reason: 'Both players need to pick a team' };
+        teams[m.team] = (teams[m.team] || 0) + 1;
+      }
+      if (!teams.A || !teams.B || teams.A !== 1 || teams.B !== 1) {
+        return { ready: false, reason: 'Each player must pick a different team (Red / Yellow)' };
+      }
+      return { ready: true, reason: '' };
+    }
+
+    // Teams (4-player)
     const counts = { A_spymaster: 0, A_guesser: 0, B_spymaster: 0, B_guesser: 0 };
     for (const s of filled) {
       const m = s.meta || {};
@@ -239,7 +269,7 @@
         <label for="lobby-name-input">Display name</label>
         <input id="lobby-name-input" type="text" value="${escapeHtml(getNameFallback())}" maxlength="24">
       </div>
-      ${cw ? '<div class="lobby-note" style="margin-bottom:12px;">Code Words needs exactly 4 players: 2 teams, each with 1 Clue Giver and 1 Guesser.</div>' : ''}
+      ${cw ? `<div class="lobby-note" style="margin-bottom:12px;">${isCodewordsDuel() ? 'Code Words Duel: 2 players, each picks a team. You give clues about the other player\\'s tiles.' : 'Code Words needs exactly 4 players: 2 teams, each with 1 Clue Giver and 1 Guesser.'}</div>` : ''}
       <div class="seat-grid">
         ${Array.from({ length: room.max_players }, function (_, idx) { return idx + 1; }).map(function (seatNo) { return seatCard(seatNo, room.seats[String(seatNo)], room); }).join('')}
       </div>

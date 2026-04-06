@@ -85,6 +85,9 @@
 
   async function loadState() {
     if (pendingAction) return;
+    // Skip re-render if user is actively typing in the clue input
+    const clueEl = document.getElementById('cw-clue-input');
+    if (clueEl && document.activeElement === clueEl) return;
     try {
       const data = await jsonFetch(`/api/codewords/state?game_id=${encodeURIComponent(gameId)}&token=${encodeURIComponent(token())}`);
       state = data.state;
@@ -172,12 +175,41 @@
     return '';
   }
 
+  function isDuel() {
+    return state && state.mode === 'duel';
+  }
+
   function teamMembers(team) {
     if (!state || !state.players) return '';
     return state.players
       .filter(p => p.team === team)
-      .map(p => `${p.name} (${p.role === 'spymaster' ? 'Clue' : 'Guess'})`)
+      .map(p => {
+        if (p.role === 'dual') return p.name;
+        return `${p.name} (${p.role === 'spymaster' ? 'Clue' : 'Guess'})`;
+      })
       .join(' · ');
+  }
+
+  /* In duel mode:
+     - current_team = the team whose player is giving the clue
+     - clue giver = player on current_team (gives clue about OTHER team's tiles)
+     - guesser    = player on OTHER team (guessing their OWN tiles)
+  */
+  function duelClueGiverTeam() { return state.current_team; }
+  function duelGuesserTeam() { return state.current_team === 'A' ? 'B' : 'A'; }
+
+  function amIClueGiver() {
+    const me = state.you;
+    if (!me) return false;
+    if (isDuel()) return me.team === duelClueGiverTeam();
+    return me.team === state.current_team && me.role === 'spymaster';
+  }
+
+  function amIGuesser() {
+    const me = state.you;
+    if (!me) return false;
+    if (isDuel()) return me.team === duelGuesserTeam();
+    return me.team === state.current_team && me.role === 'guesser';
   }
 
   function statusLines() {
@@ -186,9 +218,29 @@
       return { line: 'Game Over', main: state.winner === 'A' ? 'Team Red Wins' : 'Team Yellow Wins', sub: '' };
     }
     const me = state.you;
-    const myTurn = me && me.team === state.current_team;
     const phase = state.current_phase;
+
+    if (isDuel()) {
+      const clueGiver = state.players.find(p => p.team === duelClueGiverTeam());
+      const guesser = state.players.find(p => p.team === duelGuesserTeam());
+      if (phase === 'clue') {
+        if (amIClueGiver()) {
+          return { line: 'CLUE PHASE', main: 'Your turn to give a clue', sub: `Give ${guesser ? guesser.name : 'opponent'} a clue about their tiles.` };
+        }
+        return { line: 'CLUE PHASE', main: `${clueGiver ? clueGiver.name : 'Opponent'} is writing a clue`, sub: 'Wait for a clue about your tiles.' };
+      }
+      if (phase === 'guess') {
+        if (amIGuesser()) {
+          return { line: 'GUESS PHASE', main: 'Your turn to guess', sub: 'Click tiles you think are yours.' };
+        }
+        return { line: 'GUESS PHASE', main: `${guesser ? guesser.name : 'Opponent'} is guessing`, sub: 'Watching…' };
+      }
+      return { line: '', main: '', sub: '' };
+    }
+
+    // Teams mode
     const team = teamLabel(state.current_team);
+    const myTurn = me && me.team === state.current_team;
     if (phase === 'clue') {
       const sub = myTurn
         ? (me.role === 'spymaster' ? 'Type a clue and number for your guesser.' : 'Wait for your clue giver to send a clue.')
@@ -243,10 +295,19 @@
     `;
 
     // Clue input panel
-    if (!state.done && state.current_phase === 'clue' && myTurn && me.role === 'spymaster') {
-      const teamRemaining = me.team === 'A'
+    if (!state.done && state.current_phase === 'clue' && amIClueGiver()) {
+      let clueAboutTeam;
+      if (isDuel()) {
+        clueAboutTeam = duelGuesserTeam();
+      } else {
+        clueAboutTeam = me.team;
+      }
+      const teamRemaining = clueAboutTeam === 'A'
         ? (state.team_a_total - state.team_a_revealed)
         : (state.team_b_total - state.team_b_revealed);
+      const helpText = isDuel()
+        ? `Give your opponent a clue about their tiles.`
+        : `Up to ${MAX_CLUE_LEN} characters · Number 1–${teamRemaining} (remaining players).`;
       html += `
         <div class="cw-clue-panel">
           <h3>Send a Clue</h3>
@@ -255,7 +316,7 @@
             <input id="cw-clue-number" class="cw-clue-number" type="number" min="1" max="${teamRemaining}" value="1" />
             <button id="cw-clue-submit" class="cw-clue-submit" type="button">Send</button>
           </div>
-          <div class="cw-clue-help">Up to ${MAX_CLUE_LEN} characters · Number 1–${teamRemaining} (your remaining players). <span id="cw-clue-counter" class="cw-clue-counter">0/${MAX_CLUE_LEN}</span></div>
+          <div class="cw-clue-help">${escapeHtml(helpText)} <span id="cw-clue-counter" class="cw-clue-counter">0/${MAX_CLUE_LEN}</span></div>
         </div>
       `;
     }
@@ -264,7 +325,7 @@
     if (!state.done && state.current_phase === 'guess' && state.current_clue) {
       const c = state.current_clue;
       const teamHere = teamLabel(state.current_team);
-      const canEnd = me && me.team === state.current_team && me.role === 'guesser' && (c.guesses_made || 0) >= 1;
+      const canEnd = amIGuesser() && (c.guesses_made || 0) >= 1;
       html += `
         <div class="cw-active-clue">
           <div class="cw-active-clue-text">"${escapeHtml(c.text)}"</div>
@@ -277,17 +338,13 @@
     }
 
     // Board
-    html += '<div class="cw-board">';
+    const gridCols = isDuel() ? 7 : 5;
+    html += `<div class="cw-board" style="grid-template-columns:repeat(${gridCols},1fr);">`;
     for (const cell of state.board) {
       const revealedClass = cell.revealed ? ` revealed team-${cell.team}` : '';
       let keyClass = '';
       if (!cell.revealed && cell.team) keyClass = ` key-${cell.team}`;
-      const guesserActive = !state.done
-        && state.current_phase === 'guess'
-        && me && me.team === state.current_team
-        && me.role === 'guesser'
-        && !cell.revealed;
-      const clickable = guesserActive ? ' clickable' : '';
+      const clickable = (!state.done && state.current_phase === 'guess' && amIGuesser() && !cell.revealed) ? ' clickable' : '';
       const stampLabel = cell.revealed
         ? (cell.team === 'A' ? 'RED' : (cell.team === 'B' ? 'YEL' : 'NEU'))
         : '';

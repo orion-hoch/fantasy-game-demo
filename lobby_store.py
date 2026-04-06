@@ -69,6 +69,18 @@ SUPPORTED_GAMES = {
         "min_players": 4,
         "max_players": 4,
     },
+    "nfl_codewords_duel": {
+        "label": "NFL Code Words Duel",
+        "route": "/nfl_codewords",
+        "min_players": 2,
+        "max_players": 2,
+    },
+    "nba_codewords_duel": {
+        "label": "NBA Code Words Duel",
+        "route": "/nba_codewords",
+        "min_players": 2,
+        "max_players": 2,
+    },
 }
 
 

@@ -57,7 +57,7 @@ def _room_game_state(room: dict):
         return nba_starting5_game_mod.get_game(game_id)
     if game_type in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
         return chain_game_mod.get_game(game_id)
-    if game_type in {"nfl_codewords", "nba_codewords"}:
+    if game_type in {"nfl_codewords", "nba_codewords", "nfl_codewords_duel", "nba_codewords_duel"}:
         return codewords_mod.get_game(game_id)
     return None
 
@@ -207,8 +207,10 @@ def lobby_start_api(room_id):
             sport = "nba" if room["game_type"].startswith("nba_") else "nfl"
             mode = "comp" if room["game_type"].endswith("_comp") else "coop"
             game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens, sport=sport, mode=mode)
-        elif room["game_type"] in {"nfl_codewords", "nba_codewords"}:
-            sport = "nba" if room["game_type"] == "nba_codewords" else "nfl"
+        elif room["game_type"] in {"nfl_codewords", "nba_codewords",
+                                       "nfl_codewords_duel", "nba_codewords_duel"}:
+            sport = "nba" if "nba" in room["game_type"] else "nfl"
+            is_duel = room["game_type"].endswith("_duel")
             cw_players = []
             for _, seat in filled:
                 meta = seat.get("meta") or {}
@@ -219,7 +221,10 @@ def lobby_start_api(room_id):
                     "role": meta.get("role"),
                 })
             try:
-                game_id, _ = codewords_mod.start_game(conn, cw_players, sport=sport)
+                game_id, _ = codewords_mod.start_game(
+                    conn, cw_players, sport=sport,
+                    mode="duel" if is_duel else "teams",
+                )
             except ValueError as exc:
                 return jsonify({"error": str(exc)}), 400
         else:
