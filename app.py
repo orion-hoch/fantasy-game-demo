@@ -37,6 +37,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "fantasy.db")
 
 
+def _request_json_body() -> dict:
+    data = request.get_json(silent=True)
+    return data if isinstance(data, dict) else {}
+
+
 def _build_room_redirect(room_id: str, game_type: str) -> str:
     route = SUPPORTED_GAMES[game_type]["route"]
     return f"{route}?room_id={urllib.parse.quote(room_id)}"
@@ -129,7 +134,7 @@ def starting6():
 
 @app.route("/api/lobbies/create", methods=["POST"])
 def create_lobby_api():
-    data = request.get_json(force=True) or {}
+    data = _request_json_body()
     try:
         room = create_room(data.get("game_type", ""), data.get("player_name", "Host"), data.get("token", ""))
     except Exception as exc:
@@ -148,7 +153,7 @@ def lobby_state_api(room_id):
 
 @app.route("/api/lobbies/<room_id>/claim-seat", methods=["POST"])
 def lobby_claim_seat_api(room_id):
-    data = request.get_json(force=True) or {}
+    data = _request_json_body()
     try:
         room = claim_seat(room_id, data.get("token", ""), data.get("player_name", ""), int(data.get("seat_number", 0)))
     except Exception as exc:
@@ -158,7 +163,7 @@ def lobby_claim_seat_api(room_id):
 
 @app.route("/api/lobbies/<room_id>/leave-seat", methods=["POST"])
 def lobby_leave_seat_api(room_id):
-    data = request.get_json(force=True) or {}
+    data = _request_json_body()
     try:
         room = leave_seat(room_id, data.get("token", ""))
     except Exception as exc:
@@ -168,7 +173,7 @@ def lobby_leave_seat_api(room_id):
 
 @app.route("/api/lobbies/<room_id>/seat-meta", methods=["POST"])
 def lobby_seat_meta_api(room_id):
-    data = request.get_json(force=True) or {}
+    data = _request_json_body()
     try:
         room = update_seat_meta(room_id, data.get("token", ""), data.get("meta", {}) or {})
     except Exception as exc:
@@ -178,63 +183,65 @@ def lobby_seat_meta_api(room_id):
 
 @app.route("/api/lobbies/<room_id>/start", methods=["POST"])
 def lobby_start_api(room_id):
-    room = get_room(room_id)
-    if room is None:
-        return jsonify({"error": "Lobby not found"}), 404
-    data = request.get_json(force=True) or {}
-    token = data.get("token", "")
-    if token != room.get("host_token"):
-        return jsonify({"error": "Only the host can start the game"}), 400
-    filled = occupied_seats(room)
-    if len(filled) < 2:
-        return jsonify({"error": "Need at least 2 seated players to start"}), 400
-    if room.get("status") != "lobby":
-        return jsonify({"error": "Lobby has already started"}), 400
-
-    player_names = [seat["name"] for _, seat in filled]
-    player_tokens = [seat["token"] for _, seat in filled]
-    conn = get_db()
     try:
-        if room["game_type"] == "nfl_bullseye":
-            game_id, _ = nfl_bull.start_game(conn, player_names, player_tokens=player_tokens)
-        elif room["game_type"] == "nba_bullseye":
-            game_id, _ = nba_bull.start_game(conn, player_names, player_tokens=player_tokens)
-        elif room["game_type"] == "starting6":
-            game_id, _ = starting6_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
-        elif room["game_type"] == "nba_starting5":
-            game_id, _ = nba_starting5_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
-        elif room["game_type"] in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
-            sport = "nba" if room["game_type"].startswith("nba_") else "nfl"
-            mode = "comp" if room["game_type"].endswith("_comp") else "coop"
-            game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens, sport=sport, mode=mode)
-        elif room["game_type"] in {"nfl_codewords", "nba_codewords",
-                                       "nfl_codewords_duel", "nba_codewords_duel"}:
-            sport = "nba" if "nba" in room["game_type"] else "nfl"
-            is_duel = room["game_type"].endswith("_duel")
-            cw_players = []
-            for _, seat in filled:
-                meta = seat.get("meta") or {}
-                cw_players.append({
-                    "name": seat["name"],
-                    "token": seat["token"],
-                    "team": meta.get("team"),
-                    "role": meta.get("role"),
-                })
-            try:
-                game_id, _ = codewords_mod.start_game(
-                    conn, cw_players, sport=sport,
-                    mode="duel" if is_duel else "teams",
-                )
-            except ValueError as exc:
-                return jsonify({"error": str(exc)}), 400
-        else:
-            return jsonify({"error": "Unsupported game type"}), 400
-        conn.commit()
-    finally:
-        conn.close()
+        room = get_room(room_id)
+        if room is None:
+            return jsonify({"error": "Lobby not found"}), 404
+        data = _request_json_body()
+        token = data.get("token", "")
+        if token != room.get("host_token"):
+            return jsonify({"error": "Only the host can start the game"}), 400
+        filled = occupied_seats(room)
+        if len(filled) < 2:
+            return jsonify({"error": "Need at least 2 seated players to start"}), 400
+        if room.get("status") != "lobby":
+            return jsonify({"error": "Lobby has already started"}), 400
 
-    room = set_started(room_id, game_id, _build_room_redirect(room_id, room["game_type"]))
-    return jsonify({"room": room_payload(room, token)})
+        player_names = [seat["name"] for _, seat in filled]
+        player_tokens = [seat["token"] for _, seat in filled]
+        conn = get_db()
+        try:
+            if room["game_type"] == "nfl_bullseye":
+                game_id, _ = nfl_bull.start_game(conn, player_names, player_tokens=player_tokens)
+            elif room["game_type"] == "nba_bullseye":
+                game_id, _ = nba_bull.start_game(conn, player_names, player_tokens=player_tokens)
+            elif room["game_type"] == "starting6":
+                game_id, _ = starting6_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
+            elif room["game_type"] == "nba_starting5":
+                game_id, _ = nba_starting5_game_mod.start_game(conn, player_names, player_tokens=player_tokens)
+            elif room["game_type"] in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
+                sport = "nba" if room["game_type"].startswith("nba_") else "nfl"
+                mode = "comp" if room["game_type"].endswith("_comp") else "coop"
+                game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens, sport=sport, mode=mode)
+            elif room["game_type"] in {"nfl_codewords", "nba_codewords", "nfl_codewords_duel", "nba_codewords_duel"}:
+                sport = "nba" if "nba" in room["game_type"] else "nfl"
+                is_duel = room["game_type"].endswith("_duel")
+                cw_players = []
+                for _, seat in filled:
+                    meta = seat.get("meta") or {}
+                    cw_players.append({
+                        "name": seat["name"],
+                        "token": seat["token"],
+                        "team": meta.get("team"),
+                        "role": meta.get("role"),
+                    })
+                try:
+                    game_id, _ = codewords_mod.start_game(
+                        conn, cw_players, sport=sport,
+                        mode="duel" if is_duel else "teams",
+                    )
+                except ValueError as exc:
+                    return jsonify({"error": str(exc)}), 400
+            else:
+                return jsonify({"error": "Unsupported game type"}), 400
+            conn.commit()
+        finally:
+            conn.close()
+
+        room = set_started(room_id, game_id, _build_room_redirect(room_id, room["game_type"]))
+        return jsonify({"room": room_payload(room, token)})
+    except Exception as exc:
+        return jsonify({"error": str(exc) or "Failed to start lobby"}), 500
 
 
 @app.route("/api/lobbies/<room_id>/rematch", methods=["POST"])
@@ -242,7 +249,7 @@ def lobby_rematch_api(room_id):
     room = get_room(room_id)
     if room is None:
         return jsonify({"error": "Lobby not found"}), 404
-    data = request.get_json(force=True) or {}
+    data = _request_json_body()
     token = data.get("token", "")
     if not has_token(room, token):
         return jsonify({"error": "Only lobby players can restart this room"}), 400

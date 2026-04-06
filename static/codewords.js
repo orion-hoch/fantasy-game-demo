@@ -20,6 +20,8 @@
   let pendingAction = false;
   let lastRenderedStateSig = null;
   let lastRenderedError = null;
+  let clueDraftText = '';
+  let clueDraftNumber = 1;
   const nflHeadshotCache = (function () {
     try {
       return JSON.parse(localStorage.getItem(NFL_HEADSHOT_CACHE_KEY)) || {};
@@ -62,6 +64,25 @@
 
   function setError(msg) {
     lastError = msg || '';
+  }
+
+  function resetClueDraft() {
+    clueDraftText = '';
+    clueDraftNumber = 1;
+  }
+
+  function captureClueDraft() {
+    const clueInput = document.getElementById('cw-clue-input');
+    if (clueInput) clueDraftText = clueInput.value || '';
+    const clueNumberEl = document.getElementById('cw-clue-number');
+    if (clueNumberEl) clueDraftNumber = getClueNumber();
+  }
+
+  function shouldDeferInteractiveRender() {
+    const active = document.activeElement;
+    if (!active) return false;
+    const cluePanel = root.querySelector('.cw-clue-panel');
+    return !!cluePanel && cluePanel.contains(active);
   }
 
   function stateSignature(nextState) {
@@ -217,6 +238,7 @@
     if (!numberEl) return;
     const maxValue = Math.max(1, parseInt(numberEl.dataset.max || '1', 10) || 1);
     const safeValue = Math.min(maxValue, Math.max(1, nextValue || 1));
+    clueDraftNumber = safeValue;
     numberEl.dataset.value = String(safeValue);
     numberEl.textContent = String(safeValue);
     if (decBtn) decBtn.disabled = safeValue <= 1;
@@ -255,12 +277,11 @@
 
   async function loadState() {
     if (pendingAction) return;
-    // Skip re-render if user is actively typing in the clue input
-    const clueEl = document.getElementById('cw-clue-input');
-    if (clueEl && document.activeElement === clueEl) return;
+    if (shouldDeferInteractiveRender()) return;
     try {
       const data = await jsonFetch(`/api/codewords/state?game_id=${encodeURIComponent(gameId)}&token=${encodeURIComponent(token())}`);
       state = data.state;
+      if (!state || state.current_phase !== 'clue' || !amIClueGiver()) resetClueDraft();
       setError('');
       const nextSig = stateSignature(state);
       if (nextSig === lastRenderedStateSig && lastRenderedError === '') return;
@@ -276,6 +297,7 @@
   // ── Actions ───────────────────────────────────────────────────────────────
 
   async function submitClue() {
+    if (pendingAction) return;
     const input = document.getElementById('cw-clue-input');
     const numInput = document.getElementById('cw-clue-number');
     if (!input || !numInput) return;
@@ -293,6 +315,7 @@
         body: JSON.stringify({ game_id: gameId, token: token(), clue: clueText, number: number })
       });
       state = data.state;
+      resetClueDraft();
       setError('');
     } catch (err) {
       setError(err.message);
@@ -304,6 +327,7 @@
   }
 
   async function submitGuess(idx) {
+    if (pendingAction) return;
     pendingAction = true;
     try {
       const data = await jsonFetch('/api/codewords/guess', {
@@ -323,6 +347,7 @@
   }
 
   async function endTurn() {
+    if (pendingAction) return;
     pendingAction = true;
     try {
       const data = await jsonFetch('/api/codewords/end_turn', {
@@ -436,8 +461,9 @@
       return;
     }
 
+    captureClueDraft();
+
     const me = state.you;
-    const myTurn = me && me.team === state.current_team;
     const status = statusLines();
 
     let html = '';
@@ -479,6 +505,7 @@
       const teamRemaining = clueAboutTeam === 'A'
         ? (state.team_a_total - state.team_a_revealed)
         : (state.team_b_total - state.team_b_revealed);
+      const clueNumber = Math.min(teamRemaining, Math.max(1, clueDraftNumber || 1));
       const helpText = isDuel()
         ? `Give your opponent a clue about their tiles.`
         : `Up to ${MAX_CLUE_LEN} characters · Number 1–${teamRemaining} (remaining players).`;
@@ -486,10 +513,10 @@
         <div class="cw-clue-panel">
           <h3>Send a Clue</h3>
           <div class="cw-clue-row">
-            <input id="cw-clue-input" class="cw-clue-input" type="text" maxlength="${MAX_CLUE_LEN}" placeholder="e.g. Quarterbacks who won twice" />
+            <input id="cw-clue-input" class="cw-clue-input" type="text" maxlength="${MAX_CLUE_LEN}" value="${escapeHtml(clueDraftText)}" placeholder="e.g. Quarterbacks who won twice" />
             <div class="cw-clue-stepper" aria-label="Clue number selector">
               <button id="cw-clue-decrease" class="cw-clue-step-btn" type="button" aria-label="Decrease clue number">-</button>
-              <div id="cw-clue-number" class="cw-clue-number" data-value="1" data-max="${teamRemaining}" aria-live="polite">1</div>
+              <div id="cw-clue-number" class="cw-clue-number" data-value="${clueNumber}" data-max="${teamRemaining}" aria-live="polite">${clueNumber}</div>
               <button id="cw-clue-increase" class="cw-clue-step-btn" type="button" aria-label="Increase clue number">+</button>
             </div>
             <button id="cw-clue-submit" class="cw-clue-submit" type="button">Send</button>
@@ -528,9 +555,10 @@
         : '';
       const pfrId = sport === 'nfl' ? extractPfrId(cell.headshot_url) : '';
       const initialHeadshotUrl = getInitialHeadshotUrl(cell.headshot_url, pfrId);
+      const headshotStateClass = initialHeadshotUrl ? ' loaded' : ' missing';
       html += `
         <div class="cw-cell${revealedClass}${keyClass}${clickable}" data-index="${cell.index}">
-          <div class="cw-cell-headshot">
+          <div class="cw-cell-headshot${headshotStateClass}">
             <div class="cw-cell-headshot-fallback" aria-hidden="true">?</div>
             <img class="cw-cell-headshot-img" src="${escapeHtml(initialHeadshotUrl)}" data-src="${escapeHtml(cell.headshot_url)}" data-pfr-id="${escapeHtml(pfrId)}" alt="${escapeHtml(cell.name)}" loading="lazy">
           </div>
@@ -587,6 +615,7 @@
     const counter = document.getElementById('cw-clue-counter');
     if (clueInput && counter) {
       const updateCounter = () => {
+        clueDraftText = clueInput.value || '';
         counter.textContent = `${clueInput.value.length}/${MAX_CLUE_LEN}`;
         counter.classList.toggle('over', clueInput.value.length > MAX_CLUE_LEN);
       };

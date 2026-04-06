@@ -328,6 +328,7 @@ header h1 {
   object-position: top center;
   filter: grayscale(0.05) contrast(1.05);
   display: none;
+  pointer-events: none;
 }
 
 .cw-cell-headshot.loaded img {
@@ -372,7 +373,12 @@ header h1 {
 .cw-cell.key-neutral:not(.revealed) { border-color: #6e6e88; }
 
 /* Clickable state — only for current guesser */
-.cw-cell.clickable { cursor: pointer; }
+.cw-cell.clickable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
 .cw-cell.clickable:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--yellow); }
 
 /* Revealed states (everyone sees these) */

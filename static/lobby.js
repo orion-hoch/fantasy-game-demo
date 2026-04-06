@@ -44,7 +44,16 @@
 
   async function jsonFetch(url, options) {
     const res = await fetch(url, options);
-    const data = await res.json();
+    const raw = await res.text();
+    let data = null;
+    try {
+      data = raw ? JSON.parse(raw) : {};
+    } catch (err) {
+      if (!res.ok) {
+        throw new Error('Server returned an invalid response');
+      }
+      throw new Error('Unexpected server response');
+    }
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
   }
