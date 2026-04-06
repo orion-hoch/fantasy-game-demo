@@ -269,7 +269,7 @@
         <label for="lobby-name-input">Display name</label>
         <input id="lobby-name-input" type="text" value="${escapeHtml(getNameFallback())}" maxlength="24">
       </div>
-      ${cw ? `<div class="lobby-note" style="margin-bottom:12px;">${isCodewordsDuel() ? 'Code Words Duel: 2 players, each picks a team. You give clues about the other player\\'s tiles.' : 'Code Words needs exactly 4 players: 2 teams, each with 1 Clue Giver and 1 Guesser.'}</div>` : ''}
+      ${cw ? `<div class="lobby-note" style="margin-bottom:12px;">${isCodewordsDuel() ? "Code Words Duel: 2 players, each picks a team. You give clues about the other player's tiles." : 'Code Words needs exactly 4 players: 2 teams, each with 1 Clue Giver and 1 Guesser.'}</div>` : ''}
       <div class="seat-grid">
         ${Array.from({ length: room.max_players }, function (_, idx) { return idx + 1; }).map(function (seatNo) { return seatCard(seatNo, room.seats[String(seatNo)], room); }).join('')}
       </div>
