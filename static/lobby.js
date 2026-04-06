@@ -11,6 +11,10 @@
   const errorEl = document.getElementById('lobby-error');
   const TOKEN_KEY = 'fantasy-multiplayer-token';
   let pollTimer = null;
+  let seatMetaPending = false;
+  let latestLoadId = 0;
+  let latestRoom = null;
+  let isEditingName = false;
 
   function token() {
     let value = sessionStorage.getItem(TOKEN_KEY);
@@ -27,6 +31,11 @@
 
   function saveName(name) {
     localStorage.setItem('fantasy-multiplayer-name', name);
+  }
+
+  function shouldDeferRoomRender(room) {
+    const active = document.activeElement;
+    return !!room && room.status === 'lobby' && isEditingName && active && active.id === 'lobby-name-input';
   }
 
   function setError(msg) {
@@ -146,7 +155,12 @@
   }
 
   async function setSeatMeta(updates) {
+    if (seatMetaPending) return;
+    seatMetaPending = true;
     try {
+      root.querySelectorAll('[data-cw-team], [data-cw-role]').forEach(function (btn) {
+        btn.disabled = true;
+      });
       await jsonFetch(`/api/lobbies/${roomId}/seat-meta`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,6 +169,8 @@
       await loadRoom();
     } catch (err) {
       setError(err.message);
+    } finally {
+      seatMetaPending = false;
     }
   }
 
@@ -241,6 +257,7 @@
   }
 
   function renderRoom(room) {
+    latestRoom = room;
     if (room.status === 'in_game' && room.redirect_url) {
       window.location.href = room.redirect_url;
       return;
@@ -284,7 +301,24 @@
     });
 
     const nameInput = document.getElementById('lobby-name-input');
-    nameInput.addEventListener('change', function () { saveName(nameInput.value.trim() || 'Player'); });
+    nameInput.addEventListener('focus', function () {
+      isEditingName = true;
+    });
+    nameInput.addEventListener('input', function () {
+      saveName(nameInput.value.trim());
+    });
+    nameInput.addEventListener('change', function () {
+      saveName(nameInput.value.trim() || 'Player');
+    });
+    nameInput.addEventListener('blur', function () {
+      isEditingName = false;
+      saveName(nameInput.value.trim() || 'Player');
+      window.setTimeout(function () {
+        if (!isEditingName && latestRoom && latestRoom.status === 'lobby') {
+          renderRoom(latestRoom);
+        }
+      }, 0);
+    });
 
     root.querySelectorAll('[data-seat]').forEach(function (btn) {
       btn.addEventListener('click', function () { claimSeat(btn.dataset.seat); });
@@ -303,11 +337,16 @@
   }
 
   async function loadRoom() {
+    const loadId = ++latestLoadId;
     try {
       const data = await jsonFetch(`/api/lobbies/${roomId}?token=${encodeURIComponent(token())}`);
+      if (loadId !== latestLoadId) return;
+      latestRoom = data.room;
       setError('');
+      if (shouldDeferRoomRender(data.room)) return;
       renderRoom(data.room);
     } catch (err) {
+      if (loadId !== latestLoadId) return;
       setError(err.message);
     }
   }

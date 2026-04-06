@@ -160,15 +160,44 @@ header h1 {
 .cw-clue-input:focus { border-color: var(--yellow); }
 .cw-clue-input::placeholder { color: var(--text-muted); }
 
-.cw-clue-number {
-  width: 80px;
+.cw-clue-stepper {
+  display: flex;
+  align-items: stretch;
+  min-width: 118px;
   background: var(--surface-2);
   border: 2px solid var(--border-dim);
+}
+
+.cw-clue-step-btn {
+  width: 38px;
+  border: 0;
+  background: var(--surface-3);
+  color: var(--yellow);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cw-clue-step-btn:hover {
+  filter: brightness(1.15);
+}
+
+.cw-clue-step-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cw-clue-number {
+  min-width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text);
   font-family: 'Bebas Neue', Impact, sans-serif;
   font-size: 1.4rem;
   text-align: center;
-  padding: 8px 6px;
+  padding: 8px 10px;
 }
 
 .cw-clue-submit {
@@ -279,12 +308,30 @@ header h1 {
   background: var(--surface-2);
 }
 
+.cw-cell-headshot.loaded .cw-cell-headshot-fallback {
+  display: none;
+}
+
+.cw-cell-headshot-fallback {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 3.2rem;
+  line-height: 1;
+  color: rgba(247, 240, 223, 0.32);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.28);
+  user-select: none;
+}
+
 .cw-cell-headshot img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: top center;
   filter: grayscale(0.05) contrast(1.05);
+  display: none;
+}
+
+.cw-cell-headshot.loaded img {
+  display: block;
 }
 
 .cw-cell-name-bar {

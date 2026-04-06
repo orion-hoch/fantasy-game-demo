@@ -4,6 +4,7 @@
   const TOKEN_KEY = 'fantasy-multiplayer-token';
   const POLL_MS = 1500;
   const MAX_CLUE_LEN = 50;
+  const NFL_HEADSHOT_CACHE_KEY = 'nfl_codewords_headshot_cache_v1';
 
   const root = document.getElementById('cw-root');
   if (!root) return;
@@ -17,6 +18,16 @@
   let pollTimer = null;
   let lastError = '';
   let pendingAction = false;
+  let lastRenderedStateSig = null;
+  let lastRenderedError = null;
+  const nflHeadshotCache = (function () {
+    try {
+      return JSON.parse(localStorage.getItem(NFL_HEADSHOT_CACHE_KEY)) || {};
+    } catch (err) {
+      return {};
+    }
+  })();
+  const nflHeadshotPending = {};
 
   function token() {
     let value = sessionStorage.getItem(TOKEN_KEY);
@@ -51,6 +62,165 @@
 
   function setError(msg) {
     lastError = msg || '';
+  }
+
+  function stateSignature(nextState) {
+    try {
+      return JSON.stringify(nextState || null);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function saveNflHeadshotCache() {
+    try {
+      localStorage.setItem(NFL_HEADSHOT_CACHE_KEY, JSON.stringify(nflHeadshotCache));
+    } catch (err) {
+      // Ignore cache persistence failures.
+    }
+  }
+
+  function extractPfrId(headshotUrl) {
+    const match = String(headshotUrl || '').match(/\/headshots\/([^/_?]+)(?:_\d{4})?\.jpg/i);
+    return match ? match[1] : '';
+  }
+
+  function resolveNflHeadshotUrl(pfrId, callback) {
+    if (!pfrId) {
+      callback(null);
+      return;
+    }
+    if (Object.prototype.hasOwnProperty.call(nflHeadshotCache, pfrId)) {
+      callback(nflHeadshotCache[pfrId]);
+      return;
+    }
+    if (nflHeadshotPending[pfrId]) {
+      nflHeadshotPending[pfrId].push(callback);
+      return;
+    }
+
+    nflHeadshotPending[pfrId] = [callback];
+
+    const newBase = 'https://www.pro-football-reference.com/req/20230307/images/headshots/';
+    const oldBase = 'https://www.pro-football-reference.com/req/20180910/images/headshots/';
+    const currentYear = new Date().getFullYear();
+    const urls = [newBase + pfrId + '.jpg'];
+    for (let year = currentYear; year >= 2000; year--) {
+      urls.push(newBase + pfrId + '_' + year + '.jpg');
+    }
+    urls.push(oldBase + pfrId + '.jpg');
+
+    let index = 0;
+    function finish(url) {
+      nflHeadshotCache[pfrId] = url;
+      saveNflHeadshotCache();
+      const callbacks = nflHeadshotPending[pfrId] || [];
+      delete nflHeadshotPending[pfrId];
+      callbacks.forEach(function (cb) { cb(url); });
+    }
+    function tryNext() {
+      if (index >= urls.length) {
+        finish(null);
+        return;
+      }
+      const probe = new Image();
+      probe.onload = function () { finish(urls[index]); };
+      probe.onerror = function () {
+        index += 1;
+        tryNext();
+      };
+      probe.src = urls[index];
+    }
+    tryNext();
+  }
+
+  function markHeadshotLoaded(wrap) {
+    wrap.classList.remove('missing');
+    wrap.classList.add('loaded');
+  }
+
+  function markHeadshotMissing(wrap) {
+    wrap.classList.remove('loaded');
+    wrap.classList.add('missing');
+  }
+
+  function getInitialHeadshotUrl(directUrl, pfrId) {
+    if (sport === 'nfl' && pfrId && Object.prototype.hasOwnProperty.call(nflHeadshotCache, pfrId)) {
+      return nflHeadshotCache[pfrId] || '';
+    }
+    return directUrl || '';
+  }
+
+  function setHeadshotLoaded(img, url) {
+    const wrap = img.closest('.cw-cell-headshot');
+    if (!wrap) return;
+    if (!url) {
+      markHeadshotMissing(wrap);
+      return;
+    }
+    img.onload = function () {
+      markHeadshotLoaded(wrap);
+    };
+    img.onerror = function () {
+      markHeadshotMissing(wrap);
+    };
+    if (img.getAttribute('src') === url) {
+      if (img.complete) {
+        if (img.naturalWidth > 0) markHeadshotLoaded(wrap);
+        else markHeadshotMissing(wrap);
+      }
+      return;
+    }
+    img.src = url;
+  }
+
+  function initHeadshots() {
+    root.querySelectorAll('.cw-cell-headshot').forEach(function (wrap) {
+      const img = wrap.querySelector('.cw-cell-headshot-img');
+      if (!img) return;
+
+      const directUrl = img.dataset.src || '';
+      const pfrId = img.dataset.pfrId || '';
+      const initialUrl = img.getAttribute('src') || '';
+      if (initialUrl) {
+        setHeadshotLoaded(img, initialUrl);
+        return;
+      }
+
+      markHeadshotMissing(wrap);
+
+      if (sport === 'nfl' && pfrId) {
+        resolveNflHeadshotUrl(pfrId, function (resolvedUrl) {
+          if (!img.isConnected) return;
+          if (!resolvedUrl) return;
+          setHeadshotLoaded(img, resolvedUrl);
+        });
+        return;
+      }
+      if (directUrl) {
+        setHeadshotLoaded(img, directUrl);
+      }
+    });
+  }
+
+  function getClueNumber() {
+    const numberEl = document.getElementById('cw-clue-number');
+    if (!numberEl) return 1;
+    const value = parseInt(numberEl.dataset.value || numberEl.textContent || '1', 10);
+    return Number.isFinite(value) && value >= 1 ? value : 1;
+  }
+
+  function setClueNumber(nextValue) {
+    const numberEl = document.getElementById('cw-clue-number');
+    const decBtn = document.getElementById('cw-clue-decrease');
+    const incBtn = document.getElementById('cw-clue-increase');
+    if (!numberEl) return;
+    const maxValue = Math.max(1, parseInt(numberEl.dataset.max || '1', 10) || 1);
+    const safeValue = Math.min(maxValue, Math.max(1, nextValue || 1));
+    numberEl.dataset.value = String(safeValue);
+    numberEl.textContent = String(safeValue);
+    if (decBtn) decBtn.disabled = safeValue <= 1;
+    if (incBtn) incBtn.disabled = safeValue >= maxValue;
   }
 
   // ── Bootstrap: discover the game id by polling the lobby ──────────────────
@@ -92,9 +262,13 @@
       const data = await jsonFetch(`/api/codewords/state?game_id=${encodeURIComponent(gameId)}&token=${encodeURIComponent(token())}`);
       state = data.state;
       setError('');
+      const nextSig = stateSignature(state);
+      if (nextSig === lastRenderedStateSig && lastRenderedError === '') return;
       render();
     } catch (err) {
       setError(err.message);
+      const nextSig = stateSignature(state);
+      if (nextSig === lastRenderedStateSig && lastRenderedError === lastError) return;
       render();
     }
   }
@@ -106,7 +280,7 @@
     const numInput = document.getElementById('cw-clue-number');
     if (!input || !numInput) return;
     const clueText = (input.value || '').trim();
-    const number = parseInt(numInput.value, 10);
+    const number = getClueNumber();
     if (!clueText) { setError('Type a clue first.'); render(); return; }
     if (clueText.length > MAX_CLUE_LEN) { setError(`Clue must be ${MAX_CLUE_LEN} characters or less.`); render(); return; }
     if (!Number.isFinite(number) || number < 1) { setError('Pick a number ≥ 1.'); render(); return; }
@@ -313,7 +487,11 @@
           <h3>Send a Clue</h3>
           <div class="cw-clue-row">
             <input id="cw-clue-input" class="cw-clue-input" type="text" maxlength="${MAX_CLUE_LEN}" placeholder="e.g. Quarterbacks who won twice" />
-            <input id="cw-clue-number" class="cw-clue-number" type="number" min="1" max="${teamRemaining}" value="1" />
+            <div class="cw-clue-stepper" aria-label="Clue number selector">
+              <button id="cw-clue-decrease" class="cw-clue-step-btn" type="button" aria-label="Decrease clue number">-</button>
+              <div id="cw-clue-number" class="cw-clue-number" data-value="1" data-max="${teamRemaining}" aria-live="polite">1</div>
+              <button id="cw-clue-increase" class="cw-clue-step-btn" type="button" aria-label="Increase clue number">+</button>
+            </div>
             <button id="cw-clue-submit" class="cw-clue-submit" type="button">Send</button>
           </div>
           <div class="cw-clue-help">${escapeHtml(helpText)} <span id="cw-clue-counter" class="cw-clue-counter">0/${MAX_CLUE_LEN}</span></div>
@@ -348,10 +526,13 @@
       const stampLabel = cell.revealed
         ? (cell.team === 'A' ? 'RED' : (cell.team === 'B' ? 'YEL' : 'NEU'))
         : '';
+      const pfrId = sport === 'nfl' ? extractPfrId(cell.headshot_url) : '';
+      const initialHeadshotUrl = getInitialHeadshotUrl(cell.headshot_url, pfrId);
       html += `
         <div class="cw-cell${revealedClass}${keyClass}${clickable}" data-index="${cell.index}">
           <div class="cw-cell-headshot">
-            <img src="${escapeHtml(cell.headshot_url)}" alt="${escapeHtml(cell.name)}" loading="lazy" onerror="this.style.display='none'">
+            <div class="cw-cell-headshot-fallback" aria-hidden="true">?</div>
+            <img class="cw-cell-headshot-img" src="${escapeHtml(initialHeadshotUrl)}" data-src="${escapeHtml(cell.headshot_url)}" data-pfr-id="${escapeHtml(pfrId)}" alt="${escapeHtml(cell.name)}" loading="lazy">
           </div>
           ${stampLabel ? `<div class="cw-cell-stamp">${stampLabel}</div>` : ''}
           <div class="cw-cell-name-bar"><div class="cw-cell-name">${escapeHtml(cell.name)}</div></div>
@@ -388,10 +569,19 @@
     }
 
     root.innerHTML = html;
+    lastRenderedStateSig = stateSignature(state);
+    lastRenderedError = lastError;
+    initHeadshots();
 
     // Wire up handlers
     const submitBtn = document.getElementById('cw-clue-submit');
     if (submitBtn) submitBtn.addEventListener('click', submitClue);
+
+    const decBtn = document.getElementById('cw-clue-decrease');
+    const incBtn = document.getElementById('cw-clue-increase');
+    if (decBtn) decBtn.addEventListener('click', function () { setClueNumber(getClueNumber() - 1); });
+    if (incBtn) incBtn.addEventListener('click', function () { setClueNumber(getClueNumber() + 1); });
+    if (decBtn || incBtn) setClueNumber(getClueNumber());
 
     const clueInput = document.getElementById('cw-clue-input');
     const counter = document.getElementById('cw-clue-counter');
