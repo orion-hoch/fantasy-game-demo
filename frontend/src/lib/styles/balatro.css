@@ -2932,12 +2932,16 @@
 /* NPC panel in shop */
 #bal-app .npc-panel {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 12px;
   padding: 12px;
   margin-top: 12px;
   background: rgba(0,0,0,0.2);
   border: 1px solid rgba(255,255,255,0.08);
+  height: auto;
+  min-height: 0;
 }
 
 #bal-app .npc-nameplate {
@@ -2971,7 +2975,9 @@
   font-size: 0.75rem;
   color: var(--nb-dim, #8888bb);
   font-style: italic;
-  flex: 1;
+  flex: 1 1 auto;
+  width: auto;
+  margin: 0;
 }
 
 /* ── Rarity color classes ─────────────────────────────────────────── */
@@ -3386,3 +3392,78 @@ body.bal-page .layout-shell {
 
 /* Pack reveal yellow rim shouldn't have yellow text inside */
 #bal-app .pack-reveal-card .card-front { color: var(--text-dark); }
+
+/* Force full-width playable layout and keep bottom actions visible */
+html,
+body.bal-page {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  height: auto;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body.bal-page .layout-shell {
+  width: 100vw;
+  max-width: none;
+  min-height: 100dvh;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+#bal-app {
+  width: 100vw;
+  min-height: 100dvh;
+  height: auto;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: visible;
+}
+
+#bal-app .screen,
+#bal-app .screen.active,
+#bal-app #game-screen {
+  min-height: 100dvh;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+#bal-app #hand-area {
+  overflow: visible;
+}
+
+#bal-app #hand-cards {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: visible;
+  flex-wrap: nowrap;
+  padding: 8px 8px 14px;
+}
+
+#bal-app #action-buttons {
+  position: sticky;
+  bottom: 0;
+  z-index: 220;
+  width: 100%;
+  justify-content: stretch;
+  gap: 10px;
+  padding: 12px max(10px, env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
+  border-top: 3px solid var(--card-border);
+  background: rgba(18, 18, 42, 0.96);
+  backdrop-filter: blur(4px);
+}
+
+#bal-app .btn-play,
+#bal-app .btn-discard {
+  flex: 1 1 0;
+  min-height: 56px;
+  padding: 14px 10px;
+  font-size: clamp(1rem, 2.8vw, 1.25rem);
+  letter-spacing: 2px;
+}
