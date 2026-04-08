@@ -3399,29 +3399,41 @@ body.bal-page {
   width: 100%;
   max-width: 100%;
   min-height: 100dvh;
-  overflow-x: hidden;
+  height: auto !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
 }
 
 body.bal-page .layout-shell {
   width: 100%;
   max-width: none;
   min-height: 100dvh;
+  height: auto !important;
+  max-height: none !important;
   padding: 0;
+  overflow: visible !important;
 }
 
 #bal-app {
   width: 100%;
   min-height: 100dvh;
+  height: auto !important;
+  max-height: none !important;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
+  overflow-y: visible !important;
 }
 
 #bal-app .screen.active,
 #bal-app #game-screen {
   min-height: 100dvh;
+  height: auto !important;
+  max-height: none !important;
   display: flex;
   flex-direction: column;
+  overflow: visible !important;
 }
 
 #bal-app #hand-area {
@@ -3461,7 +3473,7 @@ body.bal-page .layout-shell {
 /* Desktop: fit cards on-screen; no horizontal swipe needed */
 @media (min-width: 1024px) {
   #bal-app #hand-cards {
-    --card-min: 92px;
+    --card-min: 70px;
     overflow-x: hidden;
     justify-content: center;
     padding-inline: 10px;
