@@ -10,8 +10,11 @@
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
   },
+  "engines": {
+    "node": "20.x"
+  },
   "devDependencies": {
-    "@sveltejs/adapter-auto": "^3.3.1",
+    "@sveltejs/adapter-vercel": "^5.8.1",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "svelte": "^5.19.0",
