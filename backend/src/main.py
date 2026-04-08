@@ -3,11 +3,14 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.config import settings
 from src.legacy.bridge import REPO_ROOT  # must be first — adds repo root to sys.path
+from src.redis_client import check_redis_health
 
 from src.balatro.router import compat_router as balatro_compat_router
 from src.balatro.router import router as balatro_router
@@ -58,4 +61,16 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "mode": "strangler", "api_prefix": settings.api_prefix}
+    redis_health = await run_in_threadpool(check_redis_health)
+    payload = {
+        "status": "healthy",
+        "mode": "strangler",
+        "api_prefix": settings.api_prefix,
+        "redis": redis_health,
+    }
+
+    if redis_health["configured"] and redis_health["status"] != "ok":
+        payload["status"] = "degraded"
+        return JSONResponse(status_code=503, content=payload)
+
+    return payload

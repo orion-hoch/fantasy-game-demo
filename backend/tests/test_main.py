@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from src.legacy.bridge import ensure_repo_on_path
 from src.main import app
+from src.redis_client import get_redis_client
 
 ensure_repo_on_path()
 
@@ -28,6 +29,20 @@ async def test_root(client: AsyncClient):
     response = await client.get("/")
     assert response.status_code == 200
     assert response.json()["mode"] == "strangler"
+
+
+@pytest.mark.asyncio
+async def test_health_without_redis_config(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr("src.config.settings.upstash_redis_rest_url", None)
+    monkeypatch.setattr("src.config.settings.upstash_redis_rest_token", None)
+    get_redis_client.cache_clear()
+
+    response = await client.get("/health")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "healthy"
+    assert body["redis"]["configured"] is False
+    assert body["redis"]["status"] == "not_configured"
 
 
 @pytest.mark.asyncio
