@@ -62,6 +62,7 @@
   let gameWon = $state(false);
   let sfxMuted = $state(SFX.isMuted());
   let statsOpen = $state(false);
+  let deckViewOpen = $state(false);
 
   // Card flip state
   let flippedCardIds = $state<Set<string>>(new Set());
@@ -150,6 +151,35 @@
     if (sport === 'nba') return String(season + 1);
     return String(season);
   }
+
+  function getDeckGroups(): Array<{ pos: string; cards: Card[] }> {
+    const posOrder = sport === 'nfl' ? ['QB', 'RB', 'WR', 'TE'] : ['G', 'F', 'C'];
+    const seen = new Set<string>();
+    const merged = [...hand, ...deckCards, ...heldCards].filter((card) => {
+      if (!card?.id || seen.has(card.id)) return false;
+      seen.add(card.id);
+      return true;
+    });
+
+    const groups = posOrder.map((pos) => ({
+      pos,
+      cards: merged
+        .filter((card) => (card.pos || '').toUpperCase() === pos)
+        .sort((a, b) => (b.fantasy_pts || b.pts || 0) - (a.fantasy_pts || a.pts || 0)),
+    }));
+
+    const otherCards = merged
+      .filter((card) => !posOrder.includes((card.pos || '').toUpperCase()))
+      .sort((a, b) => (b.fantasy_pts || b.pts || 0) - (a.fantasy_pts || a.pts || 0));
+
+    if (otherCards.length) {
+      groups.push({ pos: 'OTHER', cards: otherCards });
+    }
+
+    return groups.filter((group) => group.cards.length > 0);
+  }
+
+  const deckGroups = $derived.by(() => getDeckGroups());
 
   function addLog(msg: string) {
     logEntries = [msg, ...logEntries.slice(0, 49)];
@@ -828,7 +858,7 @@
           </div>
           <span id="score-text">{formatNum(currentScore)} / {formatNum(targetScore)}</span>
         </div>
-        <div id="actions-info">
+          <div id="actions-info">
           <div id="coins-display" class="action-badge">
             <span class="action-icon action-icon-coin">$</span>
             <span id="coins-count">{coins}</span>
@@ -844,10 +874,13 @@
             <span id="discards-count">{discardsRemaining}</span>
             <span class="action-label">Discards</span>
           </div>
-          <button class="btn-stats" type="button" onclick={() => statsOpen = !statsOpen}>STATS</button>
-          <button class="sfx-mute-btn" type="button" onclick={toggleMute} title={sfxMuted ? 'Unmute' : 'Mute'}>
-            {sfxMuted ? 'UNMUTE' : 'MUTE'}
-          </button>
+            <button class="btn-stats" type="button" onclick={() => statsOpen = !statsOpen}>STATS</button>
+            <button class="btn-stats" type="button" onclick={() => (deckViewOpen = true)}>
+              DECK ({Math.max(hand.length + deckCards.length + heldCards.length, hand.length)})
+            </button>
+            <button class="sfx-mute-btn" type="button" onclick={toggleMute} title={sfxMuted ? 'Unmute' : 'Mute'}>
+              {sfxMuted ? 'UNMUTE' : 'MUTE'}
+            </button>
         </div>
       </div>
 
@@ -1127,6 +1160,68 @@
           DISCARD ({discardsRemaining})
         </button>
       </div>
+
+      {#if deckViewOpen}
+        <div class="full-overlay" id="deck-viewer-overlay">
+          <div class="deck-viewer-header">
+            <div class="deck-viewer-title">Deck View</div>
+            <button class="btn-secondary" type="button" onclick={() => (deckViewOpen = false)}>Close</button>
+          </div>
+
+          {#if deckGroups.length === 0}
+            <div class="deck-empty-msg">No deck cards available yet.</div>
+          {:else}
+            {#each deckGroups as group}
+              <div class="deck-pos-group">
+                <div class="deck-pos-header pos-{group.pos.toLowerCase()}">{group.pos} ({group.cards.length})</div>
+                <div class="deck-cards-grid">
+                  {#each group.cards as card}
+                    {@const divInfo = getDivInfo(card.team)}
+                    {@const splitName = card.player.split(' ')}
+                    {@const firstName = splitName.length > 1 ? splitName[0] : ''}
+                    {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
+                    {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
+                    <div class="card {posClass(card.pos)}">
+                      <div class="card-inner">
+                        <div class="card-front">
+                          <div class="card-top-row">
+                            <div class="card-name-box">
+                              <div class="card-year-line">
+                                {card.season ? "'" + String(displayYear(card.season)).slice(-2) : ''}
+                                {card.team ? ' · ' + card.team : ''}
+                              </div>
+                              {#if firstName}<div class="card-player-first">{firstName}</div>{/if}
+                              <div class="card-player-last">{lastName}</div>
+                            </div>
+                            <div class="card-top-right">
+                              <div class="card-score-box">{pts}</div>
+                            </div>
+                          </div>
+                          <div class="card-headshot">
+                            {#if card.headshot_url}
+                              <img class="card-headshot-img" src={card.headshot_url} alt="" onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                            {:else}
+                              <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
+                            {/if}
+                          </div>
+                          <div class="card-bottom-row">
+                            <div class="card-footer-div">
+                              {#if divInfo}
+                                <div class="card-div-badge {divInfo.cls}">{divInfo.label}</div>
+                              {/if}
+                            </div>
+                            <span class="card-pos-badge">{card.pos}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/each}
+          {/if}
+        </div>
+      {/if}
     </div>
 
   <!-- REWARD SCREEN -->
