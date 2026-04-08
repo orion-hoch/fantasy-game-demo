@@ -985,7 +985,7 @@
             <button class="btn-sort" class:active={currentSort === 'pts'} type="button" onclick={() => sortHand('pts')}>Sort Points</button>
           </div>
         </div>
-        <div id="hand-cards">
+        <div id="hand-cards" style={`--hand-count: ${Math.max(hand.length, 1)};`}>
           {#each hand as card (card.id)}
             {@const effects = cardEffects[card.id] || []}
             {@const isFlipped = flippedCardIds.has(card.id)}

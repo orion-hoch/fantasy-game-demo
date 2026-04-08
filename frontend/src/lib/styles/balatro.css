@@ -3393,57 +3393,79 @@ body.bal-page .layout-shell {
 /* Pack reveal yellow rim shouldn't have yellow text inside */
 #bal-app .pack-reveal-card .card-front { color: var(--text-dark); }
 
-/* Force full-width playable layout and keep bottom actions visible */
+/* Final gameplay layout: centered, scaled, and no desktop side-shift */
 html,
 body.bal-page {
   width: 100%;
   max-width: 100%;
   min-height: 100dvh;
-  height: auto;
-  max-height: none;
   overflow-x: hidden;
-  overflow-y: auto;
 }
 
 body.bal-page .layout-shell {
-  width: 100vw;
+  width: 100%;
   max-width: none;
   min-height: 100dvh;
-  height: auto;
-  max-height: none;
-  overflow: visible;
+  padding: 0;
 }
 
 #bal-app {
-  width: 100vw;
+  width: 100%;
   min-height: 100dvh;
-  height: auto;
-  max-height: none;
+  display: flex;
+  flex-direction: column;
   overflow-x: hidden;
-  overflow-y: visible;
 }
 
-#bal-app .screen,
 #bal-app .screen.active,
 #bal-app #game-screen {
   min-height: 100dvh;
-  height: auto;
-  max-height: none;
-  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 #bal-app #hand-area {
-  overflow: visible;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 12px 6px;
 }
 
 #bal-app #hand-cards {
+  --hand-gap: clamp(6px, 1.1vw, 12px);
+  --hand-count: 6;
+  --card-min: 108px;
+  --card-max: 164px;
+  --card-fit: calc((100% - (var(--hand-count) - 1) * var(--hand-gap)) / var(--hand-count));
+  --card-width: clamp(var(--card-min), var(--card-fit), var(--card-max));
+
   width: 100%;
-  justify-content: flex-start;
-  gap: 10px;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hand-gap);
+  flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: visible;
-  flex-wrap: nowrap;
-  padding: 8px 8px 14px;
+  padding: 8px 4px 14px;
+  scroll-padding-inline: 12px;
+}
+
+#bal-app #hand-cards > .card {
+  width: var(--card-width);
+  height: calc(var(--card-width) * 1.5);
+  flex: 0 0 auto;
+}
+
+/* Desktop: fit cards on-screen; no horizontal swipe needed */
+@media (min-width: 1024px) {
+  #bal-app #hand-cards {
+    --card-min: 92px;
+    overflow-x: hidden;
+    justify-content: center;
+    padding-inline: 10px;
+  }
 }
 
 #bal-app #action-buttons {
@@ -3451,7 +3473,8 @@ body.bal-page .layout-shell {
   bottom: 0;
   z-index: 220;
   width: 100%;
-  justify-content: stretch;
+  display: flex;
+  justify-content: center;
   gap: 10px;
   padding: 12px max(10px, env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right));
   border-top: 3px solid var(--card-border);
@@ -3461,9 +3484,10 @@ body.bal-page .layout-shell {
 
 #bal-app .btn-play,
 #bal-app .btn-discard {
-  flex: 1 1 0;
+  flex: 1 1 220px;
   min-height: 56px;
-  padding: 14px 10px;
-  font-size: clamp(1rem, 2.8vw, 1.25rem);
+  max-width: 420px;
+  padding: 14px 12px;
+  font-size: clamp(1rem, 2.6vw, 1.25rem);
   letter-spacing: 2px;
 }
