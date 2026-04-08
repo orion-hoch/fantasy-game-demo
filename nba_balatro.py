@@ -9,7 +9,7 @@ from session_store import GameStore
 _TTL = 3600 * 4
 _GAMES = GameStore("nba_balatro", ttl_seconds=_TTL)
 
-POS_MULT = {"G": 1.0, "F": 1.5, "C": 2.5}
+POS_MULT = {"G": 1.5, "F": 1.5, "C": 1.5}
 POS_ORDER = ["G", "F", "C"]
 
 # ── NBA Conferences ────────────────────────────────────────────────────────────
@@ -1188,6 +1188,14 @@ def play_hand(gid, card_ids):
         fight = g.get("fight", 1)
         round_num = g.get("round", 1)
         mode = g.get("mode", "normal")
+        # Bonus: $1 per remaining hand when fight is won
+        hand_bonus = g["hands_remaining"]
+        if hand_bonus > 0:
+            g["coins"] += hand_bonus
+            coins_earned += hand_bonus
+            result["coins"] = g["coins"]
+            result["coins_earned"] = coins_earned
+            result["hand_bonus"] = hand_bonus
         if mode != "infinity" and fight == 3 and round_num >= 8:
             g["status"] = "won_game"
             result["status"] = "won_game"

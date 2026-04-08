@@ -822,7 +822,7 @@
   font-size: 0.85rem;
 }#bal-app .deck-cards-grid .card .card-year-line {
   display: none;
-}#bal-app .div-afc-east { background: #1e90ff; }#bal-app .div-afc-north { background: #9b59b6; }#bal-app .div-afc-south { background: #1abc9c; }#bal-app .div-afc-west { background: #e67e22; }#bal-app .div-nfc-east { background: #2980b9; }#bal-app .div-nfc-north { background: #27ae60; }#bal-app .div-nfc-south { background: #c0392b; color: #fff; }#bal-app .div-nfc-west { background: #d4a017; }/* Royal Flush highlight in hand types list */#bal-app .ht-royal { border-left: 4px solid #ffd700 !important; background: rgba(255,215,0,0.08) !important; }#bal-app .ht-royal .ht-name { color: #ffd700 !important; }#bal-app .ht-royal .ht-mult { color: #ffd700 !important; }#bal-app .card.selected .card-front {
+}#bal-app .div-afc-east { background: #1e90ff; color: #fff; }#bal-app .div-afc-north { background: #9b59b6; color: #fff; }#bal-app .div-afc-south { background: #1abc9c; color: #fff; }#bal-app .div-afc-west { background: #e67e22; color: #fff; }#bal-app .div-nfc-east { background: #2980b9; color: #fff; }#bal-app .div-nfc-north { background: #27ae60; color: #fff; }#bal-app .div-nfc-south { background: #c0392b; color: #fff; }#bal-app .div-nfc-west { background: #d4a017; color: #1a1a1a; }/* Royal Flush highlight in hand types list */#bal-app .ht-royal { border-left: 4px solid #ffd700 !important; background: rgba(255,215,0,0.08) !important; }#bal-app .ht-royal .ht-name { color: #ffd700 !important; }#bal-app .ht-royal .ht-mult { color: #ffd700 !important; }#bal-app .card.selected .card-front {
   border-color: var(--accent-yellow);
   box-shadow: 0 0 0 2px var(--accent-yellow), var(--shadow-comic);
 }/* Selected indicator dot */#bal-app .card.selected:not(.flipped)::before {
@@ -2989,6 +2989,47 @@
   border: 2px solid rgba(0,0,0,0.3);
 }
 
+/* ── Shop item images (joker fan + buy_card headshot) ─────────────── */
+#bal-app .shop-item-icon-area {
+  position: relative;
+  overflow: hidden;
+}
+#bal-app .shop-item-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.25);
+  background: #0e1130;
+  display: block;
+}
+#bal-app .shop-item-img.headshot-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.35);
+  object-fit: cover;
+  object-position: center top;
+}
+#bal-app .shop-item-img.joker-fan-img {
+  border: 2px solid rgba(255,215,0,0.5);
+  box-shadow: 0 0 8px rgba(255,215,0,0.25);
+}
+#bal-app .shop-item-pos-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 1px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--pos-color, #444);
+  color: #fff;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.6);
+  border: 1px solid rgba(0,0,0,0.4);
+}
+
 /* ── Scoring state: dim body background ───────────────────────────── */
 #bal-app #game-screen.scoring {
   background: rgba(0,0,0,0.3);
@@ -3063,7 +3104,7 @@
 #bal-app .shop-coins {
   font-family: Impact, 'Arial Black', sans-serif;
   font-size: 1.3rem;
-  color: var(--accent-yellow);
+  color: var(--text-dark);
   letter-spacing: 1px;
 }
 
@@ -3082,3 +3123,266 @@
 #bal-app .div-northwest { background: #388e3c; color: white; }
 #bal-app .div-pacific { background: #7b1fa2; color: white; }
 #bal-app .div-southwest { background: #00796b; color: white; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIT-TO-SCREEN OVERRIDES — no scrollbar, smaller cards, bigger UI
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Lock the page so the game owns the viewport (no body scroll) */
+html, body.bal-page {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+body.bal-page .layout-shell {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+#bal-app {
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#bal-app .screen.active {
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+#bal-app #game-screen {
+  height: 100vh;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Reward / shop / gameover screens may scroll internally if needed */
+#bal-app #shop-screen.active,
+#bal-app #reward-screen.active,
+#bal-app #gameover-screen.active {
+  overflow-y: auto;
+}
+
+/* Top bar — bigger, more readable */
+#bal-app #top-bar {
+  padding: 12px 22px;
+  gap: 22px;
+  flex-shrink: 0;
+}
+#bal-app #level-name-display {
+  font-size: 1.35rem;
+  letter-spacing: 3px;
+}
+#bal-app #floor-display {
+  font-size: 0.78rem;
+  padding: 3px 10px;
+}
+#bal-app #score-text {
+  font-size: 1.05rem;
+}
+#bal-app #score-bar-wrapper {
+  height: 22px;
+}
+#bal-app .action-badge {
+  padding: 8px 16px;
+  min-width: 70px;
+}
+#bal-app .action-badge span[id] {
+  font-size: 1.75rem;
+}
+#bal-app .action-label {
+  font-size: 0.62rem;
+}
+#bal-app .action-icon {
+  font-size: 0.78rem;
+}
+
+/* Jokers section — compress vertical space */
+#bal-app #jokers-section {
+  padding: 6px 16px;
+  flex-shrink: 0;
+}
+#bal-app .joker-slot {
+  width: 78px;
+  height: 56px;
+}
+#bal-app .joker-slot.filled {
+  height: 64px;
+}
+
+/* Boss / fight timeline — compress */
+#bal-app #fight-timeline {
+  padding: 6px 16px;
+  flex-shrink: 0;
+}
+#bal-app .timeline-dot { width: 18px; height: 18px; }
+#bal-app .timeline-label { font-size: 0.78rem; }
+
+/* Hand preview — compress */
+#bal-app #hand-preview {
+  min-height: 36px;
+  padding: 3px 16px;
+  flex-shrink: 0;
+}
+
+/* Play log — compress */
+#bal-app #play-log-wrapper {
+  padding: 3px 16px;
+  min-height: 24px;
+  flex-shrink: 0;
+}
+
+/* Hand area takes the remaining vertical space */
+#bal-app #hand-area {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 6px 12px 4px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Hand cards — center horizontally, no overflow scroll */
+#bal-app #hand-cards {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  padding: 4px 4px;
+}
+
+/* SMALLER cards so they fit horizontally */
+#bal-app .card {
+  width: 118px;
+  height: 178px;
+  transition:
+    transform 0.28s cubic-bezier(0.34, 1.4, 0.5, 1),
+    box-shadow 0.25s ease;
+}
+#bal-app .card.selected {
+  transform: translateY(-14px);
+}
+#bal-app .card-headshot {
+  min-height: 60px;
+}
+#bal-app .card-inner {
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Action buttons — bigger and bolder */
+#bal-app #action-buttons {
+  padding: 14px 20px;
+  gap: 16px;
+  flex-shrink: 0;
+}
+#bal-app .btn-play {
+  padding: 18px 70px;
+  font-size: 1.45rem;
+  letter-spacing: 4px;
+}
+#bal-app .btn-discard {
+  padding: 18px 50px;
+  font-size: 1.35rem;
+  letter-spacing: 3px;
+}
+#bal-app .btn-sort {
+  font-size: 0.72rem;
+  padding: 5px 12px;
+}
+#bal-app .btn-stats {
+  font-size: 1rem;
+  padding: 6px 12px;
+}
+
+/* ── Smoother scoring / deal animations ───────────────────────────── */
+@keyframes card-deal-in {
+  0% {
+    transform: translateY(180px) rotate(10deg) scale(0.55);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) rotate(0) scale(1);
+    opacity: 1;
+  }
+}
+#bal-app .card.dealing {
+  animation: card-deal-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes card-score-pop {
+  0%   { transform: translateY(0)    scale(1); }
+  35%  { transform: translateY(-16px) scale(1.10); }
+  65%  { transform: translateY(-8px)  scale(1.05); }
+  100% { transform: translateY(0)    scale(1); }
+}
+#bal-app .card.scoring-active .card-inner {
+  animation: card-score-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   YELLOW-ON-YELLOW AUDIT — never put yellow text on yellow surface
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Joker slot is yellow — text must be dark, rarity gets a chip background */
+#bal-app .joker-slot.filled .joker-name { color: var(--text-dark); }
+#bal-app .joker-slot.filled .joker-desc { color: rgba(0,0,0,0.78); }
+#bal-app .joker-slot.filled .joker-rarity {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.78);
+  color: #fff;
+  font-size: 0.55rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+#bal-app .joker-slot.filled .joker-rarity.rarity-common    { background: var(--rarity-common); color: #0a0a0a; }
+#bal-app .joker-slot.filled .joker-rarity.rarity-uncommon  { background: var(--rarity-uncommon); color: #fff; }
+#bal-app .joker-slot.filled .joker-rarity.rarity-rare      { background: var(--rarity-rare); color: #fff; }
+#bal-app .joker-slot.filled .joker-rarity.rarity-legendary { background: #1a1a1a; color: var(--rarity-legendary); }
+
+/* Score bar wrapper background is yellow → score-bar uses red, label stays white */
+#bal-app #score-bar { background: var(--accent-red); }
+
+/* Coin badge: yellow background → dark numerals */
+#bal-app .action-icon-coin { color: #1a1a1a !important; }
+
+/* Marquee / store-marquee is yellow background → ensure dark text */
+#bal-app .store-marquee {
+  color: var(--text-dark) !important;
+}
+
+/* Sort button active state is yellow → dark text */
+#bal-app .btn-sort.active {
+  color: var(--text-dark) !important;
+}
+
+/* btn-discard is dark with yellow border but its label is light — keep light */
+/* (no change needed: text is var(--text-light) on dark bg) */
+
+/* Hand preview active hand-type is yellow on dark — fine */
+/* Score popup yellow on dark — fine */
+
+/* Floor display has yellow text on dark border bg → fine */
+
+/* Card fantasy_pts box: ensure if box bg yellow then text dark */
+#bal-app .fantasy-pts-badge,
+#bal-app .card-fantasy-pts {
+  color: var(--text-dark) !important;
+}
+
+/* Pack reveal yellow rim shouldn't have yellow text inside */
+#bal-app .pack-reveal-card .card-front { color: var(--text-dark); }

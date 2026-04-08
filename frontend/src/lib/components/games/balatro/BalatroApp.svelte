@@ -683,8 +683,8 @@
   function getCardAnimStyle(card: Card): string {
     if (!dealAnimating || !(card.id in cardAnimDelays)) return '';
     const idx = cardAnimDelays[card.id];
-    const delay = 120 + idx * 90;
-    return `animation: card-deal-in 0.42s cubic-bezier(0.22, 0.68, 0, 1.2) ${delay}ms both;`;
+    const delay = 90 + idx * 70;
+    return `animation: card-deal-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms both;`;
   }
 
   // Vendor lines for the shop
@@ -921,12 +921,10 @@
       {#if previewData && selectedIds.size > 0}
         <div id="hand-preview" class="active">
           <div id="preview-hand-type">{previewData.hand_name ?? '...'}</div>
-          <div id="preview-score-details">{formatNum(previewData.score ?? 0)} ({previewData.base_pts ?? 0} x {previewData.total_mult ?? 0})</div>
         </div>
       {:else}
         <div id="hand-preview">
           <div id="preview-hand-type">Select up to 5 cards to see hand type</div>
-          <div id="preview-score-details"></div>
         </div>
       {/if}
 
@@ -1202,10 +1200,22 @@
                     {@const itemType = isPack ? 'pack' : ((item as ShopItem).item_type || '')}
                     {@const shopId = isPack ? (item as ShopPack).pack_id : (item as ShopItem).shop_id}
                     {@const rarity = (item as Record<string, unknown>).rarity as string}
+                    {@const cardData = (item as Record<string, unknown>).card_data as Record<string, unknown> | undefined}
+                    {@const headshotUrl = cardData?.headshot_url as string | undefined}
+                    {@const cardPos = (cardData?.pos as string | undefined)?.toLowerCase()}
                     <div class="shop-item" class:cant-afford={!canAfford}>
                       <div class="shop-price-badge" class:cant-afford={!canAfford}>${cost}</div>
                       <div class="shop-item-icon-area">
-                        <span class="shop-item-icon-text">{isPack ? 'PACK' : (ITEM_ICON[itemType] || 'ITM')}</span>
+                        {#if itemType === 'joker'}
+                          <img class="shop-item-img joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
+                        {:else if itemType === 'buy_card' && headshotUrl}
+                          <img class="shop-item-img headshot-img" src={headshotUrl} alt={cardData?.player as string ?? ''} onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                          {#if cardPos}
+                            <div class="shop-item-pos-badge card-pos-{cardPos}">{(cardData?.pos as string ?? '').toUpperCase()}</div>
+                          {/if}
+                        {:else}
+                          <span class="shop-item-icon-text">{isPack ? 'PACK' : (ITEM_ICON[itemType] || 'ITM')}</span>
+                        {/if}
                         {#if rarity}
                           <div class="shop-item-rarity-bar rarity-bar-{rarity}"></div>
                         {/if}

@@ -1303,6 +1303,14 @@ def play_hand(gid, card_ids):
         fight = g.get("fight", 1)
         round_num = g.get("round", 1)
         mode = g.get("mode", "normal")
+        # Bonus: $1 per remaining hand when fight is won
+        hand_bonus = g["hands_remaining"]
+        if hand_bonus > 0:
+            g["coins"] += hand_bonus
+            coins_earned += hand_bonus
+            result["coins"] = g["coins"]
+            result["coins_earned"] = coins_earned
+            result["hand_bonus"] = hand_bonus
         if mode != "infinity" and fight == 3 and round_num >= 8:
             # Final boss of final round — game won
             g["status"] = "won_game"
