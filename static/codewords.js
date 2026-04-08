@@ -5,6 +5,9 @@
   const POLL_MS = 1500;
   const MAX_CLUE_LEN = 50;
   const NFL_HEADSHOT_CACHE_KEY = 'nfl_codewords_headshot_cache_v1';
+  const CODEWORDS_API_PREFIX = window.CODEWORDS_API_PREFIX || '/api/codewords';
+  const LOBBY_API_PREFIX = window.CODEWORDS_LOBBY_API_PREFIX || '/api/lobbies';
+  const LOBBY_ROUTE_PREFIX = window.CODEWORDS_LOBBY_ROUTE_PREFIX || '/lobbies';
 
   const root = document.getElementById('cw-root');
   if (!root) return;
@@ -54,12 +57,22 @@
     let data = null;
     try { data = await res.json(); } catch (e) { /* ignore */ }
     if (!res.ok) {
-      const msg = (data && data.error) || 'Request failed';
+      const msg = (data && (data.error || data.detail)) || 'Request failed';
       const err = new Error(msg);
       err.payload = data;
       throw err;
     }
     return data;
+  }
+
+  async function resetMultiplayerGame() {
+    if (!roomId) return '';
+    const data = await jsonFetch(`${LOBBY_API_PREFIX}/${encodeURIComponent(roomId)}/rematch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token() })
+    });
+    return data.room_url || `${LOBBY_ROUTE_PREFIX}/${encodeURIComponent(roomId)}`;
   }
 
   function setError(msg) {
@@ -253,7 +266,7 @@
       return;
     }
     try {
-      const data = await jsonFetch(`/api/lobbies/${roomId}/game-state?token=${encodeURIComponent(token())}`);
+      const data = await jsonFetch(`${LOBBY_API_PREFIX}/${roomId}/game-state?token=${encodeURIComponent(token())}`);
       if (data && data.room && data.room.game_id) {
         gameId = data.room.game_id;
         await loadState();
@@ -279,7 +292,7 @@
     if (pendingAction) return;
     if (shouldDeferInteractiveRender()) return;
     try {
-      const data = await jsonFetch(`/api/codewords/state?game_id=${encodeURIComponent(gameId)}&token=${encodeURIComponent(token())}`);
+      const data = await jsonFetch(`${CODEWORDS_API_PREFIX}/state?game_id=${encodeURIComponent(gameId)}&token=${encodeURIComponent(token())}`);
       state = data.state;
       if (!state || state.current_phase !== 'clue' || !amIClueGiver()) resetClueDraft();
       setError('');
@@ -309,7 +322,7 @@
 
     pendingAction = true;
     try {
-      const data = await jsonFetch('/api/codewords/clue', {
+      const data = await jsonFetch(`${CODEWORDS_API_PREFIX}/clue`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ game_id: gameId, token: token(), clue: clueText, number: number })
@@ -330,7 +343,7 @@
     if (pendingAction) return;
     pendingAction = true;
     try {
-      const data = await jsonFetch('/api/codewords/guess', {
+      const data = await jsonFetch(`${CODEWORDS_API_PREFIX}/guess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ game_id: gameId, token: token(), index: idx })
@@ -350,7 +363,7 @@
     if (pendingAction) return;
     pendingAction = true;
     try {
-      const data = await jsonFetch('/api/codewords/end_turn', {
+      const data = await jsonFetch(`${CODEWORDS_API_PREFIX}/end_turn`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ game_id: gameId, token: token() })
@@ -590,7 +603,10 @@
           <div class="cw-results-card">
             <div class="cw-results-title">${escapeHtml(winName)} Wins!</div>
             <div class="cw-results-sub">All ${state.winner === 'A' ? state.team_a_total : state.team_b_total} players uncovered.</div>
-            <a href="/lobbies/${encodeURIComponent(roomId)}" class="cw-results-back">Back to Lobby</a>
+            <div class="cw-results-actions">
+              <button id="cw-play-again-btn" class="cw-results-back" type="button">Play Again</button>
+              <a href="${LOBBY_ROUTE_PREFIX}/${encodeURIComponent(roomId)}" data-sveltekit-reload class="cw-results-back alt">Back to Lobby</a>
+            </div>
           </div>
         </div>
       `;
@@ -631,6 +647,18 @@
 
     const endBtn = document.getElementById('cw-end-turn');
     if (endBtn) endBtn.addEventListener('click', endTurn);
+
+    const playAgainBtn = document.getElementById('cw-play-again-btn');
+    if (playAgainBtn) {
+      playAgainBtn.addEventListener('click', async function () {
+        let nextUrl = `/lobbies/${encodeURIComponent(roomId)}`;
+        try {
+          nextUrl = await resetMultiplayerGame();
+        } finally {
+          window.location.href = nextUrl;
+        }
+      });
+    }
 
     root.querySelectorAll('.cw-cell.clickable').forEach(el => {
       el.addEventListener('click', () => {

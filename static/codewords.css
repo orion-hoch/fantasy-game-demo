@@ -507,6 +507,12 @@ header h1 {
   font-size: 1rem;
   margin-bottom: 18px;
 }
+.cw-results-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 .cw-results-back {
   display: inline-block;
   background: var(--yellow);
@@ -520,6 +526,10 @@ header h1 {
   cursor: pointer;
   text-transform: uppercase;
   text-decoration: none;
+}
+.cw-results-back.alt {
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 /* ── Mobile ──────────────────────────────────────────────────────── */

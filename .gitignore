@@ -1,3 +1,13 @@
 __pycache__/
 *.pyc
 .DS_Store
+node_modules/
+.svelte-kit/
+dist/
+build/
+.venv/
+backend/.venv/
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+frontend/dist/

@@ -94,8 +94,8 @@ def _advance_turn(conn, state: dict):
 
 
 def start_game(conn, player_names: list, player_tokens: list | None = None) -> tuple:
-    if not 2 <= len(player_names) <= 4:
-        raise ValueError("Need 2-4 players")
+    if not 2 <= len(player_names) <= 5:
+        raise ValueError("Need 2-5 players")
     if player_tokens and len(player_tokens) != len(player_names):
         raise ValueError("Player token count mismatch")
 

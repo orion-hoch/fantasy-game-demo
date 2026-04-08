@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, redirect, render_template
 import sqlite3
 import os
 import urllib.parse
@@ -36,15 +36,57 @@ app = Flask(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "fantasy.db")
 
+MIGRATED_FRONTEND_ROUTES = {
+    "nfl_bullseye": "/games/nfl/bullseye",
+    "nba_bullseye": "/games/nba/bullseye",
+    "starting6": "/games/nfl/fantasy-duel",
+    "nba_starting5": "/games/nba/fantasy-duel",
+    "chain_coop": "/games/nfl/chain",
+    "chain_comp": "/games/nfl/chain",
+    "nba_chain_coop": "/games/nba/chain",
+    "nba_chain_comp": "/games/nba/chain",
+    "nfl_codewords": "/games/nfl/codewords",
+    "nba_codewords": "/games/nba/codewords",
+}
+
 
 def _request_json_body() -> dict:
     data = request.get_json(silent=True)
     return data if isinstance(data, dict) else {}
 
 
+def _frontend_base_url() -> str:
+    configured = os.getenv("FRONTEND_BASE_URL", "").rstrip("/")
+    if configured:
+        return configured
+    host = (request.host or "").split(":", 1)[0].lower()
+    if host in {"127.0.0.1", "localhost"}:
+        return "http://127.0.0.1:5173"
+    return ""
+
+
+def _frontend_url(path: str, query: dict | None = None) -> str:
+    query = {k: v for k, v in (query or {}).items() if v is not None and v != ""}
+    base = _frontend_base_url()
+    qs = urllib.parse.urlencode(query, doseq=True)
+    return f"{base}{path}{f'?{qs}' if qs else ''}"
+
+
+def _redirect_frontend(path: str, preserve_query: bool = False, extra_query: dict | None = None, code: int = 302):
+    query = dict(request.args) if preserve_query else {}
+    if extra_query:
+        query.update(extra_query)
+    target = _frontend_url(path, query)
+    current_query = urllib.parse.urlencode(dict(request.args), doseq=True)
+    current_target = f"{request.path}{f'?{current_query}' if current_query else ''}"
+    if not _frontend_base_url() and target == current_target:
+        return "FRONTEND_BASE_URL is not configured for redirect cutover", 503
+    return redirect(target, code=code)
+
+
 def _build_room_redirect(room_id: str, game_type: str) -> str:
-    route = SUPPORTED_GAMES[game_type]["route"]
-    return f"{route}?room_id={urllib.parse.quote(room_id)}"
+    route = MIGRATED_FRONTEND_ROUTES.get(game_type, SUPPORTED_GAMES[game_type]["route"])
+    return _frontend_url(route, {"room_id": room_id})
 
 
 def _room_game_state(room: dict):
@@ -62,7 +104,7 @@ def _room_game_state(room: dict):
         return nba_starting5_game_mod.get_game(game_id)
     if game_type in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
         return chain_game_mod.get_game(game_id)
-    if game_type in {"nfl_codewords", "nba_codewords", "nfl_codewords_duel", "nba_codewords_duel"}:
+    if game_type in {"nfl_codewords", "nba_codewords"}:
         return codewords_mod.get_game(game_id)
     return None
 
@@ -102,7 +144,7 @@ def _table_exists(conn, name):
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return _redirect_frontend("/")
 
 
 @app.route("/multiplayer/<game_type>")
@@ -110,11 +152,42 @@ def multiplayer_create_page(game_type):
     config = SUPPORTED_GAMES.get(game_type)
     if not config:
         return "Game not supported for multiplayer", 404
-    return render_template("lobby.html", create_mode=True, game_type=game_type, game_label=config["label"])
+    return _redirect_frontend(f"/multiplayer/{game_type}")
 
 
 @app.route("/lobbies/<room_id>")
 def multiplayer_lobby_page(room_id):
+    room = get_room(room_id)
+    if room is None:
+        return "Lobby not found", 404
+    return _redirect_frontend(f"/lobbies/{room_id}")
+
+
+@app.route("/migration")
+def migration_page():
+    return _redirect_frontend("/migration")
+
+
+@app.route("/games/<sport>/<slug>")
+def migrated_game_page(sport, slug):
+    return _redirect_frontend(f"/games/{sport}/{slug}", preserve_query=True)
+
+
+@app.route("/legacy-home")
+def legacy_home_page():
+    return render_template("index.html")
+
+
+@app.route("/legacy/multiplayer/<game_type>")
+def legacy_multiplayer_create_page(game_type):
+    config = SUPPORTED_GAMES.get(game_type)
+    if not config:
+        return "Game not supported for multiplayer", 404
+    return render_template("lobby.html", create_mode=True, game_type=game_type, game_label=config["label"])
+
+
+@app.route("/legacy/lobbies/<room_id>")
+def legacy_multiplayer_lobby_page(room_id):
     room = get_room(room_id)
     if room is None:
         return "Lobby not found", 404
@@ -127,9 +200,49 @@ def multiplayer_lobby_page(room_id):
     )
 
 
+@app.route("/legacy/starting6")
+def legacy_starting6_page():
+    return render_template("starting6.html")
+
+
+@app.route("/legacy/nba_starting5")
+def legacy_nba_starting5_page():
+    return render_template("nba_starting5.html")
+
+
+@app.route("/legacy/chain")
+def legacy_chain_page():
+    return render_template("chain.html")
+
+
+@app.route("/legacy/nba_chain")
+def legacy_nba_chain_page():
+    return render_template("nba_chain.html")
+
+
+@app.route("/legacy/ttb")
+def legacy_ttb_page():
+    return render_template("ttb.html")
+
+
+@app.route("/legacy/nba_ttb")
+def legacy_nba_ttb_page():
+    return render_template("nba_ttb.html")
+
+
+@app.route("/legacy/nfl_bullseye")
+def legacy_nfl_bullseye_page():
+    return render_template("nfl_bullseye.html")
+
+
+@app.route("/legacy/nba_bullseye")
+def legacy_nba_bullseye_page():
+    return render_template("nba_bullseye.html")
+
+
 @app.route("/starting6")
 def starting6():
-    return render_template("starting6.html")
+    return _redirect_frontend("/games/nfl/fantasy-duel", preserve_query=True)
 
 
 @app.route("/api/lobbies/create", methods=["POST"])
@@ -213,9 +326,8 @@ def lobby_start_api(room_id):
                 sport = "nba" if room["game_type"].startswith("nba_") else "nfl"
                 mode = "comp" if room["game_type"].endswith("_comp") else "coop"
                 game_id, _ = chain_game_mod.start_game(conn, player_names, player_tokens=player_tokens, sport=sport, mode=mode)
-            elif room["game_type"] in {"nfl_codewords", "nba_codewords", "nfl_codewords_duel", "nba_codewords_duel"}:
+            elif room["game_type"] in {"nfl_codewords", "nba_codewords"}:
                 sport = "nba" if "nba" in room["game_type"] else "nfl"
-                is_duel = room["game_type"].endswith("_duel")
                 cw_players = []
                 for _, seat in filled:
                     meta = seat.get("meta") or {}
@@ -228,7 +340,7 @@ def lobby_start_api(room_id):
                 try:
                     game_id, _ = codewords_mod.start_game(
                         conn, cw_players, sport=sport,
-                        mode="duel" if is_duel else "teams",
+                        mode="teams",
                     )
                 except ValueError as exc:
                     return jsonify({"error": str(exc)}), 400
@@ -254,7 +366,7 @@ def lobby_rematch_api(room_id):
     if not has_token(room, token):
         return jsonify({"error": "Only lobby players can restart this room"}), 400
     room = reset_to_lobby(room_id)
-    return jsonify({"room": room_payload(room, token)})
+    return jsonify({"room": room_payload(room, token), "room_url": f"/lobbies/{room['room_id']}"})
 
 
 @app.route("/api/lobbies/<room_id>/game-state")
@@ -268,26 +380,12 @@ def lobby_game_state_api(room_id):
 
 @app.route("/dungeon_adventure")
 def dungeon_adventure_page():
-    return render_template(
-        "dungeon_adventure.html",
-        page_title="Dungeon Adventure",
-        game_title="Dungeon Adventure",
-        sport_label="NFL",
-        back_tab="nfl",
-        api_prefix="/api/dungeon",
-    )
+    return _redirect_frontend("/games/nfl/dungeon")
 
 
 @app.route("/nba_dungeon_adventure")
 def nba_dungeon_adventure_page():
-    return render_template(
-        "dungeon_adventure.html",
-        page_title="NBA Dungeon Adventure",
-        game_title="NBA Dungeon Adventure",
-        sport_label="NBA",
-        back_tab="nba",
-        api_prefix="/api/nba_dungeon",
-    )
+    return _redirect_frontend("/games/nba/dungeon")
 
 
 @app.route("/api/starting6/random-team")
@@ -534,7 +632,7 @@ def nba_dungeon_search():
 
 @app.route("/chain")
 def chain_game():
-    return render_template("chain.html")
+    return _redirect_frontend("/games/nfl/chain", preserve_query=True)
 
 
 @app.route("/api/chain/start", methods=["POST"])
@@ -648,7 +746,7 @@ def chain_state():
 
 @app.route("/ttb")
 def ttb_page():
-    return render_template("ttb.html")
+    return _redirect_frontend("/games/nfl/ttb")
 
 
 @app.route("/api/ttb/start", methods=["POST"])
@@ -704,17 +802,17 @@ def ttb_search():
 
 @app.route("/nba_chain")
 def nba_chain_game():
-    return render_template("nba_chain.html")
+    return _redirect_frontend("/games/nba/chain", preserve_query=True)
 
 
 @app.route("/nba_ttb")
 def nba_ttb_page():
-    return render_template("nba_ttb.html")
+    return _redirect_frontend("/games/nba/ttb")
 
 
 @app.route("/nba_starting5")
 def nba_starting5_page():
-    return render_template("nba_starting5.html")
+    return _redirect_frontend("/games/nba/fantasy-duel", preserve_query=True)
 
 
 # ── NBA Chain Game routes ─────────────────────────────────────────────────────
@@ -1005,7 +1103,7 @@ def nba_starting5_pass():
 
 @app.route("/nfl_balatro")
 def nfl_balatro_page():
-    return render_template("nfl_balatro.html")
+    return _redirect_frontend("/games/nfl/balatro")
 
 
 @app.route("/api/nfl_balatro/start", methods=["POST"])
@@ -1246,7 +1344,7 @@ def nfl_balatro_claim_reward():
 
 @app.route("/nba_balatro")
 def nba_balatro_page():
-    return render_template("nba_balatro.html")
+    return _redirect_frontend("/games/nba/balatro")
 
 
 @app.route("/api/nba_balatro/start", methods=["POST"])
@@ -1521,7 +1619,9 @@ def api_nba_start_infinity():
 
 @app.route("/nba_bullseye")
 def nba_bullseye_page():
-    return render_template("nba_bullseye.html")
+    if request.args.get("room_id"):
+        return _redirect_frontend("/games/nba/bullseye", preserve_query=True)
+    return _redirect_frontend("/games/nba/bullseye", extra_query={"solo": "1"})
 
 
 @app.route("/api/nba_bullseye/start", methods=["POST"])
@@ -1612,7 +1712,9 @@ def nba_bullseye_state():
 
 @app.route("/nfl_bullseye")
 def nfl_bullseye_page():
-    return render_template("nfl_bullseye.html")
+    if request.args.get("room_id"):
+        return _redirect_frontend("/games/nfl/bullseye", preserve_query=True)
+    return _redirect_frontend("/games/nfl/bullseye", extra_query={"solo": "1"})
 
 
 @app.route("/api/nfl_bullseye/start", methods=["POST"])
@@ -1699,23 +1801,20 @@ def nfl_bullseye_pick():
         conn.close()
 
 
-# ── Twenty-Four card game ────────────────────────────────────────────────────
-
-@app.route("/twenty_four")
-def twenty_four_page():
-    return render_template("twenty_four.html")
-
-
 # ── Code Words (multiplayer) ─────────────────────────────────────────────────
 
 @app.route("/nfl_codewords")
 def nfl_codewords_page():
-    return render_template("nfl_codewords.html")
+    if request.args.get("room_id"):
+        return _redirect_frontend("/games/nfl/codewords", preserve_query=True)
+    return _redirect_frontend("/multiplayer/nfl_codewords")
 
 
 @app.route("/nba_codewords")
 def nba_codewords_page():
-    return render_template("nba_codewords.html")
+    if request.args.get("room_id"):
+        return _redirect_frontend("/games/nba/codewords", preserve_query=True)
+    return _redirect_frontend("/multiplayer/nba_codewords")
 
 
 def _codewords_state_response(game_id: str, token: str):

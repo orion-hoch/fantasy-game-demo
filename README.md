@@ -142,10 +142,10 @@ The value of the project comes from turning historical sports data into game rul
 
 At a high level, the project is split into four layers:
 
-### 1. Flask App Layer
+### 1. Flask Compatibility Layer
 
-- `app.py` wires together routes, templates, and API endpoints
-- Each game exposes page routes and JSON endpoints for interactive actions
+- `app.py` still exposes the legacy JSON/API surface and now acts as a page-route redirect layer during cutover
+- Old page URLs redirect into the migrated Svelte frontend
 
 ### 2. Game Logic Layer
 
@@ -154,20 +154,28 @@ At a high level, the project is split into four layers:
 
 ### 3. Frontend Interaction Layer
 
-- `static/*.js` files manage per-page interactivity, rendering, and request handling
-- `static/*.css` files give each mode its own feel while inheriting the shared visual baseline from `static/style.css`
+- `frontend/` is now the primary player-facing app
+- remaining `static/*.js` and `static/*.css` files only exist for compatibility-backed routes that have not yet been rewritten natively
 
 ### 4. Data / Session Layer
 
 - `fantasy.db` supplies the sports data
 - `session_store.py` provides a small storage abstraction so local development can use memory while production uses KV-backed session persistence on Vercel
 
+### 5. Migration Layer
+
+- `backend/` is the new FastAPI strangler backend scaffold
+- `frontend/` is the new SvelteKit strangler frontend scaffold
+- `MIGRATION_TRACKER.md` records per-surface rollout status and eventual full-cutover tasks
+
+The primary UI now lives in `frontend/`, while Flask remains as a compatibility layer for old URLs and legacy API entrypoints during the final cutover period.
+
 ---
 
 ## Project Structure
 
 ```text
-app.py                      Flask routes and API endpoints
+app.py                      Flask compatibility redirects + legacy API surface
 load_data.py                Data cleanup and import helpers
 session_store.py            Session storage abstraction for local/dev + Vercel KV
 
@@ -180,10 +188,12 @@ nba_dungeon_adventure.py    NBA dungeon run logic
 nfl_balatro.py              NFL Balatro run logic
 nba_balatro.py              NBA Balatro run logic
 
-templates/                  HTML templates for landing page and each game mode
-static/                     Shared and per-game CSS/JS/assets
-api/index.py                Vercel Python entrypoint
-vercel.json                 Vercel deployment config
+frontend/                   Primary SvelteKit frontend
+backend/                    Primary FastAPI backend
+templates/                  Compatibility-only legacy HTML still used by Balatro bridge
+static/                     Shared assets plus compatibility-only legacy CSS/JS
+api/index.py                Vercel Python entrypoint for compatibility layer
+vercel.json                 Current Vercel compatibility deployment config
 fantasy.db                  Consolidated runtime database
 ```
 
@@ -203,26 +213,43 @@ pip install -r requirements.txt
 python app.py
 ```
 
-The app starts locally at `http://127.0.0.1:5000`.
+The legacy Flask compatibility layer starts locally at `http://127.0.0.1:5000`.
+
+For the cutover stack, run the migrated apps instead:
+
+```bash
+cd backend && python -m uvicorn src.main:app --reload --port 8000
+cd frontend && npm run dev
+```
+
+The Svelte frontend runs at `http://127.0.0.1:5173` and the FastAPI backend runs at `http://127.0.0.1:8000`.
+
+When using Flask as a redirect layer outside local dev, set:
+
+```bash
+FRONTEND_BASE_URL=https://your-frontend-host
+```
 
 ---
 
 ## Vercel Deployment
 
-This repo includes a Vercel entrypoint at `api/index.py` and config in `vercel.json`.
+This repo still includes a Vercel entrypoint at `api/index.py` and config in `vercel.json`, but that deployment now represents the compatibility layer rather than the intended long-term primary frontend.
 
 To deploy:
 
-- import the repo into Vercel as a Python project
+- import the repo into Vercel as a Python project if you want the compatibility/API layer
 - attach a KV-compatible database
 - make sure `KV_REST_API_URL` and `KV_REST_API_TOKEN` are set in the project environment
+- set `FRONTEND_BASE_URL` so old Flask routes can redirect to the Svelte frontend host
 - deploy from `main`
 
 Notes:
 
 - local development falls back to in-memory session storage
 - production uses KV so multi-step games can survive across requests in a serverless environment
-- static assets, templates, and the SQLite database are explicitly bundled for deployment
+- static assets, compatibility templates, and the SQLite database are explicitly bundled for deployment
+- the preferred production direction is a separate Svelte frontend deployment + FastAPI backend deployment
 
 ---
 

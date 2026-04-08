@@ -7,9 +7,8 @@ from session_store import GameStore
 
 _ROOMS = GameStore("multiplayer_lobbies", ttl_seconds=86400)
 
-_CODEWORDS_TEAM_GAMES = {"nfl_codewords", "nba_codewords"}
-_CODEWORDS_DUEL_GAMES = {"nfl_codewords_duel", "nba_codewords_duel"}
-_CODEWORDS_GAMES = _CODEWORDS_TEAM_GAMES | _CODEWORDS_DUEL_GAMES
+_REMOVED_GAME_TYPE_MAP = {}
+_CODEWORDS_GAMES = {"nfl_codewords", "nba_codewords"}
 _VALID_CW_TEAMS = {"A", "B"}
 _VALID_CW_ROLES = {"spymaster", "guesser"}
 
@@ -75,18 +74,6 @@ SUPPORTED_GAMES = {
         "min_players": 4,
         "max_players": 4,
     },
-    "nfl_codewords_duel": {
-        "label": "NFL Code Words Duel",
-        "route": "/nfl_codewords",
-        "min_players": 2,
-        "max_players": 2,
-    },
-    "nba_codewords_duel": {
-        "label": "NBA Code Words Duel",
-        "route": "/nba_codewords",
-        "min_players": 2,
-        "max_players": 2,
-    },
 }
 
 
@@ -106,12 +93,12 @@ def _seat_map() -> dict:
     return {str(idx): None for idx in range(1, 5)}
 
 
+def _canonical_game_type(game_type: str) -> str:
+    return _REMOVED_GAME_TYPE_MAP.get(game_type, game_type)
+
+
 def _is_codewords_game(game_type: str) -> bool:
-    return game_type in _CODEWORDS_GAMES
-
-
-def _is_codewords_duel(game_type: str) -> bool:
-    return game_type in _CODEWORDS_DUEL_GAMES
+    return _canonical_game_type(game_type) in _CODEWORDS_GAMES
 
 
 def _cw_team_label(team: str) -> str:
@@ -135,7 +122,6 @@ def _merge_meta(existing: dict, meta_updates: dict) -> dict:
 def _normalize_codewords_meta(room: dict, seat_no: int, seat: dict, meta_updates: dict) -> dict:
     existing = dict(seat.get("meta") or {})
     updates = dict(meta_updates or {})
-    duel_mode = _is_codewords_duel(room["game_type"])
 
     if "team" in updates and updates["team"] is not None and updates["team"] not in _VALID_CW_TEAMS:
         raise ValueError("Invalid team")
@@ -144,21 +130,25 @@ def _normalize_codewords_meta(room: dict, seat_no: int, seat: dict, meta_updates
 
     merged = _merge_meta(existing, updates)
 
-    # Team switches should not carry the previous team role with them.
-    if not duel_mode and "team" in updates and updates.get("team") != existing.get("team") and "role" not in updates:
-        merged.pop("role", None)
-
     chosen_team = merged.get("team")
     chosen_role = merged.get("role")
+
+    # If team changed and the carried-over role conflicts on the new team, clear it
+    if "team" in updates and updates.get("team") != existing.get("team") and "role" not in updates:
+        if chosen_team and chosen_role:
+            for other_seat_no, other_seat in occupied_seats(room):
+                if other_seat_no == seat_no:
+                    continue
+                other_meta = other_seat.get("meta") or {}
+                if other_meta.get("team") == chosen_team and other_meta.get("role") == chosen_role:
+                    merged.pop("role", None)
+                    chosen_role = None
+                    break
 
     for other_seat_no, other_seat in occupied_seats(room):
         if other_seat_no == seat_no:
             continue
         other_meta = other_seat.get("meta") or {}
-        if duel_mode:
-            if chosen_team and other_meta.get("team") == chosen_team:
-                raise ValueError(f"Team {_cw_team_label(chosen_team)} is already taken")
-            continue
         if chosen_team and chosen_role and other_meta.get("team") == chosen_team and other_meta.get("role") == chosen_role:
             raise ValueError(f"{_cw_team_label(chosen_team)} {_cw_role_label(chosen_role)} is already taken")
 
@@ -166,6 +156,7 @@ def _normalize_codewords_meta(room: dict, seat_no: int, seat: dict, meta_updates
 
 
 def create_room(game_type: str, host_name: str, host_token: str) -> dict:
+    game_type = _canonical_game_type(game_type)
     if game_type not in SUPPORTED_GAMES:
         raise ValueError("Unsupported game type")
     if not host_token:
@@ -191,7 +182,14 @@ def create_room(game_type: str, host_name: str, host_token: str) -> dict:
 
 
 def get_room(room_id: str) -> dict | None:
-    return _ROOMS.get(room_id)
+    room = _ROOMS.get(room_id)
+    if room is None:
+        return None
+    canonical_game_type = _canonical_game_type(room.get("game_type", ""))
+    if canonical_game_type != room.get("game_type"):
+        room["game_type"] = canonical_game_type
+        save_room(room)
+    return room
 
 
 def save_room(room: dict) -> dict:

@@ -31,7 +31,14 @@ _HIST_TO_MOD = {
     "CHH": "CHA", "CHO": "CHA", "VAN": "MEM", "WSB": "WAS",
 }
 
-ACCOLADES = ["allstar", "top10_draft", "top5_draft", None, None]  # weighted toward none
+NBA_DIVISIONS = {
+    "Atlantic": ["BOS", "BRK", "NJN", "NYK", "PHI", "TOR"],
+    "Central": ["CHI", "CLE", "DET", "IND", "MIL"],
+    "Southeast": ["ATL", "CHA", "CHO", "MIA", "ORL", "WAS", "WSB"],
+    "Northwest": ["DEN", "MIN", "OKC", "SEA", "POR", "UTA"],
+    "Pacific": ["GSW", "LAC", "LAL", "PHO", "SAC"],
+    "Southwest": ["DAL", "HOU", "MEM", "VAN", "NOP", "NOH", "SAS"],
+}
 
 
 def _stat_expr(stat: str) -> str:
@@ -105,7 +112,11 @@ def _build_prompt_where(prompt: dict, stat: str = None, apply_stat_floor: bool =
     params = []
 
     team_filter = prompt.get("team_filter")
-    if team_filter == "Eastern":
+    if team_filter in NBA_DIVISIONS:
+        ph, p = _teams_in_clause(NBA_DIVISIONS[team_filter])
+        clauses.append(f"s.team IN {ph}")
+        params.extend(p)
+    elif team_filter == "Eastern":
         ph, p = _teams_in_clause(EASTERN_TEAMS)
         clauses.append(f"s.team IN {ph}")
         params.extend(p)
@@ -148,23 +159,26 @@ def _build_prompt_where(prompt: dict, stat: str = None, apply_stat_floor: bool =
 
 
 def _generate_prompts(conn, stat: str) -> list:
-    """Generate 5 varied prompts for a stat category."""
+    """Generate 5 varied prompts for a stat category.
+    Uses specific teams and divisions (no conferences, no accolades)."""
     stat_expr = _stat_expr(stat)
 
-    # Pool of team filters: mix of any, conference, specific teams
     storied_franchises = ["BOS", "LAL", "GSW", "CHI", "MIA", "SAS", "NYK", "PHI", "DET", "HOU"]
     other_franchises = ["DAL", "OKC", "DEN", "POR", "UTA", "SAC", "MIL", "ATL", "CLE", "IND", "ORL", "MIN", "TOR", "BRK", "NOP"]
+    division_names = list(NBA_DIVISIONS.keys())
+
     team_filter_pool = [
-        "any", "any",
-        "Eastern", "Western",
         random.choice(storied_franchises),
         random.choice(other_franchises),
         random.choice(ALL_TEAMS),
+        random.choice(division_names),
+        random.choice(division_names),
+        random.choice(storied_franchises),
+        random.choice(division_names),
     ]
     random.shuffle(team_filter_pool)
     team_filters = team_filter_pool[:5]
 
-    # Year ranges — wider variety including older eras
     year_ranges = [
         (2015, 2024),
         (2010, 2024),
@@ -176,24 +190,17 @@ def _generate_prompts(conn, stat: str) -> list:
     ]
     random.shuffle(year_ranges)
 
-    # Accolades — more variety
-    accolade_pool = [None, None, "allstar", "top10_draft", "top5_draft",
-                     "nba_hof", "all_nba", "all_defensive", "all_rookie_nba",
-                     "olympic_team", "nba_mvp", "nba_fmvp", "nba_dpoy"]
-    random.shuffle(accolade_pool)
-
     prompts = []
     for i in range(5):
         team_filter = team_filters[i]
         yr_min, yr_max = year_ranges[i]
-        accolade = accolade_pool[i]
 
         prompt = {
-            "team_filter": team_filter if team_filter != "any" else None,
+            "team_filter": team_filter,
             "team_filter_label": team_filter,
             "year_min": yr_min,
             "year_max": yr_max,
-            "accolade": accolade,
+            "accolade": None,
         }
 
         # Verify prompt returns players
@@ -203,11 +210,17 @@ def _generate_prompts(conn, stat: str) -> list:
         ).fetchone()
         count = row[0] if row else 0
 
-        # If too few results, loosen to any team
         if count < 5:
-            prompt["team_filter"] = None
-            prompt["team_filter_label"] = "any"
-            prompt["accolade"] = None
+            # Fallback: widen to a division or any
+            prompt["team_filter"] = random.choice(division_names)
+            prompt["team_filter_label"] = prompt["team_filter"]
+            where2, params2 = _build_prompt_where(prompt, stat, apply_stat_floor=True)
+            row2 = conn.execute(
+                f"SELECT COUNT(*) FROM nba_stats s {where2}", params2
+            ).fetchone()
+            if (row2[0] if row2 else 0) < 5:
+                prompt["team_filter"] = None
+                prompt["team_filter_label"] = "Any Team"
 
         prompts.append(prompt)
 
@@ -273,8 +286,8 @@ def start_game(conn, player_names: list, player_tokens: list | None = None) -> t
     Initialize a new game.
     Returns (game_id, state_dict).
     """
-    if not 2 <= len(player_names) <= 4:
-        raise ValueError("Need 2–4 players")
+    if not 1 <= len(player_names) <= 4:
+        raise ValueError("Need 1-4 players")
     if player_tokens and len(player_tokens) != len(player_names):
         raise ValueError("Player token count mismatch")
 

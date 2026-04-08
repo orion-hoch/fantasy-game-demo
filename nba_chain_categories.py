@@ -473,6 +473,21 @@ CATEGORIES = [
 # Index for fast lookup
 _CAT_BY_ID = {c["id"]: c for c in CATEGORIES}
 
+# ── Category weights ─────────────────────────────────────────────────────────
+# Higher = picked more often during shuffle. Default is 1.
+_CATEGORY_WEIGHTS = {
+    "team": 4,
+}
+
+
+def _weighted_candidates(cats):
+    """Return cats with high-weight categories duplicated for shuffling."""
+    out = []
+    for c in cats:
+        out.extend([c] * _CATEGORY_WEIGHTS.get(c["id"], 1))
+    return out
+
+
 # ── Conflict groups ──────────────────────────────────────────────────────────
 _CONFLICT_GROUPS = [
     {"first_round", "top_10"},    # top-10 picks are all 1st round picks
@@ -519,7 +534,7 @@ def get_players_for_chain(conn, chain):
 def get_start_category(conn):
     """Pick a starting category with >= 10 valid players. No teammate cats."""
     exclude_start = {"teammate"}
-    candidates = [c for c in CATEGORIES if c["id"] not in exclude_start]
+    candidates = _weighted_candidates([c for c in CATEGORIES if c["id"] not in exclude_start])
     random.shuffle(candidates)
 
     for cat in candidates:
@@ -546,7 +561,7 @@ def get_chain_category(conn, current_players, exclude_ids=None):
     Returns a dict with id/value/label/valid_count, or None if none found.
     """
     exclude_ids = _expand_excluded(exclude_ids or [])
-    candidates = [c for c in CATEGORIES if c["id"] not in exclude_ids]
+    candidates = _weighted_candidates([c for c in CATEGORIES if c["id"] not in exclude_ids])
     random.shuffle(candidates)
 
     best = None  # fallback: intersect >= 1

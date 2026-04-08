@@ -12,25 +12,36 @@ MAX_WRONG = 5
 
 # ── DB helpers ────────────────────────────────────────────────────────────────
 
-def _pick_classic_player(conn):
+def _pick_classic_player(conn, min_draft_year=None):
     """Recent NBA player, season >= 2021, games >= 10, fantasy_score >= 1500."""
+    extra = ""
+    params: list = []
+    if min_draft_year:
+        extra = " AND player IN (SELECT player FROM nba_draft WHERE CAST(draft_year AS REAL) >= ?)"
+        params = [min_draft_year]
     row = conn.execute(
-        """
+        f"""
         SELECT player, pos FROM nba_stats
         WHERE season >= 2021 AND games >= 10 AND fantasy_score >= 1500
+        {extra}
         ORDER BY RANDOM() LIMIT 1
-        """
+        """,
+        params,
     ).fetchone()
     return {"player": row[0], "pos": row[1]} if row else None
 
 
-def _pick_vintage_player(conn):
+def _pick_vintage_player(conn, min_draft_year=None):
     """Notable past NBA player from nba_draft with win_shares >= 30,
     max season in nba_stats < 2021, at least 3 teammates in nba_stats."""
+    extra = ""
+    if min_draft_year:
+        extra = f"  AND CAST(d.draft_year AS REAL) >= {int(min_draft_year)}\n"
     row = conn.execute(
-        """
+        f"""
         SELECT d.player FROM nba_draft d
         WHERE CAST(d.win_shares AS REAL) >= 30
+          {extra}
           AND d.player IN (SELECT DISTINCT player FROM nba_stats)
           AND (SELECT MAX(CAST(season AS INTEGER)) FROM nba_stats WHERE player = d.player) < 2021
           AND (
@@ -57,8 +68,9 @@ def _pick_vintage_player(conn):
 
 # ── Teammate chain builders ───────────────────────────────────────────────────
 
-def _build_classic_chain(conn, player):
-    """Find 5 notable teammates. One per team. Notable = career pts_pg >= 12 in nba_draft."""
+def _build_classic_chain(conn, player, hard_mode=False):
+    """Find 5 notable teammates. One per team. Notable = career pts_pg >= 12 in nba_draft.
+    In hard mode, any teammate qualifies (no notability filter)."""
     teams = conn.execute(
         "SELECT team, MIN(season) FROM nba_stats WHERE player = ? GROUP BY team ORDER BY MIN(season)",
         (player,),
@@ -77,17 +89,25 @@ def _build_classic_chain(conn, player):
         if not seasons:
             return None
         ph = ",".join("?" * len(seasons))
-        # Prefer notable teammates (pts_pg >= 12 in nba_draft)
-        notable = [r[0] for r in conn.execute(
-            f"""SELECT DISTINCT s.player FROM nba_stats s
-                LEFT JOIN nba_draft d ON d.player = s.player
-                WHERE s.team = ? AND s.season IN ({ph}) AND s.player != ?
-                  AND CAST(d.pts_pg AS REAL) >= 12
-                ORDER BY RANDOM() LIMIT 20""",
-            [team] + seasons + [player],
-        ).fetchall()]
-        if notable:
-            return random.choice(notable)
+        if hard_mode:
+            pool = [r[0] for r in conn.execute(
+                f"""SELECT DISTINCT player FROM nba_stats
+                    WHERE team=? AND season IN ({ph}) AND player!=?
+                    ORDER BY RANDOM() LIMIT 30""",
+                [team] + seasons + [player],
+            ).fetchall()]
+        else:
+            # Prefer notable teammates (pts_pg >= 12 in nba_draft)
+            pool = [r[0] for r in conn.execute(
+                f"""SELECT DISTINCT s.player FROM nba_stats s
+                    LEFT JOIN nba_draft d ON d.player = s.player
+                    WHERE s.team = ? AND s.season IN ({ph}) AND s.player != ?
+                      AND CAST(d.pts_pg AS REAL) >= 12
+                    ORDER BY RANDOM() LIMIT 20""",
+                [team] + seasons + [player],
+            ).fetchall()]
+        if pool:
+            return random.choice(pool)
         # Fallback: any teammate
         row = conn.execute(
             f"SELECT DISTINCT player FROM nba_stats WHERE team=? AND season IN ({ph}) AND player!=? ORDER BY RANDOM() LIMIT 1",
@@ -104,24 +124,32 @@ def _build_classic_chain(conn, player):
             clues.append({"icon": "🤝", "label": "Teammate", "text": tm})
 
     if len(clues) < 5:
-        # Pad with more notable teammates
-        extras = conn.execute(
-            """SELECT DISTINCT s2.player FROM nba_stats s1
-               JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
-               LEFT JOIN nba_draft d ON d.player = s2.player
-               WHERE s1.player=? AND s2.player!=?
-                 AND CAST(d.pts_pg AS REAL) >= 12
-               ORDER BY RANDOM() LIMIT 40""",
-            (player, player),
-        ).fetchall()
-        if len(extras) < 5:
-            extras += conn.execute(
+        if hard_mode:
+            extras = conn.execute(
                 """SELECT DISTINCT s2.player FROM nba_stats s1
                    JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
                    WHERE s1.player=? AND s2.player!=?
+                   ORDER BY RANDOM() LIMIT 60""",
+                (player, player),
+            ).fetchall()
+        else:
+            extras = conn.execute(
+                """SELECT DISTINCT s2.player FROM nba_stats s1
+                   JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
+                   LEFT JOIN nba_draft d ON d.player = s2.player
+                   WHERE s1.player=? AND s2.player!=?
+                     AND CAST(d.pts_pg AS REAL) >= 12
                    ORDER BY RANDOM() LIMIT 40""",
                 (player, player),
             ).fetchall()
+            if len(extras) < 5:
+                extras += conn.execute(
+                    """SELECT DISTINCT s2.player FROM nba_stats s1
+                       JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
+                       WHERE s1.player=? AND s2.player!=?
+                       ORDER BY RANDOM() LIMIT 40""",
+                    (player, player),
+                ).fetchall()
         pool = [r[0] for r in extras]
         random.shuffle(pool)
         for name in pool:
@@ -134,8 +162,9 @@ def _build_classic_chain(conn, player):
     return clues[:5]
 
 
-def _build_vintage_chain(conn, player):
-    """Similar to classic but prefer win_shares >= 10 teammates."""
+def _build_vintage_chain(conn, player, hard_mode=False):
+    """Similar to classic but prefer win_shares >= 10 teammates.
+    In hard mode, any teammate qualifies."""
     teams = conn.execute(
         "SELECT team, MIN(season) FROM nba_stats WHERE player = ? GROUP BY team ORDER BY MIN(season)",
         (player,),
@@ -154,16 +183,24 @@ def _build_vintage_chain(conn, player):
         if not seasons:
             return None
         ph = ",".join("?" * len(seasons))
-        notable = [r[0] for r in conn.execute(
-            f"""SELECT DISTINCT s.player FROM nba_stats s
-                LEFT JOIN nba_draft d ON d.player = s.player
-                WHERE s.team = ? AND s.season IN ({ph}) AND s.player != ?
-                  AND CAST(d.win_shares AS REAL) >= 10
-                ORDER BY CAST(d.win_shares AS REAL) DESC, RANDOM() LIMIT 20""",
-            [team] + seasons + [player],
-        ).fetchall()]
-        if notable:
-            return random.choice(notable)
+        if hard_mode:
+            pool = [r[0] for r in conn.execute(
+                f"""SELECT DISTINCT player FROM nba_stats
+                    WHERE team=? AND season IN ({ph}) AND player!=?
+                    ORDER BY RANDOM() LIMIT 30""",
+                [team] + seasons + [player],
+            ).fetchall()]
+        else:
+            pool = [r[0] for r in conn.execute(
+                f"""SELECT DISTINCT s.player FROM nba_stats s
+                    LEFT JOIN nba_draft d ON d.player = s.player
+                    WHERE s.team = ? AND s.season IN ({ph}) AND s.player != ?
+                      AND CAST(d.win_shares AS REAL) >= 10
+                    ORDER BY CAST(d.win_shares AS REAL) DESC, RANDOM() LIMIT 20""",
+                [team] + seasons + [player],
+            ).fetchall()]
+        if pool:
+            return random.choice(pool)
         # Fallback: any teammate
         row = conn.execute(
             f"SELECT DISTINCT player FROM nba_stats WHERE team=? AND season IN ({ph}) AND player!=? ORDER BY RANDOM() LIMIT 1",
@@ -180,20 +217,29 @@ def _build_vintage_chain(conn, player):
             clues.append({"icon": "🤝", "label": "Teammate", "text": tm})
 
     if len(clues) < 5:
-        extras = conn.execute(
-            """SELECT DISTINCT s2.player FROM nba_stats s1
-               JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
-               LEFT JOIN nba_draft d ON d.player = s2.player
-               WHERE s1.player=? AND s2.player!=?
-                 AND CAST(d.win_shares AS REAL) >= 10
-               ORDER BY CAST(d.win_shares AS REAL) DESC, RANDOM() LIMIT 40""",
-            (player, player),
-        ).fetchall()
-        if len(extras) < 5:
-            extras += conn.execute(
+        if hard_mode:
+            extras = conn.execute(
                 """SELECT DISTINCT s2.player FROM nba_stats s1
                    JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
                    WHERE s1.player=? AND s2.player!=?
+                   ORDER BY RANDOM() LIMIT 60""",
+                (player, player),
+            ).fetchall()
+        else:
+            extras = conn.execute(
+                """SELECT DISTINCT s2.player FROM nba_stats s1
+                   JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
+                   LEFT JOIN nba_draft d ON d.player = s2.player
+                   WHERE s1.player=? AND s2.player!=?
+                     AND CAST(d.win_shares AS REAL) >= 10
+                   ORDER BY CAST(d.win_shares AS REAL) DESC, RANDOM() LIMIT 40""",
+                (player, player),
+            ).fetchall()
+            if len(extras) < 5:
+                extras += conn.execute(
+                    """SELECT DISTINCT s2.player FROM nba_stats s1
+                       JOIN nba_stats s2 ON s1.team=s2.team AND s1.season=s2.season
+                       WHERE s1.player=? AND s2.player!=?
                    ORDER BY RANDOM() LIMIT 40""",
                 (player, player),
             ).fetchall()
@@ -282,13 +328,13 @@ def _build_hints(conn, player, pos):
 
 # ── Public API ────────────────────────────────────────────────────────────────
 
-def start_game(conn, mode="classic"):
+def start_game(conn, mode="classic", hard_mode=False, min_draft_year=None):
     if mode == "vintage":
-        p = _pick_vintage_player(conn)
-        chain_fn = _build_vintage_chain
+        p = _pick_vintage_player(conn, min_draft_year=min_draft_year)
+        chain_fn = lambda c, pl: _build_vintage_chain(c, pl, hard_mode=hard_mode)
     else:
-        p = _pick_classic_player(conn)
-        chain_fn = _build_classic_chain
+        p = _pick_classic_player(conn, min_draft_year=min_draft_year)
+        chain_fn = lambda c, pl: _build_classic_chain(c, pl, hard_mode=hard_mode)
 
     if not p:
         return None, [], []

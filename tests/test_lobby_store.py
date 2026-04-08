@@ -14,7 +14,7 @@ class LobbyStoreSeatMetaTests(unittest.TestCase):
             lobby_store.claim_seat(room_id, f"token-{seat_no}", f"P{seat_no}", seat_no)
         return room_id
 
-    def test_team_switch_clears_role_in_codewords_teams(self):
+    def test_team_switch_preserves_role_if_no_conflict(self):
         room_id = self._create_room_with_players("nfl_codewords", 4)
 
         room = lobby_store.update_seat_meta(room_id, "host-token", {"team": "A"})
@@ -23,6 +23,18 @@ class LobbyStoreSeatMetaTests(unittest.TestCase):
         room = lobby_store.update_seat_meta(room_id, "host-token", {"role": "spymaster"})
         self.assertEqual(room["seats"]["1"]["meta"], {"team": "A", "role": "spymaster"})
 
+        # Switch team — role preserved since no one else is B/spymaster
+        room = lobby_store.update_seat_meta(room_id, "host-token", {"team": "B"})
+        self.assertEqual(room["seats"]["1"]["meta"], {"team": "B", "role": "spymaster"})
+
+    def test_team_switch_clears_role_on_conflict(self):
+        room_id = self._create_room_with_players("nfl_codewords", 4)
+
+        # P1 is A/spymaster, P2 is B/spymaster
+        lobby_store.update_seat_meta(room_id, "host-token", {"team": "A", "role": "spymaster"})
+        lobby_store.update_seat_meta(room_id, "token-2", {"team": "B", "role": "spymaster"})
+
+        # P1 switches to team B — role cleared because B/spymaster is taken by P2
         room = lobby_store.update_seat_meta(room_id, "host-token", {"team": "B"})
         self.assertEqual(room["seats"]["1"]["meta"], {"team": "B"})
 
@@ -33,18 +45,6 @@ class LobbyStoreSeatMetaTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Red Clue Giver is already taken"):
             lobby_store.update_seat_meta(room_id, "token-2", {"team": "A", "role": "spymaster"})
-
-    def test_duel_team_switch_rejects_taken_team(self):
-        room_id = self._create_room_with_players("nfl_codewords_duel", 2)
-
-        lobby_store.update_seat_meta(room_id, "host-token", {"team": "A"})
-
-        with self.assertRaisesRegex(ValueError, "Team Red is already taken"):
-            lobby_store.update_seat_meta(room_id, "token-2", {"team": "A"})
-
-        room = lobby_store.update_seat_meta(room_id, "token-2", {"team": "B"})
-        self.assertEqual(room["seats"]["2"]["meta"], {"team": "B"})
-
 
 if __name__ == "__main__":
     unittest.main()

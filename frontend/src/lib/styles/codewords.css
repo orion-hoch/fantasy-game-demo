@@ -1,0 +1,541 @@
+/* ================================================================
+   codewords.css — Code Words multiplayer game
+   Aesthetic matches bullseye / dark Bebas-Barlow sports theme.
+   ================================================================ */
+
+#cw-root {
+  padding: 20px 24px 40px;
+}
+
+#cw-root .back-link {
+  display: inline-block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  text-decoration: none;
+  margin-bottom: 6px;
+}
+#cw-root .back-link:hover { filter: brightness(1.2); }
+
+.cw-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--yellow);
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+/* ── Game header / score bar ─────────────────────────────────────── */
+
+.cw-header {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.cw-team-card {
+  flex: 1 1 220px;
+  background: var(--surface);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.cw-team-card.team-a { border-left: 8px solid #d62828; }
+.cw-team-card.team-b { border-left: 8px solid var(--yellow); }
+.cw-team-card.active {
+  box-shadow: 4px 4px 0 var(--yellow);
+}
+
+.cw-team-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.cw-team-card.team-a .cw-team-label { color: #ff7676; }
+.cw-team-card.team-b .cw-team-label { color: var(--yellow); }
+
+.cw-team-score {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: 3px;
+  color: var(--text);
+  line-height: 1;
+}
+.cw-team-roster {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.cw-status-card {
+  flex: 2 1 320px;
+  background: var(--surface-2);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cw-status-line {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cw-status-main {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 3px;
+  color: var(--yellow);
+  line-height: 1.05;
+}
+
+.cw-status-sub {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+}
+
+/* ── Clue input panel ────────────────────────────────────────────── */
+
+.cw-clue-panel {
+  background: var(--surface);
+  border: 3px solid var(--yellow);
+  box-shadow: 4px 4px 0 var(--border);
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.cw-clue-panel h3 {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 3px;
+  color: var(--yellow);
+  margin-bottom: 10px;
+}
+
+.cw-clue-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+
+.cw-clue-input {
+  flex: 1 1 240px;
+  background: var(--surface-2);
+  border: 2px solid var(--border-dim);
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.05rem;
+  padding: 10px 13px;
+  outline: none;
+}
+.cw-clue-input:focus { border-color: var(--yellow); }
+.cw-clue-input::placeholder { color: var(--text-muted); }
+
+.cw-clue-stepper {
+  display: flex;
+  align-items: stretch;
+  min-width: 118px;
+  background: var(--surface-2);
+  border: 2px solid var(--border-dim);
+}
+
+.cw-clue-step-btn {
+  width: 38px;
+  border: 0;
+  background: var(--surface-3);
+  color: var(--yellow);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cw-clue-step-btn:hover {
+  filter: brightness(1.15);
+}
+
+.cw-clue-step-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cw-clue-number {
+  min-width: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.4rem;
+  text-align: center;
+  padding: 8px 10px;
+}
+
+.cw-clue-submit {
+  background: var(--yellow);
+  color: var(--text-dark);
+  border: 3px solid var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  padding: 8px 18px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.cw-clue-submit:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--border); }
+.cw-clue-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: 3px 3px 0 var(--border); }
+
+.cw-clue-help {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+.cw-clue-counter { color: var(--text-dim); }
+.cw-clue-counter.over { color: var(--red-bright); }
+
+/* ── Active clue display (during guess phase) ────────────────────── */
+
+.cw-active-clue {
+  background: var(--surface-3);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cw-active-clue-text {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.7rem;
+  letter-spacing: 2px;
+  color: var(--yellow);
+  flex: 1;
+  min-width: 200px;
+  word-break: break-word;
+}
+
+.cw-active-clue-pill {
+  background: var(--surface-2);
+  border: 2px solid var(--border-dim);
+  color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 6px 12px;
+}
+
+.cw-end-turn-btn {
+  background: var(--surface-2);
+  border: 2px solid var(--red);
+  color: var(--red-bright);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1rem;
+  letter-spacing: 2px;
+  padding: 8px 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.cw-end-turn-btn:hover { filter: brightness(1.15); }
+.cw-end-turn-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── 5x5 board ────────────────────────────────────────────────────── */
+
+.cw-board {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+.cw-cell {
+  position: relative;
+  background: var(--surface);
+  border: 3px solid var(--border);
+  box-shadow: 3px 3px 0 var(--border);
+  aspect-ratio: 1 / 1.15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 6px 4px 6px;
+  overflow: hidden;
+  cursor: default;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.cw-cell-headshot {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+}
+
+.cw-cell-headshot.loaded .cw-cell-headshot-fallback {
+  display: none;
+}
+
+.cw-cell-headshot-fallback {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 3.2rem;
+  line-height: 1;
+  color: rgba(247, 240, 223, 0.32);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.28);
+  user-select: none;
+}
+
+.cw-cell-headshot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  filter: grayscale(0.05) contrast(1.05);
+  display: none;
+  pointer-events: none;
+}
+
+.cw-cell-headshot.loaded img {
+  display: block;
+}
+
+.cw-cell-name-bar {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  background: linear-gradient(180deg, rgba(15,15,30,0) 0%, rgba(15,15,30,0.85) 35%, rgba(15,15,30,0.95) 100%);
+  padding: 14px 4px 4px;
+  text-align: center;
+}
+
+.cw-cell-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text);
+  line-height: 1.05;
+}
+
+/* Spymaster preview overlay (full key visible) */
+.cw-cell.key-A:not(.revealed)::after,
+.cw-cell.key-B:not(.revealed)::after,
+.cw-cell.key-neutral:not(.revealed)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.cw-cell.key-A:not(.revealed)::after { background: rgba(214, 40, 40, 0.42); }
+.cw-cell.key-B:not(.revealed)::after { background: rgba(245, 199, 0, 0.4); }
+.cw-cell.key-neutral:not(.revealed)::after { background: rgba(140, 140, 160, 0.32); }
+
+.cw-cell.key-A:not(.revealed) { border-color: #d62828; }
+.cw-cell.key-B:not(.revealed) { border-color: var(--yellow); }
+.cw-cell.key-neutral:not(.revealed) { border-color: #6e6e88; }
+
+/* Clickable state — only for current guesser */
+.cw-cell.clickable {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.cw-cell.clickable:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--yellow); }
+
+/* Revealed states (everyone sees these) */
+.cw-cell.revealed {
+  cursor: default;
+}
+.cw-cell.revealed.team-A {
+  background: #5a1818;
+  border-color: #d62828;
+  box-shadow: 3px 3px 0 #2a0808;
+}
+.cw-cell.revealed.team-B {
+  background: #5e4a00;
+  border-color: var(--yellow);
+  box-shadow: 3px 3px 0 #2a2000;
+}
+.cw-cell.revealed.team-neutral {
+  background: #2c2c3a;
+  border-color: #6e6e88;
+  box-shadow: 3px 3px 0 #1a1a26;
+}
+.cw-cell.revealed .cw-cell-headshot img {
+  filter: grayscale(0.6) brightness(0.7);
+}
+.cw-cell.revealed .cw-cell-name-bar {
+  background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.85) 100%);
+}
+
+.cw-cell-stamp {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 3;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 0.68rem;
+  letter-spacing: 1px;
+  padding: 2px 6px;
+  border: 2px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+.cw-cell.revealed.team-A .cw-cell-stamp { background: #d62828; color: #fff; border-color: #fff; }
+.cw-cell.revealed.team-B .cw-cell-stamp { background: var(--yellow); color: var(--text-dark); border-color: var(--text-dark); }
+.cw-cell.revealed.team-neutral .cw-cell-stamp { background: #6e6e88; color: #fff; border-color: #fff; }
+
+/* ── History / log ────────────────────────────────────────────────── */
+
+.cw-history {
+  margin-top: 18px;
+  background: var(--surface);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+  padding: 12px 16px;
+}
+.cw-history h3 {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.cw-history-row {
+  display: flex;
+  gap: 10px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.92rem;
+  color: var(--text-dim);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-dim);
+}
+.cw-history-row:last-child { border-bottom: none; }
+.cw-history-team-A { color: #ff7676; font-weight: 800; }
+.cw-history-team-B { color: var(--yellow); font-weight: 800; }
+
+/* ── Error / loading ─────────────────────────────────────────────── */
+
+.cw-error {
+  background: rgba(214,40,40,0.15);
+  border: 2px solid var(--red);
+  color: var(--red-bright);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.95rem;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.cw-loading {
+  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--text-dim);
+  padding: 24px;
+  text-align: center;
+}
+
+/* ── Results overlay ─────────────────────────────────────────────── */
+
+.cw-results-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 35, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+}
+
+.cw-results-card {
+  background: var(--surface);
+  border: 3px solid var(--border);
+  box-shadow: 8px 8px 0 var(--border);
+  padding: 32px 32px 28px;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+}
+.cw-results-title {
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 2.2rem;
+  letter-spacing: 4px;
+  color: var(--yellow);
+  margin-bottom: 12px;
+}
+.cw-results-sub {
+  font-family: 'Barlow Condensed', sans-serif;
+  color: var(--text-dim);
+  font-size: 1rem;
+  margin-bottom: 18px;
+}
+.cw-results-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cw-results-back {
+  display: inline-block;
+  background: var(--yellow);
+  color: var(--text-dark);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0 var(--border);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.1rem;
+  letter-spacing: 3px;
+  padding: 12px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.cw-results-back.alt {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  #cw-root { padding: 14px 12px 32px; }
+  header { padding: 14px 14px 0; }
+  header h1 { font-size: 1.6rem; }
+  .cw-board { gap: 6px; }
+  .cw-cell-name { font-size: 0.62rem; }
+  .cw-cell-name-bar { padding-top: 8px; padding-bottom: 3px; }
+  .cw-cell-stamp { font-size: 0.55rem; padding: 1px 4px; }
+  .cw-active-clue-text { font-size: 1.3rem; }
+}
