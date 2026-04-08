@@ -2564,3 +2564,521 @@
   color: #f08080;
   border: 1px solid rgba(220, 60, 60, 0.4);
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   ADDITIONAL STYLES FOR FLASK-MATCHING REWRITE
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── NBA Position Colors (card-pos-g/f/c) ────────────────────────── */
+#bal-app .card-pos-g { --footer-color: var(--pos-qb); }
+#bal-app .card-pos-f { --footer-color: var(--pos-rb); }
+#bal-app .card-pos-c { --footer-color: var(--pos-wr); }
+#bal-app .card-pos-g .card-front { border-color: var(--pos-qb); }
+#bal-app .card-pos-f .card-front { border-color: var(--pos-rb); }
+#bal-app .card-pos-c .card-front { border-color: var(--pos-wr); }
+#bal-app .card-pos-g .card-pos-badge { background: var(--pos-qb); }
+#bal-app .card-pos-f .card-pos-badge { background: var(--pos-rb); }
+#bal-app .card-pos-c .card-pos-badge { background: var(--pos-wr); }
+#bal-app .card-pos-g .card-back-pos { color: var(--pos-qb); border-color: var(--pos-qb-dim); }
+#bal-app .card-pos-f .card-back-pos { color: var(--pos-rb); border-color: var(--pos-rb-dim); }
+#bal-app .card-pos-c .card-back-pos { color: var(--pos-wr); border-color: var(--pos-wr-dim); }
+
+/* NBA stats bar fills */
+#bal-app .stats-bar-seg.filled.pos-fill-g { background: var(--pos-qb); border-color: var(--pos-qb-dim); }
+#bal-app .stats-bar-seg.filled.pos-fill-f { background: var(--pos-rb); border-color: var(--pos-rb-dim); }
+#bal-app .stats-bar-seg.filled.pos-fill-c { background: var(--pos-wr); border-color: var(--pos-wr-dim); }
+
+/* NBA stats pos badges */
+#bal-app .pos-badge-g { background: var(--pos-qb); border-color: var(--pos-qb-dim); color: white; }
+#bal-app .pos-badge-f { background: var(--pos-rb); border-color: var(--pos-rb-dim); color: white; }
+#bal-app .pos-badge-c { background: var(--pos-wr); border-color: var(--pos-wr-dim); color: white; }
+
+/* ── Stats Overlay ────────────────────────────────────────────────── */
+#bal-app .stats-overlay {
+  position: fixed;
+  top: 60px;
+  right: 12px;
+  width: 320px;
+  max-width: 90vw;
+  background: var(--card-face, #f7f0df);
+  color: var(--text-dark, #1a1a1a);
+  border: 3px solid var(--card-border, #1a1a1a);
+  box-shadow: 6px 6px 0 rgba(0,0,0,0.3);
+  z-index: 200;
+  padding: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+#bal-app .stats-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--card-border);
+}
+
+#bal-app .stats-overlay-title {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text-dark);
+}
+
+#bal-app .stats-overlay .overlay-close {
+  background: var(--card-border);
+  border: 2px solid var(--card-border);
+  color: var(--text-light);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  font-family: Impact, sans-serif;
+  transition: background 0.15s;
+}
+
+#bal-app .stats-overlay .overlay-close:hover {
+  background: var(--accent-red);
+}
+
+#bal-app .stats-overlay .stats-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px dotted #aaa;
+}
+
+#bal-app .stats-overlay .stats-row:last-child { border-bottom: none; }
+
+#bal-app .stats-overlay .stats-pos-badge {
+  font-family: Impact, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  border-width: 2px;
+  border-style: solid;
+  flex-shrink: 0;
+  min-width: 36px;
+  text-align: center;
+  color: white;
+}
+
+#bal-app .stats-overlay .stats-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#bal-app .stats-overlay .stats-level {
+  font-family: Impact, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  letter-spacing: 1px;
+}
+
+#bal-app .stats-overlay .stats-bar-wrap {
+  display: flex;
+  gap: 3px;
+}
+
+#bal-app .stats-overlay .stats-bar-seg {
+  height: 8px;
+  flex: 1;
+  background: #ddd;
+  border: 1px solid #aaa;
+}
+
+#bal-app .stats-overlay .stats-boosts {
+  font-family: Arial, sans-serif;
+  font-size: 0.65rem;
+  color: #555;
+  letter-spacing: 1px;
+}
+
+#bal-app .stats-combos {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dotted #aaa;
+}
+
+#bal-app .stats-combos-title {
+  font-family: Impact, sans-serif;
+  font-size: 0.7rem;
+  color: var(--text-dark);
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+
+#bal-app .stats-combo-row {
+  font-family: Arial, sans-serif;
+  font-size: 0.65rem;
+  color: #555;
+  padding: 2px 0;
+}
+
+/* ── SFX Mute Button ──────────────────────────────────────────────── */
+#bal-app .sfx-mute-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text-light);
+  cursor: pointer;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 4px 8px;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+#bal-app .sfx-mute-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ── Card Deal Animation ──────────────────────────────────────────── */
+@keyframes card-deal-in {
+  0% {
+    transform: translateY(200px) rotate(15deg) scale(0.45);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) rotate(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── Sort Buttons ─────────────────────────────────────────────────── */
+#bal-app #sort-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+#bal-app .btn-sort {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: var(--text-light);
+  cursor: pointer;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+#bal-app .btn-sort:hover,
+#bal-app .btn-sort.active {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* ── Shop Content Layout (new layout) ─────────────────────────────── */
+#bal-app .shop-content {
+  padding: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+#bal-app .shop-items-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+#bal-app .shop-items-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Shop item card style matching Flask */
+#bal-app .shop-item {
+  display: flex;
+  flex-direction: column;
+  width: 150px;
+  background: var(--nb-surface, #1e1e48);
+  border: 2px solid var(--nb-border, #2a2a6a);
+  position: relative;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#bal-app .shop-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+}
+
+#bal-app .shop-item.cant-afford {
+  opacity: 0.5;
+}
+
+#bal-app .shop-item-icon-text {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.8);
+  letter-spacing: 1px;
+}
+
+#bal-app .shop-item-rarity-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+}
+
+#bal-app .rarity-bar-common { background: var(--rarity-common); }
+#bal-app .rarity-bar-uncommon { background: var(--rarity-uncommon); }
+#bal-app .rarity-bar-rare { background: var(--rarity-rare); }
+#bal-app .rarity-bar-legendary { background: var(--rarity-legendary); }
+
+/* Shop section header */
+#bal-app .shop-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+
+#bal-app .shop-section-title {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--section-color, var(--text-light));
+}
+
+/* Shop locker section */
+#bal-app .shop-locker-section {
+  margin-bottom: 20px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+#bal-app .shop-sell-hint {
+  font-size: 0.55rem;
+  color: var(--nb-dim, #8888bb);
+  margin-left: auto;
+  font-family: Arial, sans-serif;
+}
+
+#bal-app .shop-locker-section .joker-list {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+#bal-app .shop-joker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  background: var(--nb-surface, #1e1e48);
+  border: 2px solid var(--nb-border, #2a2a6a);
+  min-width: 120px;
+  max-width: 160px;
+}
+
+#bal-app .shop-joker .joker-desc {
+  font-family: Arial, sans-serif;
+  font-size: 0.55rem;
+  color: var(--nb-dim, #8888bb);
+  text-align: center;
+  line-height: 1.3;
+}
+
+#bal-app .btn-sell {
+  background: var(--accent-red, #d62828);
+  border: 2px solid #1a1a1a;
+  color: white;
+  cursor: pointer;
+  font-family: Impact, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  text-transform: uppercase;
+  transition: background 0.15s;
+  margin-top: 4px;
+}
+
+#bal-app .btn-sell:hover {
+  background: #ff3333;
+}
+
+/* Shop actions row */
+#bal-app .shop-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px 0;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: 12px;
+}
+
+/* NPC panel in shop */
+#bal-app .npc-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-top: 12px;
+  background: rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+#bal-app .npc-nameplate {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  color: var(--accent-yellow);
+  text-transform: uppercase;
+}
+
+#bal-app .npc-char {
+  flex-shrink: 0;
+}
+
+#bal-app .npc-avatar {
+  width: 44px;
+  height: 44px;
+  background: var(--nb-surface, #1e1e48);
+  border: 2px solid var(--accent-yellow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Impact, sans-serif;
+  font-size: 0.7rem;
+  color: var(--accent-yellow);
+  letter-spacing: 1px;
+}
+
+#bal-app .vendor-bubble {
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: 0.75rem;
+  color: var(--nb-dim, #8888bb);
+  font-style: italic;
+  flex: 1;
+}
+
+/* ── Rarity color classes ─────────────────────────────────────────── */
+#bal-app .rarity-common { color: var(--rarity-common); }
+#bal-app .rarity-uncommon { color: var(--rarity-uncommon); }
+#bal-app .rarity-rare { color: var(--rarity-rare); }
+#bal-app .rarity-legendary { color: var(--rarity-legendary); }
+
+/* ── Joker fan image ──────────────────────────────────────────────── */
+#bal-app .joker-fan-img {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(0,0,0,0.3);
+}
+
+/* ── Scoring state: dim body background ───────────────────────────── */
+#bal-app #game-screen.scoring {
+  background: rgba(0,0,0,0.3);
+}
+
+#bal-app #game-screen.scoring #hand-cards > .card:not(.scoring-active):not(.scoring-done):not(.scoring-dim) {
+  opacity: 0.6;
+}
+
+/* ── Card horizontal layout fix (no stacking) ─────────────────────── */
+#bal-app #hand-cards {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 8px 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure cards don't shrink below readable size */
+#bal-app #hand-cards > .card {
+  flex-shrink: 0;
+}
+
+/* ── Store Banner Improvements ────────────────────────────────────── */
+#bal-app .store-banner {
+  background: linear-gradient(135deg, var(--nb-surface, #1e1e48), var(--bg-secondary, #12122a));
+  border-bottom: 3px solid var(--accent-yellow);
+  padding: 0;
+}
+
+#bal-app .store-marquee {
+  background: var(--accent-yellow);
+  color: var(--text-dark);
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 4px 0;
+  text-align: center;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+#bal-app .store-main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+#bal-app .store-title-main {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--accent-yellow);
+  text-shadow: 2px 2px 0 var(--card-border);
+}
+
+#bal-app .store-title-sub {
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--nb-dim, #8888bb);
+}
+
+#bal-app .shop-coins {
+  font-family: Impact, 'Arial Black', sans-serif;
+  font-size: 1.3rem;
+  color: var(--accent-yellow);
+  letter-spacing: 1px;
+}
+
+/* ── Reward screen Joker rarity colors ────────────────────────────── */
+#bal-app .reward-joker-option .joker-rarity {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: 'Barlow Condensed', Arial, sans-serif;
+}
+
+/* ── Division badge colors ────────────────────────────────────────── */
+#bal-app .div-atlantic { background: #2a5caa; color: white; }
+#bal-app .div-central { background: #d32f2f; color: white; }
+#bal-app .div-southeast { background: #f57c00; color: white; }
+#bal-app .div-northwest { background: #388e3c; color: white; }
+#bal-app .div-pacific { background: #7b1fa2; color: white; }
+#bal-app .div-southwest { background: #00796b; color: white; }

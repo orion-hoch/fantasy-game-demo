@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import '$lib/styles/balatro.css';
-  import type { Card, Joker, ShopItem, ShopPack, Screen, Sport, GameState } from './types';
+  import type { Card, Joker, ShopItem, ShopPack, Screen, Sport, GameState, CardStats, PlayResult } from './types';
+  import { SFX } from '$lib/sfx';
   import {
     startBalatroGame,
     playBalatroHand,
@@ -17,6 +18,7 @@
     advanceBalatroFight,
     claimBalatroReward,
     startBalatroInfinity,
+    getBalatroCardStats,
   } from '$lib/api/balatro';
 
   let { sport }: { sport: Sport } = $props();
@@ -47,15 +49,38 @@
   let heldCards: Card[] = $state([]);
   let deckCards: Card[] = $state([]);
   let restockCount = $state(0);
+  let maxHandSize = $state(9);
+  let baseDiscards = $state(3);
 
   // ── UI state ─────────────────────────────────────────────────────
   let selectedIds = $state<Set<string>>(new Set());
   let actionPending = $state(false);
   let errorMsg = $state('');
-  let lastPlayResult = $state<{ handName: string; score: number; basePts: number; totalMult: number } | null>(null);
+  let lastPlayResult = $state<PlayResult | null>(null);
   let logEntries: string[] = $state([]);
   let previewData = $state<{ hand_name?: string; score?: number; base_pts?: number; total_mult?: number } | null>(null);
   let gameWon = $state(false);
+  let sfxMuted = $state(SFX.isMuted());
+  let statsOpen = $state(false);
+
+  // Card flip state
+  let flippedCardIds = $state<Set<string>>(new Set());
+  let cardStatsCache: Record<string, CardStats> = {};
+
+  // Scoring animation state
+  let scoringActive = $state(false);
+  let animHandType = $state('');
+  let animChips = $state(0);
+  let animMult = $state(0);
+  let animXmult = $state(0);
+  let animScore = $state(0);
+  let animShowMult = $state(false);
+  let animShowXmult = $state(false);
+  let animShowScore = $state(false);
+  let animScoringIds = $state<Set<string>>(new Set());
+  let animActiveId = $state('');
+  let animDimIds = $state<Set<string>>(new Set());
+  let animDoneIds = $state<Set<string>>(new Set());
 
   // Reward state
   let rewardOptions: Joker[] = $state([]);
@@ -67,19 +92,104 @@
   let packMaxPicks = $state(1);
   let packOpen = $state(false);
 
+  // Deal animation state
+  let dealAnimating = $state(false);
+  let cardAnimDelays: Record<string, number> = $state({});
+
   const title = $derived(sport === 'nfl' ? 'NFL Balatro' : 'NBA Balatro');
+
+  // ── Division lookup ──────────────────────────────────────────────
+  const NBA_DIV: Record<string, string> = {
+    BOS:'Atlantic',BRK:'Atlantic',BKN:'Atlantic',NYK:'Atlantic',PHI:'Atlantic',TOR:'Atlantic',NJN:'Atlantic',
+    CHI:'Central',CLE:'Central',DET:'Central',IND:'Central',MIL:'Central',
+    ATL:'Southeast',CHA:'Southeast',CHH:'Southeast',MIA:'Southeast',ORL:'Southeast',WAS:'Southeast',
+    DEN:'Northwest',MIN:'Northwest',OKC:'Northwest',POR:'Northwest',UTA:'Northwest',SEA:'Northwest',
+    GSW:'Pacific',LAC:'Pacific',LAL:'Pacific',PHX:'Pacific',PHO:'Pacific',SAC:'Pacific',
+    DAL:'Southwest',HOU:'Southwest',MEM:'Southwest',NOP:'Southwest',SAS:'Southwest',NOH:'Southwest',VAN:'Southwest',NOK:'Southwest',
+  };
+  const NBA_DIV_LABEL: Record<string, string> = {
+    'Atlantic':'ATL','Central':'CEN','Southeast':'SE',
+    'Northwest':'NW','Pacific':'PAC','Southwest':'SW',
+  };
+  const NBA_DIV_CLASS: Record<string, string> = {
+    'Atlantic':'div-atlantic','Central':'div-central','Southeast':'div-southeast',
+    'Northwest':'div-northwest','Pacific':'div-pacific','Southwest':'div-southwest',
+  };
+
+  // NFL Division lookup
+  const NFL_DIV: Record<string, string> = {
+    BUF:'AFC East',MIA:'AFC East',NE:'AFC East',NYJ:'AFC East',
+    BAL:'AFC North',CIN:'AFC North',CLE:'AFC North',PIT:'AFC North',
+    HOU:'AFC South',IND:'AFC South',JAX:'AFC South',TEN:'AFC South',
+    DEN:'AFC West',KC:'AFC West',LV:'AFC West',LAC:'AFC West',OAK:'AFC West',SD:'AFC West',
+    DAL:'NFC East',NYG:'NFC East',PHI:'NFC East',WAS:'NFC East',
+    CHI:'NFC North',DET:'NFC North',GB:'NFC North',MIN:'NFC North',
+    ATL:'NFC South',CAR:'NFC South',NO:'NFC South',TB:'NFC South',
+    ARI:'NFC West',LAR:'NFC West',SF:'NFC West',SEA:'NFC West',STL:'NFC West',
+  };
+  const NFL_DIV_LABEL: Record<string, string> = {
+    'AFC East':'AFCE','AFC North':'AFCN','AFC South':'AFCS','AFC West':'AFCW',
+    'NFC East':'NFCE','NFC North':'NFCN','NFC South':'NFCS','NFC West':'NFCW',
+  };
+
+  function getDivInfo(team: string) {
+    if (!team) return null;
+    const t = team.toUpperCase();
+    if (sport === 'nba') {
+      const div = NBA_DIV[t];
+      if (!div) return null;
+      return { label: NBA_DIV_LABEL[div] || div, cls: NBA_DIV_CLASS[div] || '' };
+    } else {
+      const div = NFL_DIV[t];
+      if (!div) return null;
+      return { label: NFL_DIV_LABEL[div] || div, cls: '' };
+    }
+  }
+
+  function displayYear(season: number): string {
+    if (sport === 'nba') return String(season + 1);
+    return String(season);
+  }
 
   function addLog(msg: string) {
     logEntries = [msg, ...logEntries.slice(0, 49)];
   }
 
   function toggleCard(id: string) {
+    if (scoringActive) return;
     const next = new Set(selectedIds);
     if (next.has(id)) next.delete(id);
     else if (next.size < 5) next.add(id);
     selectedIds = next;
+    SFX.play('card_sel');
     if (next.size > 0) fetchPreview();
     else previewData = null;
+  }
+
+  function flipCard(id: string, card: Card) {
+    const next = new Set(flippedCardIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+      fetchCardBack(card);
+    }
+    flippedCardIds = next;
+  }
+
+  async function fetchCardBack(card: Card) {
+    const key = card.player + '_' + card.season;
+    if (cardStatsCache[key]) return;
+    try {
+      const stats = await getBalatroCardStats(sport, card.player, String(card.season));
+      cardStatsCache[key] = stats as CardStats;
+      // Force reactivity
+      cardStatsCache = { ...cardStatsCache };
+    } catch { /* ignore */ }
+  }
+
+  function getCardStats(card: Card): CardStats | null {
+    return cardStatsCache[card.player + '_' + card.season] || null;
   }
 
   async function fetchPreview() {
@@ -114,9 +224,115 @@
     if (data.joker_state) jokerState = data.joker_state;
     if (data.held_cards !== undefined) heldCards = data.held_cards;
     if (data.deck_cards !== undefined) deckCards = data.deck_cards;
+    if (data.max_hand_size !== undefined) maxHandSize = data.max_hand_size;
+    if (data.base_discards !== undefined) baseDiscards = data.base_discards;
     selectedIds = new Set();
     previewData = null;
     errorMsg = '';
+  }
+
+  // ── Sleep helper ─────────────────────────────────────────────────
+  function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
+
+  // ── Scoring animation ───────────────────────────────────────────
+  async function animateScore(data: PlayResult, playedIds: string[]) {
+    if (!data.card_contributions || data.card_contributions.length === 0) return;
+    scoringActive = true;
+
+    const scoringIds = new Set(data.scoring_card_ids || data.card_contributions.map(c => c.id));
+    animScoringIds = scoringIds;
+    animDimIds = new Set(playedIds.filter(id => !scoringIds.has(id)));
+    animDoneIds = new Set();
+    animHandType = (data.hand_name || '').toUpperCase();
+    animChips = 0;
+    animMult = 0;
+    animXmult = 1;
+    animScore = 0;
+    animShowMult = false;
+    animShowXmult = false;
+    animShowScore = false;
+    animActiveId = '';
+
+    await tick();
+    await sleep(200);
+
+    // Phase 1: card by card chips
+    let runningChips = 0;
+    for (const contrib of data.card_contributions) {
+      animActiveId = contrib.id;
+      await sleep(180);
+      runningChips += contrib.contribution;
+      animChips = Math.round(runningChips);
+      SFX.play('score_tick');
+      animDoneIds = new Set([...animDoneIds, contrib.id]);
+      animActiveId = '';
+      await sleep(280);
+    }
+    await sleep(220);
+
+    // Phase 2: mult reveal
+    animShowMult = true;
+    animMult = data.total_mult || 0;
+    SFX.play('score_tick');
+    await sleep(420);
+
+    // Phase 2b: xmult
+    if (data.mult_factor && data.mult_factor > 1.0) {
+      animShowXmult = true;
+      animXmult = data.mult_factor;
+      SFX.play('score_tick');
+      await sleep(420);
+    }
+
+    // Phase 3: score bang
+    animShowScore = true;
+    animScore = data.score || 0;
+    SFX.play('reward');
+    await sleep(1000);
+
+    // Fade out
+    scoringActive = false;
+    animScoringIds = new Set();
+    animDimIds = new Set();
+    animDoneIds = new Set();
+    animActiveId = '';
+  }
+
+  // ── Deal animation ──────────────────────────────────────────────
+  async function triggerDealAnimation() {
+    dealAnimating = true;
+    const delays: Record<string, number> = {};
+    hand.forEach((card, i) => {
+      delays[card.id] = i;
+    });
+    cardAnimDelays = delays;
+    SFX.play('rustle');
+    await tick();
+    // After animation completes
+    setTimeout(() => {
+      dealAnimating = false;
+      cardAnimDelays = {};
+    }, 120 + hand.length * 90 + 500);
+  }
+
+  async function triggerNewCardsAnimation(oldIds: Set<string>) {
+    const delays: Record<string, number> = {};
+    let idx = 0;
+    hand.forEach((card) => {
+      if (!oldIds.has(card.id)) {
+        delays[card.id] = idx++;
+      }
+    });
+    if (idx > 0) {
+      dealAnimating = true;
+      cardAnimDelays = delays;
+      SFX.play('rustle');
+      await tick();
+      setTimeout(() => {
+        dealAnimating = false;
+        cardAnimDelays = {};
+      }, idx * 90 + 500);
+    }
   }
 
   // ── Game actions ─────────────────────────────────────────────────
@@ -132,8 +348,12 @@
       restockCount = 0;
       lastPlayResult = null;
       gameWon = false;
+      flippedCardIds = new Set();
+      cardStatsCache = {};
       applyState(data);
       screen = 'playing';
+      await tick();
+      triggerDealAnimation();
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Failed to start game';
     } finally {
@@ -142,28 +362,40 @@
   }
 
   async function handlePlayHand() {
-    if (selectedIds.size === 0 || actionPending) return;
+    if (selectedIds.size === 0 || actionPending || scoringActive) return;
     actionPending = true;
+    SFX.play('card_play');
+    const ids = Array.from(selectedIds);
+    const oldHandIds = new Set(hand.map(c => c.id));
     try {
-      const data = await playBalatroHand(sport, gameId, Array.from(selectedIds)) as GameState;
+      const data = await playBalatroHand(sport, gameId, ids) as GameState & PlayResult;
       if (data.error) { errorMsg = data.error; actionPending = false; return; }
 
+      // Run scoring animation BEFORE updating UI
+      await animateScore(data, ids);
+
       lastPlayResult = {
-        handName: data.hand_name ?? '',
+        hand_name: data.hand_name ?? '',
         score: data.score ?? 0,
-        basePts: data.base_pts ?? 0,
-        totalMult: data.total_mult ?? 0,
+        base_pts: data.base_pts ?? 0,
+        total_mult: data.total_mult ?? 0,
       };
       addLog(`${data.hand_name}: +${formatNum(data.score ?? 0)}${data.coins_earned ? ` | +$${data.coins_earned}` : ''}`);
 
       applyState(data);
+      flippedCardIds = new Set();
 
       const status = data.status;
-      if (status === 'won_fight' || status === 'won_level') {
+      if (status === 'playing') {
+        await tick();
+        triggerNewCardsAnimation(oldHandIds);
+      } else if (status === 'won_fight' || status === 'won_level') {
         setTimeout(() => handleAdvanceFight(), 1200);
       } else if (status === 'won_game') {
+        SFX.play('win');
         setTimeout(() => showGameOver(true), 1200);
       } else if (status === 'lost') {
+        SFX.play('lose');
         setTimeout(() => showGameOver(false), 1200);
       }
     } catch (err) {
@@ -174,13 +406,18 @@
   }
 
   async function handleDiscard() {
-    if (selectedIds.size === 0 || discardsRemaining <= 0 || actionPending) return;
+    if (selectedIds.size === 0 || discardsRemaining <= 0 || actionPending || scoringActive) return;
     actionPending = true;
+    SFX.play('discard');
+    const oldHandIds = new Set(hand.map(c => c.id));
     try {
       const data = await discardBalatroCards(sport, gameId, Array.from(selectedIds)) as GameState;
       if (data.error) { errorMsg = data.error; return; }
       addLog(`Discarded ${selectedIds.size} card(s)`);
       applyState(data);
+      flippedCardIds = new Set();
+      await tick();
+      triggerNewCardsAnimation(oldHandIds);
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Discard failed';
     } finally {
@@ -195,6 +432,7 @@
       if (data.coins !== undefined) coins = data.coins;
       rewardOptions = (data.reward_options ?? []) as Joker[];
       rewardCoins = (data.reward_coins as number) ?? 0;
+      SFX.play('reward');
       screen = 'reward';
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Advance failed';
@@ -203,6 +441,7 @@
 
   async function handleClaimReward(choice: string, jokerId?: string) {
     actionPending = true;
+    SFX.play('buy');
     try {
       const data = await claimBalatroReward(sport, gameId, choice, jokerId) as GameState;
       if (data.error) { errorMsg = data.error; return; }
@@ -239,7 +478,8 @@
     actionPending = true;
     try {
       const data = await buyBalatroItem(sport, gameId, shopId, itemType) as GameState;
-      if (data.error) { errorMsg = data.error; return; }
+      if (data.error) { errorMsg = data.error; actionPending = false; return; }
+      SFX.play('buy');
       applyState(data);
       if (data.shop_items) shopItems = data.shop_items;
       if (data.shop_packs) shopPacks = data.shop_packs;
@@ -257,6 +497,7 @@
       const data = await sellBalatroJoker(sport, gameId, jokerId) as GameState;
       if (data.error) { errorMsg = data.error; return; }
       applyState(data);
+      SFX.play('buy');
       addLog('Sold joker');
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Sell failed';
@@ -270,6 +511,7 @@
     try {
       const data = await restockBalatroShop(sport, gameId) as GameState;
       if (data.error) { errorMsg = data.error; return; }
+      SFX.play('buy');
       applyState(data);
       if (data.shop_items) shopItems = data.shop_items;
       if (data.shop_packs) shopPacks = data.shop_packs;
@@ -286,6 +528,7 @@
     try {
       const data = await openBalatroPack(sport, gameId, packId) as Record<string, unknown>;
       if (data.error) { errorMsg = data.error as string; return; }
+      SFX.play('buy');
       packCards = (data.cards ?? []) as Card[];
       packMaxPicks = (data.max_picks as number) ?? 1;
       packSelectedIds = new Set();
@@ -322,8 +565,11 @@
       currentScore = 0;
       lastPlayResult = null;
       logEntries = [];
+      flippedCardIds = new Set();
       applyState(data);
       screen = 'playing';
+      await tick();
+      triggerDealAnimation();
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Leave shop failed';
     } finally {
@@ -344,8 +590,11 @@
       currentScore = 0;
       lastPlayResult = null;
       logEntries = [];
+      flippedCardIds = new Set();
       applyState(data);
       screen = 'playing';
+      await tick();
+      triggerDealAnimation();
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Start infinity failed';
     } finally {
@@ -361,6 +610,8 @@
     lastPlayResult = null;
     previewData = null;
     errorMsg = '';
+    flippedCardIds = new Set();
+    cardStatsCache = {};
   }
 
   function togglePackCard(id: string) {
@@ -370,10 +621,15 @@
     packSelectedIds = next;
   }
 
+  function toggleMute() {
+    SFX.toggleMute();
+    sfxMuted = SFX.isMuted();
+  }
+
   function formatNum(n: number): string {
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
     if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
-    return String(n);
+    return String(Math.round(n));
   }
 
   function scorePercent(): number {
@@ -382,7 +638,8 @@
 
   const backHref = $derived(sport === 'nfl' ? '/?tab=nfl' : '/?tab=nba');
   const titleMain = $derived(sport === 'nfl' ? 'NFL BALATRO' : 'NBA BALATRO');
-  const titleSub = $derived(sport === 'nfl' ? 'Skill Position Edition' : 'Hardwood Edition');
+  const titleSub = $derived(sport === 'nfl' ? 'Skill Position Edition' : 'Fantasy Draft Edition');
+  const sportLogoSrc = $derived(sport === 'nfl' ? '/img/football_logo_nobg.png' : '/img/basketball_logo_nobg.png');
 
   type HandTypeRow = { name: string; mult: string; desc: string; royal?: boolean };
   const handTypes: HandTypeRow[] = $derived(sport === 'nfl' ? [
@@ -398,17 +655,14 @@
     { name: 'Division Six', mult: '6x', desc: '6 cards from same division' },
     { name: 'Division Balanced Offense', mult: '25x', desc: 'QB + 2 WRs + 2 RBs + TE, all same division', royal: true },
   ] : [
-    { name: 'Highlight Reel', mult: '1x', desc: 'Best single card' },
-    { name: 'Dynamic Duo', mult: '1.5x', desc: '2 of same position' },
-    { name: 'Triple Threat', mult: '2x', desc: '3 of same position' },
-    { name: 'Quad Set', mult: '3x', desc: '4 of same position' },
-    { name: 'Starting Five', mult: '3.5x', desc: 'G + G + F + F + C' },
-    { name: 'Position Split', mult: '4x', desc: '3 of one position + 3 of another' },
-    { name: 'Conference Straight', mult: '5x', desc: '5 cards from same conference' },
-    { name: 'Position Flush', mult: '5x', desc: '5 of same position' },
-    { name: 'Six of a Kind', mult: '5.5x', desc: '6 of the same position' },
-    { name: 'Conference Six', mult: '6x', desc: '6 cards from same conference' },
-    { name: 'Conference Starting Five', mult: '25x', desc: 'G + G + F + F + C, all same conference', royal: true },
+    { name: 'Isolation', mult: '1x', desc: 'Best single card' },
+    { name: 'Catch & Shoot', mult: '1.5x', desc: '2 of same position' },
+    { name: 'Pick & Roll', mult: '2x', desc: '3 of same position' },
+    { name: 'Starting Four', mult: '3x', desc: '4 of same position' },
+    { name: 'Twin Towers', mult: '2.5x', desc: '3 of one position + 2 of another' },
+    { name: 'Zone Press', mult: '5.5x', desc: '5 of same position' },
+    { name: 'Division Court', mult: '6x', desc: '5+ cards from same division' },
+    { name: 'Division Starting Lineup', mult: '25x', desc: 'G + F + C all present (5+ cards) same division', royal: true },
   ]);
 
   function posClass(pos: string): string {
@@ -419,11 +673,95 @@
       if (p === 'wr') return 'card-pos-wr';
       if (p === 'te') return 'card-pos-te';
     } else {
-      if (p === 'g') return 'card-pos-qb';
-      if (p === 'f') return 'card-pos-rb';
-      if (p === 'c') return 'card-pos-wr';
+      if (p === 'g') return 'card-pos-g';
+      if (p === 'f') return 'card-pos-f';
+      if (p === 'c') return 'card-pos-c';
     }
     return '';
+  }
+
+  function getCardAnimStyle(card: Card): string {
+    if (!dealAnimating || !(card.id in cardAnimDelays)) return '';
+    const idx = cardAnimDelays[card.id];
+    const delay = 120 + idx * 90;
+    return `animation: card-deal-in 0.42s cubic-bezier(0.22, 0.68, 0, 1.2) ${delay}ms both;`;
+  }
+
+  // Vendor lines for the shop
+  const VENDOR_LINES = [
+    'Stock up before tip-off!', 'Fresh talent just arrived!', "Get 'em while they last!",
+    'Best roster in the league!', 'Playoffs gear is here!', 'Limited stock - act fast!',
+    "Today's deals won't last!", 'Draft your dream team!', 'Championship season calls!',
+    'That last quarter was ELITE!', 'Running low on coins? Choose wisely!',
+    'A new fan could change everything!', 'Trust the process. Buy the pack.',
+  ];
+  let vendorLine = $state(VENDOR_LINES[0]);
+
+  function randomVendorLine() {
+    vendorLine = VENDOR_LINES[Math.floor(Math.random() * VENDOR_LINES.length)];
+  }
+
+  // Item type labels and icons for shop
+  const ITEM_ICON: Record<string, string> = {
+    joker: 'Fan', skill_card: 'SK', combo_card: 'CMB', effect_card: 'EF',
+    year_card: 'YR', cut_card: 'CUT', upgrade: 'UP', mod_card: 'MOD',
+    joker_enhancement: 'ENH', buy_card: 'PLR',
+  };
+  const ITEM_TYPE_LABEL: Record<string, string> = {
+    joker: 'FAN', skill_card: 'SKILL', combo_card: 'COMBO',
+    effect_card: 'EFFECT', year_card: 'SEASON', cut_card: 'RELEASE',
+    upgrade: 'UPGRADE', mod_card: 'MOD', joker_enhancement: 'ENHANCE',
+    buy_card: 'PLAYER CARD',
+  };
+
+  // Position levels config
+  const POS_LIST = $derived(sport === 'nfl' ? ['QB', 'RB', 'WR', 'TE'] : ['G', 'F', 'C']);
+  const BASE_MULTS = $derived<Record<string, number>>(sport === 'nfl'
+    ? { QB: 1.0, RB: 1.5, WR: 1.5, TE: 2.0 }
+    : { G: 1.0, F: 1.5, C: 2.5 });
+
+  // Sort hand
+  let currentSort = $state<string | null>(null);
+  function sortHand(mode: string) {
+    SFX.play('rustle');
+    if (currentSort === mode) {
+      currentSort = null;
+      return;
+    }
+    currentSort = mode;
+    if (mode === 'pos') {
+      hand = [...hand].sort((a, b) => {
+        const order = POS_LIST;
+        const ai = order.indexOf(a.pos);
+        const bi = order.indexOf(b.pos);
+        if (ai !== bi) return ai - bi;
+        return (b.fantasy_pts || b.pts || 0) - (a.fantasy_pts || a.pts || 0);
+      });
+    } else if (mode === 'pts') {
+      hand = [...hand].sort((a, b) => (b.fantasy_pts || b.pts || 0) - (a.fantasy_pts || a.pts || 0));
+    }
+  }
+
+  // Shop item sections
+  function getShopSections() {
+    const sections = [
+      { key: 'roster', label: 'FANS & PLAYERS', color: '#9b59b6', items: [] as (ShopItem | ShopPack)[] },
+      { key: 'training', label: 'SKILLS & UPGRADES', color: '#27ae60', items: [] as (ShopItem | ShopPack)[] },
+      { key: 'packs', label: 'PACKS', color: '#e74c3c', items: [] as (ShopItem | ShopPack)[] },
+    ];
+    const sectionMap: Record<string, typeof sections[0]> = {};
+    sections.forEach(s => sectionMap[s.key] = s);
+
+    (shopItems || []).forEach(item => {
+      const sec = (item as Record<string, unknown>).section as string || 'training';
+      if (sectionMap[sec]) sectionMap[sec].items.push(item);
+    });
+
+    (shopPacks || []).forEach(pack => {
+      sectionMap.packs.items.push(pack);
+    });
+
+    return sections.filter(s => s.items.length > 0);
   }
 
   onMount(() => {
@@ -439,7 +777,7 @@
 <div id="bal-app">
 
   {#if errorMsg}
-    <div class="bal-error">{errorMsg} <button type="button" onclick={() => (errorMsg = '')}>×</button></div>
+    <div class="bal-error">{errorMsg} <button type="button" onclick={() => (errorMsg = '')}>x</button></div>
   {/if}
 
   <!-- START SCREEN -->
@@ -447,16 +785,18 @@
     <div id="start-screen" class="screen active">
       <div class="start-inner">
         <a href={backHref} class="back-link">&larr; Back</a>
+        <button class="sfx-mute-btn" type="button" onclick={toggleMute} title={sfxMuted ? 'Unmute' : 'Mute'}>
+          {sfxMuted ? 'UNMUTE' : 'MUTE'}
+        </button>
         <div class="start-logo">
+          <img src={sportLogoSrc} alt={title} class="start-logo-img">
           <h1 class="start-title">{titleMain}</h1>
           <h2 class="start-sub">{titleSub}</h2>
         </div>
-        <p class="start-tagline">Draft hands of {sport === 'nfl' ? 'NFL' : 'NBA'} player-season cards. Build combos to beat the {sport === 'nfl' ? 'blitz' : 'press'}!</p>
-        <div class="start-mode-btns">
-          <button id="start-btn" class="btn-primary" type="button" disabled={actionPending} onclick={handleStart}>
-            {actionPending ? 'LOADING...' : (sport === 'nfl' ? 'KICKOFF!' : 'TIP-OFF!')}
-          </button>
-        </div>
+        <p class="start-tagline">Draft hands of {sport === 'nfl' ? 'NFL' : 'NBA'} player-season cards. Build combos to beat the {sport === 'nfl' ? 'blitz' : 'shot clock'}!</p>
+        <button id="start-btn" class="btn-primary" type="button" disabled={actionPending} onclick={handleStart}>
+          {actionPending ? 'LOADING...' : (sport === 'nfl' ? 'KICKOFF!' : 'TIP OFF!')}
+        </button>
         <div class="rules-preview">
           <h3 class="rules-title">HAND TYPES</h3>
           <div class="hand-types-grid">
@@ -474,12 +814,13 @@
 
   <!-- PLAYING SCREEN -->
   {:else if screen === 'playing'}
-    <div id="game-screen" class="screen active">
+    <div id="game-screen" class="screen active" class:scoring={scoringActive}>
+
       <!-- Top bar -->
       <div id="top-bar">
         <div id="level-info">
           <div id="level-name-display">{levelName}</div>
-          <div id="floor-display">Floor {floor} · Fight {fight}</div>
+          <div id="floor-display">Floor {floor} &middot; Fight {fight}</div>
         </div>
         <div id="score-section">
           <div id="score-bar-wrapper">
@@ -503,8 +844,55 @@
             <span id="discards-count">{discardsRemaining}</span>
             <span class="action-label">Discards</span>
           </div>
+          <button class="btn-stats" type="button" onclick={() => statsOpen = !statsOpen}>STATS</button>
+          <button class="sfx-mute-btn" type="button" onclick={toggleMute} title={sfxMuted ? 'Unmute' : 'Mute'}>
+            {sfxMuted ? 'UNMUTE' : 'MUTE'}
+          </button>
         </div>
       </div>
+
+      <!-- Stats Overlay (Position Levels as Bars) -->
+      {#if statsOpen}
+        <div id="stats-overlay" class="stats-overlay">
+          <div class="stats-overlay-header">
+            <span class="stats-overlay-title">POSITION LEVELS</span>
+            <button class="overlay-close" type="button" onclick={() => statsOpen = false}>x</button>
+          </div>
+          <div id="stats-bars-container">
+            {#each POS_LIST as pos}
+              {@const level = skillLevels[pos] || 0}
+              {@const ptsBoost = Math.round(level * 8)}
+              {@const baseMult = BASE_MULTS[pos] || 1}
+              {@const effMult = (baseMult + level * 0.12).toFixed(2)}
+              {@const barFill = Math.min(10, level)}
+              <div class="stats-row">
+                <div class="stats-pos-badge pos-badge-{pos.toLowerCase()}">{pos}</div>
+                <div class="stats-info">
+                  <div class="stats-level">Level {level}</div>
+                  <div class="stats-bar-wrap">
+                    {#each Array(10) as _, i}
+                      <div class="stats-bar-seg {i < barFill ? 'filled pos-fill-' + pos.toLowerCase() : ''}"></div>
+                    {/each}
+                  </div>
+                  <div class="stats-boosts">+{ptsBoost}% Pts x{effMult} Mult</div>
+                </div>
+              </div>
+            {/each}
+            <div class="stats-row" style="flex-direction:column;align-items:flex-start;">
+              <div class="stats-boosts" style="margin-bottom:4px">Hand Size: {maxHandSize} cards</div>
+              <div class="stats-boosts">Discards/Level: {baseDiscards}</div>
+            </div>
+            {#if Object.entries(comboBoosts).filter(([,v]) => v > 0).length > 0}
+              <div class="stats-combos">
+                <div class="stats-combos-title">COMBO BOOSTS</div>
+                {#each Object.entries(comboBoosts).filter(([,v]) => v > 0) as [combo, boost]}
+                  <div class="stats-combo-row">{combo}: +{boost}</div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
 
       <!-- Boss Effect Banner -->
       {#if bossEffect}
@@ -518,9 +906,10 @@
             <div id="jokers-label">FANS ({jokers.length}/{maxJokers})</div>
             <div id="jokers-container">
               {#each jokers as joker}
-                <div class="joker-slot filled" title={joker.description}>
+                <div class="joker-slot filled" title={joker.description} data-joker-id={joker.id}>
+                  <img class="joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
                   <div class="joker-name">{joker.name}</div>
-                  <div class="joker-rarity">{joker.rarity}</div>
+                  <div class="joker-rarity rarity-{joker.rarity}">{joker.rarity}</div>
                 </div>
               {/each}
             </div>
@@ -532,7 +921,7 @@
       {#if previewData && selectedIds.size > 0}
         <div id="hand-preview" class="active">
           <div id="preview-hand-type">{previewData.hand_name ?? '...'}</div>
-          <div id="preview-score-details">{formatNum(previewData.score ?? 0)} ({previewData.base_pts ?? 0} × {previewData.total_mult ?? 0})</div>
+          <div id="preview-score-details">{formatNum(previewData.score ?? 0)} ({previewData.base_pts ?? 0} x {previewData.total_mult ?? 0})</div>
         </div>
       {:else}
         <div id="hand-preview">
@@ -541,11 +930,50 @@
         </div>
       {/if}
 
+      <!-- Score Animation Panel -->
+      {#if scoringActive}
+        <div id="score-anim-panel">
+          <div id="anim-hand-type-label">{animHandType}</div>
+          <div id="anim-counters-row">
+            <div class="anim-counter-box" id="anim-chips-box">
+              <div class="anim-counter-label">CHIPS</div>
+              <div class="anim-counter-val">{formatNum(animChips)}</div>
+            </div>
+            <div class="anim-op">x</div>
+            {#if animShowMult}
+              <div class="anim-counter-box mult-popping" id="anim-mult-box">
+                <div class="anim-counter-label">MULT</div>
+                <div class="anim-counter-val">{animMult}</div>
+              </div>
+            {:else}
+              <div class="anim-counter-box" id="anim-mult-box">
+                <div class="anim-counter-label">MULT</div>
+                <div class="anim-counter-val">--</div>
+              </div>
+            {/if}
+            {#if animShowXmult}
+              <div class="anim-op">x</div>
+              <div class="anim-counter-box mult-popping" id="anim-xmult-box">
+                <div class="anim-counter-label">XMULT</div>
+                <div class="anim-counter-val">{animXmult}</div>
+              </div>
+            {/if}
+            {#if animShowScore}
+              <div class="anim-op">=</div>
+              <div class="anim-counter-box score-banging" id="anim-score-box">
+                <div class="anim-counter-label">SCORE</div>
+                <div class="anim-counter-val anim-score-val">{formatNum(animScore)}</div>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+
       <!-- Last play result -->
-      {#if lastPlayResult}
+      {#if lastPlayResult && !scoringActive}
         <div id="play-log-wrapper">
           <div id="play-log">
-            <div class="log-entry">{lastPlayResult.handName}: +{formatNum(lastPlayResult.score)} ({lastPlayResult.basePts} × {lastPlayResult.totalMult})</div>
+            <div class="log-entry">{lastPlayResult.hand_name}: +{formatNum(lastPlayResult.score ?? 0)} ({lastPlayResult.base_pts} x {lastPlayResult.total_mult})</div>
           </div>
         </div>
       {/if}
@@ -554,35 +982,136 @@
       <div id="hand-area">
         <div id="hand-area-header">
           <div id="hand-label">YOUR HAND</div>
+          <div id="sort-buttons">
+            <button class="btn-sort" class:active={currentSort === 'pos'} type="button" onclick={() => sortHand('pos')}>Sort Position</button>
+            <button class="btn-sort" class:active={currentSort === 'pts'} type="button" onclick={() => sortHand('pts')}>Sort Points</button>
+          </div>
         </div>
         <div id="hand-cards">
-          {#each hand as card}
+          {#each hand as card (card.id)}
+            {@const effects = cardEffects[card.id] || []}
+            {@const isFlipped = flippedCardIds.has(card.id)}
+            {@const stats = getCardStats(card)}
+            {@const divInfo = getDivInfo(card.team)}
+            {@const splitName = card.player.split(' ')}
+            {@const firstName = splitName.length > 1 ? splitName[0] : ''}
+            {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
+            {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
             <div
               class="card {posClass(card.pos)}"
               class:selected={selectedIds.has(card.id)}
+              class:flipped={isFlipped}
+              class:card-gold={effects.includes('gold')}
+              class:card-glass={effects.includes('glass')}
+              class:card-foil={effects.includes('foil')}
+              class:card-trained={effects.includes('trained')}
+              class:boss-disabled={card.boss_disabled}
+              class:scoring-active={animActiveId === card.id}
+              class:scoring-dim={animDimIds.has(card.id)}
+              class:scoring-done={animDoneIds.has(card.id)}
+              data-card-id={card.id}
+              data-id={card.id}
               role="button"
               tabindex="0"
-              onclick={() => toggleCard(card.id)}
+              style={getCardAnimStyle(card)}
+              onclick={(e) => {
+                if ((e.target as HTMLElement).closest('.card-flip-btn')) return;
+                if (isFlipped) { flipCard(card.id, card); return; }
+                toggleCard(card.id);
+              }}
               onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCard(card.id); } }}
             >
               <div class="card-inner">
+                <!-- Card Front -->
                 <div class="card-front">
+                  <!-- Top row: name + score -->
+                  <div class="card-top-row">
+                    <div class="card-name-box">
+                      <div class="card-year-line">
+                        {card.season ? "'" + String(displayYear(card.season)).slice(-2) : ''}
+                        {card.team ? ' \u00B7 ' + card.team : ''}
+                      </div>
+                      {#if firstName}
+                        <div class="card-player-first">{firstName}</div>
+                      {/if}
+                      <div class="card-player-last">{lastName}</div>
+                    </div>
+                    <div class="card-top-right">
+                      {#if card.allstar_count && card.allstar_count > 0}
+                        <div class="card-stars-box" title="{card.allstar_count}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}">
+                          {'★'.repeat(Math.min(card.allstar_count, 5))}
+                        </div>
+                      {/if}
+                      <div class="card-score-box">{pts}</div>
+                    </div>
+                  </div>
+
+                  <!-- Effect badges -->
+                  {#if effects.length > 0}
+                    <div class="card-effect-badges">
+                      {#each effects as eff}
+                        <span class="effect-badge effect-{eff}">
+                          {eff === 'gold' ? 'GD' : eff === 'glass' ? 'GL' : eff === 'trained' ? 'TR' : 'FO'}
+                        </span>
+                      {/each}
+                    </div>
+                  {/if}
+
+                  <!-- Headshot -->
                   <div class="card-headshot">
-                    <div class="card-pos-label">{card.pos}</div>
+                    {#if card.headshot_url}
+                      <img
+                        class="card-headshot-img"
+                        src={card.headshot_url}
+                        alt=""
+                        onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; (e.target as HTMLImageElement).classList.add('card-headshot-blank'); }}
+                      >
+                    {:else}
+                      <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
+                    {/if}
+                    <button class="card-flip-btn" type="button" title="View stats" onclick={(e) => { e.stopPropagation(); flipCard(card.id, card); }}>
+                      &#8617;
+                    </button>
                   </div>
-                  <div class="card-name-box">
-                    <div class="card-player">{card.player}</div>
+
+                  <!-- Bottom row: division + position -->
+                  <div class="card-bottom-row">
+                    <div class="card-footer-div">
+                      {#if divInfo}
+                        <div class="card-div-badge {divInfo.cls}">{divInfo.label}</div>
+                      {/if}
+                    </div>
+                    <span class="card-pos-badge">{card.pos}</span>
                   </div>
-                  <div class="card-score-box">
-                    <div class="card-score">{card.pts}</div>
-                    <div class="card-score-label">PTS</div>
-                  </div>
-                  <div class="card-footer">
-                    <span class="card-team">{card.team}</span>
-                    <span class="card-season">{card.season}</span>
-                  </div>
-                  {#if cardEffects[card.id]?.length}
-                    <div class="card-effects-badge">{cardEffects[card.id].join(', ')}</div>
+                </div>
+
+                <!-- Card Back -->
+                <div class="card-back">
+                  {#if stats}
+                    <div class="card-back-header">
+                      <span class="card-back-pos card-pos-{card.pos.toLowerCase()}">{card.pos}</span>
+                      <span class="card-back-team">{card.team}</span>
+                    </div>
+                    <div class="card-back-name">{card.player}</div>
+                    <div class="card-back-season">{displayYear(card.season)}</div>
+                    <div class="card-back-college">{(card.college && card.college !== 'Unknown') ? card.college : 'Undrafted'}</div>
+                    {#if card.allstar_count && card.allstar_count > 0}
+                      <div class="card-back-pb">★ {card.allstar_count}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}</div>
+                    {:else if card.draft_pick && card.draft_pick > 0}
+                      <div class="card-back-pb">Pick #{card.draft_pick}</div>
+                    {/if}
+                    <div class="card-back-stats">
+                      {#if sport === 'nba'}
+                        <div class="stat-row"><span>PTS</span><span>{(stats.pts_pg || 0).toFixed(1)} ppg</span></div>
+                        <div class="stat-row"><span>REB</span><span>{(stats.trb_pg || 0).toFixed(1)} rpg</span></div>
+                        <div class="stat-row"><span>AST</span><span>{(stats.ast_pg || 0).toFixed(1)} apg</span></div>
+                      {:else}
+                        {#if stats.pts_pg}<div class="stat-row"><span>FP</span><span>{stats.pts_pg}</span></div>{/if}
+                      {/if}
+                    </div>
+                    <div class="card-back-ppr">{card.fantasy_pts !== undefined ? card.fantasy_pts.toFixed(1) : pts} FP</div>
+                  {:else}
+                    <div class="card-back-loading">Loading...</div>
                   {/if}
                 </div>
               </div>
@@ -593,25 +1122,13 @@
 
       <!-- Action Buttons -->
       <div id="action-buttons">
-        <button id="play-btn" class="btn-play" type="button" disabled={selectedIds.size === 0 || actionPending} onclick={handlePlayHand}>
+        <button id="play-btn" class="btn-play" type="button" disabled={selectedIds.size === 0 || actionPending || scoringActive} onclick={handlePlayHand}>
           PLAY HAND ({selectedIds.size})
         </button>
-        <button id="discard-btn" class="btn-discard" type="button" disabled={selectedIds.size === 0 || discardsRemaining <= 0 || actionPending} onclick={handleDiscard}>
+        <button id="discard-btn" class="btn-discard" type="button" disabled={selectedIds.size === 0 || discardsRemaining <= 0 || actionPending || scoringActive} onclick={handleDiscard}>
           DISCARD ({discardsRemaining})
         </button>
       </div>
-
-      <!-- Skill levels -->
-      {#if Object.keys(skillLevels).length}
-        <div class="bal-skills">
-          {#each Object.entries(skillLevels) as [pos, level]}
-            <div class="skill-chip">{pos} Lv.{level}</div>
-          {/each}
-          {#each Object.entries(comboBoosts).filter(([,v]) => v > 0) as [combo, boost]}
-            <div class="skill-chip combo">{combo} +{boost}</div>
-          {/each}
-        </div>
-      {/if}
     </div>
 
   <!-- REWARD SCREEN -->
@@ -630,21 +1147,23 @@
             <div class="reward-choice-desc">Cold hard cash for the shop</div>
             <button class="btn-primary" type="button" disabled={actionPending} onclick={() => handleClaimReward('coins')}>Take Coins</button>
           </div>
-          <div class="reward-choice-card reward-choice-joker-card" id="reward-choice-joker">
-            <div class="reward-choice-icon reward-icon-joker">FAN</div>
-            <div class="reward-choice-label">FREE FAN PACK</div>
-            <div class="reward-choice-desc reward-joker-subdesc">Pick 1 of {rewardOptions.length} — keep it forever</div>
-            <div id="reward-joker-options" class="reward-joker-grid">
-              {#each rewardOptions as joker}
-                <div class="reward-joker-option">
-                  <div class="joker-name">{joker.name}</div>
-                  <div class="joker-desc">{joker.description}</div>
-                  <div class="joker-rarity">{joker.rarity}</div>
-                  <button class="btn-secondary" type="button" disabled={actionPending} onclick={() => handleClaimReward('joker', joker.id)}>Take</button>
-                </div>
-              {/each}
+          {#if rewardOptions.length > 0}
+            <div class="reward-choice-card reward-choice-joker-card" id="reward-choice-joker">
+              <div class="reward-choice-icon reward-icon-joker">FAN</div>
+              <div class="reward-choice-label">FREE FAN PACK</div>
+              <div class="reward-choice-desc reward-joker-subdesc">Pick 1 of {rewardOptions.length} - keep it forever</div>
+              <div id="reward-joker-options" class="reward-joker-grid">
+                {#each rewardOptions as joker}
+                  <div class="reward-joker-option">
+                    <div class="joker-name">{joker.name}</div>
+                    <div class="joker-desc">{joker.description}</div>
+                    <div class="joker-rarity rarity-{joker.rarity}">{joker.rarity}</div>
+                    <button class="btn-secondary" type="button" disabled={actionPending} onclick={() => handleClaimReward('joker', joker.id)}>Take</button>
+                  </div>
+                {/each}
+              </div>
             </div>
-          </div>
+          {/if}
         </div>
       </div>
     </div>
@@ -655,7 +1174,7 @@
       <div class="shop-inner">
         <!-- Store Banner -->
         <div class="store-banner">
-          <div class="store-marquee">OFFICIAL TEAM MERCHANDISE &nbsp;·&nbsp; ALL SALES FINAL &nbsp;·&nbsp; GAME DAY SPECIALS</div>
+          <div class="store-marquee">OFFICIAL TEAM MERCHANDISE &nbsp;&middot;&nbsp; ALL SALES FINAL &nbsp;&middot;&nbsp; GAME DAY SPECIALS</div>
           <div class="store-main-header">
             <div class="store-title-area">
               <div class="store-title-main">TEAM STORE</div>
@@ -667,59 +1186,67 @@
           </div>
         </div>
 
-        <!-- Quadrant grid -->
-        <div class="shop-grid">
-          <!-- Top-left: items for sale -->
-          <div class="shop-q shop-q-items">
-            <div id="shop-items-container">
-              {#if shopItems.length}
-                <div class="shop-section">
-                  <div class="shop-section-label">Items for Sale</div>
-                  <div class="shop-items">
-                    {#each shopItems as item}
-                      <div class="shop-item-card">
+        <!-- Shop content: sections of items -->
+        <div class="shop-content">
+          <div class="shop-items-area">
+            {#each getShopSections() as section}
+              <div class="shop-section" style="--section-color: {section.color}">
+                <div class="shop-section-header">
+                  <span class="shop-section-title">{section.label}</span>
+                </div>
+                <div class="shop-items-row">
+                  {#each section.items as item}
+                    {@const isPack = 'pack_id' in item}
+                    {@const cost = item.cost}
+                    {@const canAfford = coins >= cost}
+                    {@const itemType = isPack ? 'pack' : ((item as ShopItem).item_type || '')}
+                    {@const shopId = isPack ? (item as ShopPack).pack_id : (item as ShopItem).shop_id}
+                    {@const rarity = (item as Record<string, unknown>).rarity as string}
+                    <div class="shop-item" class:cant-afford={!canAfford}>
+                      <div class="shop-price-badge" class:cant-afford={!canAfford}>${cost}</div>
+                      <div class="shop-item-icon-area">
+                        <span class="shop-item-icon-text">{isPack ? 'PACK' : (ITEM_ICON[itemType] || 'ITM')}</span>
+                        {#if rarity}
+                          <div class="shop-item-rarity-bar rarity-bar-{rarity}"></div>
+                        {/if}
+                      </div>
+                      <div class="shop-item-body">
+                        <div class="shop-item-type">{isPack ? 'PACK' : (ITEM_TYPE_LABEL[itemType] || itemType.toUpperCase())}</div>
                         <div class="shop-item-name">{item.name}</div>
-                        <div class="shop-item-desc">{item.description}</div>
-                        <div class="shop-item-cost">${item.cost}</div>
-                        <button class="btn-secondary" type="button" disabled={actionPending || coins < item.cost} onclick={() => handleBuyItem(item.shop_id, item.item_type)}>
-                          Buy
+                        <div class="shop-item-desc">{item.description || (item as Record<string, unknown>).desc}</div>
+                      </div>
+                      <div class="shop-item-footer">
+                        <button class="btn-buy" type="button" disabled={!canAfford || actionPending}
+                          onclick={() => {
+                            if (isPack) handleOpenPack(shopId);
+                            else handleBuyItem(shopId, itemType);
+                          }}>
+                          {canAfford ? (isPack ? 'OPEN' : 'BUY') : 'NO $'}
                         </button>
                       </div>
-                    {/each}
-                  </div>
+                    </div>
+                  {/each}
                 </div>
-              {/if}
-              {#if shopPacks.length}
-                <div class="shop-section">
-                  <div class="shop-section-label">Packs</div>
-                  <div class="shop-items">
-                    {#each shopPacks as pack}
-                      <div class="shop-item-card pack">
-                        <div class="shop-item-name">{pack.name}</div>
-                        <div class="shop-item-desc">{pack.description}</div>
-                        <div class="shop-item-cost">${pack.cost}</div>
-                        <button class="btn-secondary" type="button" disabled={actionPending || coins < pack.cost} onclick={() => handleOpenPack(pack.pack_id)}>
-                          Open
-                        </button>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/if}
-            </div>
+              </div>
+            {/each}
           </div>
 
-          <!-- Top-right: your locker -->
-          <div class="shop-q shop-q-locker">
-            <div id="shop-jokers-section" class="your-locker-section">
-              <div class="shop-section-label">Your Jokers ({jokers.length}/{maxJokers})</div>
+          <!-- Your Locker (Jokers) -->
+          {#if jokers.length > 0}
+            <div class="shop-locker-section">
+              <div class="shop-section-header">
+                <span class="shop-section-title" style="color:#9b59b6;">YOUR LOCKER</span>
+                <span class="shop-sell-hint">click SELL to sell</span>
+              </div>
               <div class="joker-list">
                 {#each jokers as joker}
-                  <div class="joker-card shop-joker">
+                  <div class="joker-slot filled shop-joker">
+                    <img class="joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
                     <div class="joker-name">{joker.name}</div>
-                    <div class="joker-rarity">{joker.rarity}</div>
+                    <div class="joker-desc">{joker.description}</div>
+                    <div class="joker-rarity rarity-{joker.rarity}">{joker.rarity}</div>
                     {#if joker.sell_value}
-                      <button class="btn-secondary" type="button" disabled={actionPending} onclick={() => handleSellJoker(joker.id)}>
+                      <button class="btn-sell" type="button" disabled={actionPending} onclick={() => handleSellJoker(joker.id)}>
                         Sell ${joker.sell_value}
                       </button>
                     {/if}
@@ -727,27 +1254,26 @@
                 {/each}
               </div>
             </div>
-          </div>
+          {/if}
 
-          <!-- Bottom-left: actions -->
-          <div class="shop-q shop-q-actions">
-            <button id="restock-btn" class="btn-secondary" type="button" disabled={actionPending} onclick={handleRestock}>
-              Restock (${2 + restockCount})
+          <!-- Shop Actions -->
+          <div class="shop-actions">
+            <button id="restock-btn" class="btn-secondary" type="button" disabled={actionPending || coins < (2 + restockCount * 2)}
+              onclick={handleRestock}>
+              Restock (${2 + restockCount * 2})
             </button>
             <button id="leave-shop-btn" class="btn-primary" type="button" disabled={actionPending} onclick={handleLeaveShop}>
-              CONTINUE →
+              NEXT FIGHT &rarr;
             </button>
           </div>
 
-          <!-- Bottom-right: NPC vendor -->
-          <div class="shop-q shop-q-npc">
-            <div class="npc-panel">
-              <div class="npc-nameplate">Vendor Vic</div>
-              <div class="npc-char">
-                <div class="npc-avatar">VIC</div>
-              </div>
-              <div class="vendor-bubble" id="vendor-bubble">Gear up before the next game!</div>
+          <!-- Vendor NPC -->
+          <div class="npc-panel">
+            <div class="npc-nameplate">Vendor Vic</div>
+            <div class="npc-char">
+              <div class="npc-avatar">VIC</div>
             </div>
+            <div class="vendor-bubble">{vendorLine}</div>
           </div>
         </div>
       </div>
@@ -759,6 +1285,11 @@
             <div id="pack-opening-title">Pick up to {packMaxPicks} card(s)</div>
             <div id="pack-cards-reveal">
               {#each packCards as card}
+                {@const divInfo = getDivInfo(card.team)}
+                {@const splitName = card.player.split(' ')}
+                {@const firstName = splitName.length > 1 ? splitName[0] : ''}
+                {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
+                {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
                 <div
                   class="card {posClass(card.pos)} pack-reveal-card"
                   class:selected={packSelectedIds.has(card.id)}
@@ -769,18 +1300,34 @@
                 >
                   <div class="card-inner">
                     <div class="card-front">
+                      <div class="card-top-row">
+                        <div class="card-name-box">
+                          <div class="card-year-line">
+                            {card.season ? "'" + String(displayYear(card.season)).slice(-2) : ''}
+                            {card.team ? ' \u00B7 ' + card.team : ''}
+                          </div>
+                          {#if firstName}<div class="card-player-first">{firstName}</div>{/if}
+                          <div class="card-player-last">{lastName}</div>
+                        </div>
+                        <div class="card-top-right">
+                          <div class="card-score-box">{pts}</div>
+                        </div>
+                      </div>
                       <div class="card-headshot">
-                        <div class="card-pos-label">{card.pos}</div>
+                        {#if card.headshot_url}
+                          <img class="card-headshot-img" src={card.headshot_url} alt=""
+                            onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                        {:else}
+                          <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
+                        {/if}
                       </div>
-                      <div class="card-name-box">
-                        <div class="card-player">{card.player}</div>
-                      </div>
-                      <div class="card-score-box">
-                        <div class="card-score">{card.pts}</div>
-                        <div class="card-score-label">PTS</div>
-                      </div>
-                      <div class="card-footer">
-                        <span class="card-team">{card.team}</span>
+                      <div class="card-bottom-row">
+                        <div class="card-footer-div">
+                          {#if divInfo}
+                            <div class="card-div-badge {divInfo.cls}">{divInfo.label}</div>
+                          {/if}
+                        </div>
+                        <span class="card-pos-badge">{card.pos}</span>
                       </div>
                     </div>
                   </div>
@@ -801,9 +1348,9 @@
       <div id="gameover-content">
         <h2 class="gameover-title">{gameWon ? 'VICTORY!' : 'GAME OVER'}</h2>
         <div class="gameover-stats">
-          Floor {floor} · Fight {fight} · Round {round}
+          Floor {floor} &middot; Fight {fight} &middot; Round {round}
           <br>Score: {formatNum(currentScore)} / {formatNum(targetScore)}
-          <br>Coins: ${coins} · Jokers: {jokers.length}
+          <br>Coins: ${coins} &middot; Jokers: {jokers.length}
         </div>
         <div class="gameover-actions">
           {#if gameWon}
@@ -816,4 +1363,3 @@
     </div>
   {/if}
 </div>
-

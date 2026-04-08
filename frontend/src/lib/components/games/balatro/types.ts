@@ -7,9 +7,41 @@ export type Card = {
   pos: string;
   season: number;
   pts: number;
+  fantasy_pts?: number;
   pfr_id?: string;
   headshot_url?: string;
+  division?: string;
+  allstar_count?: number;
+  draft_pick?: number;
+  college?: string;
+  boss_disabled?: boolean;
+  _stickerCls?: string;
+  _stickerLabel?: string;
   [key: string]: unknown;
+};
+
+export type CardStats = {
+  pts_pg?: number;
+  trb_pg?: number;
+  ast_pg?: number;
+  games?: number;
+  team?: string;
+  pos?: string;
+};
+
+export type PlayResult = {
+  hand_name?: string;
+  score?: number;
+  base_pts?: number;
+  total_mult?: number;
+  coins_earned?: number;
+  broken_cards?: string[];
+  card_contributions?: { id: string; contribution: number }[];
+  scoring_card_ids?: string[];
+  joker_mult?: number;
+  joker_add_ids?: string[];
+  mult_factor?: number;
+  xmult_joker_ids?: string[];
 };
 
 export type Joker = {
