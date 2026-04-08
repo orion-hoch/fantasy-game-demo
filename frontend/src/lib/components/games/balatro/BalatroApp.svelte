@@ -32,7 +32,7 @@
   let floor = $state(1);
   let round = $state(1);
   let fight = $state(1);
-  let bossEffect = $state<string | null>(null);
+  let bossEffect = $state<unknown>(null);
   let levelName = $state('Preseason');
   let targetScore = $state(0);
   let currentScore = $state(0);
@@ -89,6 +89,8 @@
 
   // Pack opening state
   let packCards: Card[] = $state([]);
+  let packJokerOptions: Joker[] = $state([]);
+  let packIsJoker = $state(false);
   let packSelectedIds = $state<Set<string>>(new Set());
   let packMaxPicks = $state(1);
   let packOpen = $state(false);
@@ -150,6 +152,18 @@
   function displayYear(season: number): string {
     if (sport === 'nba') return String(season + 1);
     return String(season);
+  }
+
+  function bossName(effect: unknown): string {
+    if (!effect) return '';
+    if (typeof effect === 'string') return effect.replace(/_/g, ' ').toUpperCase();
+    if (typeof effect === 'object' && effect && 'name' in effect) return String((effect as { name: unknown }).name);
+    return String(effect);
+  }
+
+  function bossDesc(effect: unknown): string {
+    if (typeof effect === 'object' && effect && 'desc' in effect) return String((effect as { desc: unknown }).desc);
+    return '';
   }
 
   function getDeckGroups(): Array<{ pos: string; cards: Card[] }> {
@@ -559,8 +573,22 @@
       const data = await openBalatroPack(sport, gameId, packId) as Record<string, unknown>;
       if (data.error) { errorMsg = data.error as string; return; }
       SFX.play('buy');
-      packCards = (data.cards ?? []) as Card[];
-      packMaxPicks = (data.max_picks as number) ?? 1;
+
+      if (data.shop_packs) shopPacks = data.shop_packs as ShopPack[];
+
+      const candidates = (Array.isArray(data.candidates) ? data.candidates : data.cards ?? []) as Record<string, unknown>[];
+      const isJokerPack = Boolean(data.is_joker_pack) || (candidates.length > 0 && !('player' in candidates[0]));
+
+      packIsJoker = isJokerPack;
+      if (isJokerPack) {
+        packJokerOptions = candidates as unknown as Joker[];
+        packCards = [];
+      } else {
+        packCards = candidates as unknown as Card[];
+        packJokerOptions = [];
+      }
+
+      packMaxPicks = Number(data.picks_allowed ?? data.max_picks ?? 1);
       packSelectedIds = new Set();
       packOpen = true;
     } catch (err) {
@@ -580,6 +608,8 @@
       if (data.shop_packs) shopPacks = data.shop_packs;
       packOpen = false;
       packCards = [];
+      packJokerOptions = [];
+      packIsJoker = false;
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Confirm picks failed';
     } finally {
@@ -783,11 +813,13 @@
     sections.forEach(s => sectionMap[s.key] = s);
 
     (shopItems || []).forEach(item => {
+      if ((item as Record<string, unknown>).sold) return;
       const sec = (item as Record<string, unknown>).section as string || 'training';
       if (sectionMap[sec]) sectionMap[sec].items.push(item);
     });
 
     (shopPacks || []).forEach(pack => {
+      if ((pack as Record<string, unknown>).sold) return;
       sectionMap.packs.items.push(pack);
     });
 
@@ -929,7 +961,13 @@
 
       <!-- Boss Effect Banner -->
       {#if bossEffect}
-        <div id="boss-effect-banner">BOSS: {bossEffect}</div>
+        <div id="boss-effect-banner">
+          <span class="boss-banner-icon">⚠</span>
+          <span class="boss-banner-name">BOSS: {bossName(bossEffect)}</span>
+          {#if bossDesc(bossEffect)}
+            <span class="boss-banner-desc">{bossDesc(bossEffect)}</span>
+          {/if}
+        </div>
       {/if}
 
       <!-- Joker Display -->
@@ -1388,8 +1426,22 @@
         <div id="pack-opening-modal" class="full-overlay">
           <div id="pack-opening-content">
             <div id="pack-opening-title">Pick up to {packMaxPicks} card(s)</div>
-            <div id="pack-cards-reveal">
-              {#each packCards as card}
+            {#if packIsJoker}
+              <div class="reward-joker-grid">
+                {#each packJokerOptions as joker}
+                  <div class="reward-joker-option" class:selected={packSelectedIds.has(joker.id)}>
+                    <div class="joker-name">{joker.name}</div>
+                    <div class="joker-desc">{joker.description}</div>
+                    <div class="joker-rarity rarity-{joker.rarity}">{joker.rarity}</div>
+                    <button class="btn-secondary" type="button" onclick={() => togglePackCard(joker.id)}>
+                      {packSelectedIds.has(joker.id) ? 'Selected' : 'Pick'}
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <div id="pack-cards-reveal">
+                {#each packCards as card}
                 {@const divInfo = getDivInfo(card.team)}
                 {@const splitName = card.player.split(' ')}
                 {@const firstName = splitName.length > 1 ? splitName[0] : ''}
@@ -1437,8 +1489,9 @@
                     </div>
                   </div>
                 </div>
-              {/each}
-            </div>
+                {/each}
+              </div>
+            {/if}
             <button id="pack-close-btn" class="btn-primary" type="button" disabled={actionPending} onclick={handleConfirmPackPicks}>
               Confirm ({packSelectedIds.size}/{packMaxPicks})
             </button>

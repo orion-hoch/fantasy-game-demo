@@ -1718,11 +1718,7 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
         enhs.append(enhancement_id)
 
     g["coins"] -= cost
-    # Mark item as sold instead of removing it
-    for i in g["shop_items"]:
-        if i["shop_id"] == shop_id:
-            i["sold"] = True
-            break
+    g["shop_items"] = [i for i in g["shop_items"] if i.get("shop_id") != shop_id]
 
     result = {
         "coins": g["coins"],
@@ -2088,13 +2084,17 @@ def open_pack(gid, pack_id, conn):
             "picks_allowed": picks_allowed,
             "is_joker_pack": True,
         }
+        g["shop_packs"] = [p for p in g.get("shop_packs", []) if p.get("id") != pack_id]
         _GAMES[gid] = g
         return {
             "pack_name": pack["name"],
             "candidates": candidates,  # full joker objects
+            "cards": [],
             "picks_allowed": picks_allowed,
+            "max_picks": picks_allowed,
             "is_joker_pack": True,
             "coins": g["coins"],
+            "shop_packs": g.get("shop_packs", []),
         }, None
 
     # Determine how many candidates to show and how many player can pick
@@ -2113,6 +2113,7 @@ def open_pack(gid, pack_id, conn):
 
     g["coins"] -= pack["cost"]
     g["pending_pack"] = {"candidates": candidates, "effects": effects, "picks_allowed": picks_allowed}
+    g["shop_packs"] = [p for p in g.get("shop_packs", []) if p.get("id") != pack_id]
 
     _GAMES[gid] = g
     return {
@@ -2120,8 +2121,11 @@ def open_pack(gid, pack_id, conn):
         "pack_name": pack["name"],
         "pack_tier": pack["tier"],
         "candidates": candidates,
+        "cards": candidates,
         "picks_allowed": picks_allowed,
+        "max_picks": picks_allowed,
         "card_effects": effects,
+        "shop_packs": g.get("shop_packs", []),
     }, None
 
 
@@ -2153,6 +2157,8 @@ def confirm_pack_picks(gid, selected_ids):
             "added_jokers": valid_selected,
             "jokers": [JOKER_MAP[j if isinstance(j, str) else j["id"]] for j in g["jokers"]],
             "coins": g["coins"],
+            "shop_items": g.get("shop_items", []),
+            "shop_packs": g.get("shop_packs", []),
         }, None
 
     candidates = pending["candidates"]
@@ -2181,6 +2187,8 @@ def confirm_pack_picks(gid, selected_ids):
         "deck_pool_size": len(g["deck_pool"]),
         "added_cards": selected,
         "card_effects": g["card_effects"],
+        "shop_items": g.get("shop_items", []),
+        "shop_packs": g.get("shop_packs", []),
     }, None
 
 

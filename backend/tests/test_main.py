@@ -15,6 +15,8 @@ import lobby_store  # noqa: E402
 import codewords_game  # noqa: E402
 import nfl_bullseye  # noqa: E402
 import nba_bullseye  # noqa: E402
+import nfl_balatro  # noqa: E402
+import nba_balatro  # noqa: E402
 import nba_starting5_game  # noqa: E402
 import starting6_game  # noqa: E402
 
@@ -504,3 +506,124 @@ async def test_balatro_compat_start_alias(client: AsyncClient):
     body = response.json()
     assert body["game_id"]
     assert body["hand"]
+
+
+@pytest.mark.asyncio
+async def test_balatro_api_shop_buy_and_pack_flow(client: AsyncClient):
+    module_specs = [
+        ("nfl", nfl_balatro, "QB"),
+        ("nba", nba_balatro, "G"),
+    ]
+
+    for sport, module, pos in module_specs:
+        start = await client.post(f"/api/v1/balatro/{sport}/start", json={"mode": "normal"})
+        assert start.status_code == 200
+        gid = start.json()["game_id"]
+
+        state = module.get_state(gid)
+        assert state is not None
+        state["status"] = "shopping"
+        state["coins"] = 50
+        state["shop_items"] = [
+            {
+                "shop_id": "test-item",
+                "type": "skill_card",
+                "item_type": "skill_card",
+                "pos": pos,
+                "cost": 1,
+                "name": "Test Skill",
+                "desc": "test",
+                "section": "training",
+            }
+        ]
+        state["shop_packs"] = [dict(module.PACK_MAP["starter_pack"])]
+        module._GAMES[gid] = state
+
+        buy = await client.post(
+            f"/api/v1/balatro/{sport}/buy_item",
+            json={"game_id": gid, "shop_id": "test-item", "item_type": "skill_card"},
+        )
+        assert buy.status_code == 200
+        assert all(item["shop_id"] != "test-item" for item in buy.json()["shop_items"])
+
+        open_pack = await client.post(
+            f"/api/v1/balatro/{sport}/open_pack",
+            json={"game_id": gid, "pack_id": "starter_pack"},
+        )
+        assert open_pack.status_code == 200
+        open_body = open_pack.json()
+        assert open_body["candidates"]
+        assert open_body["picks_allowed"] == open_body["max_picks"]
+        assert "cards" in open_body
+        assert all(pack.get("id") != "starter_pack" for pack in open_body.get("shop_packs", []))
+
+        selected_id = open_body["candidates"][0]["id"]
+        confirm = await client.post(
+            f"/api/v1/balatro/{sport}/confirm_pack_picks",
+            json={"game_id": gid, "selected_ids": [selected_id]},
+        )
+        assert confirm.status_code == 200
+        confirm_body = confirm.json()
+        assert "shop_items" in confirm_body
+        assert "shop_packs" in confirm_body
+
+
+def test_balatro_shop_buy_and_pack_remove_entries():
+    db_path = "/Users/orionhoch/fantasy_game_demo/fantasy.db"
+    module_specs = [
+        ("nfl", nfl_balatro, "QB"),
+        ("nba", nba_balatro, "G"),
+    ]
+
+    for _sport, module, pos in module_specs:
+        conn = sqlite3.connect(db_path)
+        try:
+            if _sport == "nfl":
+                gid, _ = module.start_game(conn, mode="normal")
+            else:
+                gid, _ = module.start_game(conn)
+        finally:
+            conn.close()
+
+        state = module.get_state(gid)
+        assert state is not None
+        state["status"] = "shopping"
+        state["coins"] = 50
+        state["shop_items"] = [
+            {
+                "shop_id": "test-item",
+                "type": "skill_card",
+                "item_type": "skill_card",
+                "pos": pos,
+                "cost": 1,
+                "name": "Test Skill",
+                "desc": "test",
+                "section": "training",
+            }
+        ]
+        state["shop_packs"] = [dict(module.PACK_MAP["starter_pack"])]
+        module._GAMES[gid] = state
+
+        conn = sqlite3.connect(db_path)
+        try:
+            buy_result, buy_err = module.buy_shop_item(gid, "skill_card", "test-item", conn=conn)
+        finally:
+            conn.close()
+        assert buy_err is None
+        assert all(item["shop_id"] != "test-item" for item in buy_result["shop_items"])
+
+        conn = sqlite3.connect(db_path)
+        try:
+            pack_result, pack_err = module.open_pack(gid, "starter_pack", conn)
+        finally:
+            conn.close()
+        assert pack_err is None
+        assert pack_result["picks_allowed"] == pack_result["max_picks"]
+        assert "cards" in pack_result
+        assert all(pack.get("id") != "starter_pack" for pack in module.get_state(gid).get("shop_packs", []))
+
+        selected_id = pack_result["candidates"][0]["id"]
+        confirm_result, confirm_err = module.confirm_pack_picks(gid, [selected_id])
+        assert confirm_err is None
+        assert "shop_items" in confirm_result
+        assert "shop_packs" in confirm_result
