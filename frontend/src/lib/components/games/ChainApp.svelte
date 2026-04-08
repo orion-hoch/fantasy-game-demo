@@ -92,6 +92,13 @@
   }
 
   function updatePrompt() {
+    const activeLink = displayedChain[displayedChain.length - 1];
+    const chainPrompt = !displayedChain.length
+      ? 'Waiting for the first chain link...'
+      : displayedChain.length === 1
+        ? `Name a player who ${activeLink.label}`
+        : `Name a player who fits all ${displayedChain.length} links — latest: ${activeLink.label}`;
+
     if (isOnlineMode && onlineState) {
       if (onlineState.done && onlineState.winner) {
         promptText = onlineState.winner.winner_names.length === 1
@@ -100,9 +107,9 @@
         return;
       }
       if (onlineState.mode === 'coop') {
-        promptText = `${currentOnlinePlayer?.name}'s turn. Team lives left: ${onlineState.lives_left}`;
+        promptText = `${currentOnlinePlayer?.name}'s turn. ${chainPrompt} Team lives left: ${onlineState.lives_left}`;
       } else {
-        promptText = `${currentOnlinePlayer?.name}'s chain. Lives left: ${currentOnlinePlayer?.lives_left}`;
+        promptText = `${currentOnlinePlayer?.name}'s chain. ${chainPrompt} Lives left: ${currentOnlinePlayer?.lives_left}`;
       }
       return;
     }

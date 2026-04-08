@@ -17,6 +17,7 @@ _GAMES = GameStore("nba_bullseye", ttl_seconds=14400)
 # ── Constants ──────────────────────────────────────────────────────────────────
 
 STAT_CATEGORIES = ["PTS", "AST", "REB", "STL", "BLK", "3PM", "FGM", "FTM", "TOV"]
+MIN_PROMPT_PLAYERS = 5
 
 EASTERN_TEAMS = ["ATL", "BOS", "BRK", "NJN", "CHO", "CHA", "CHI", "CLE",
                  "DET", "IND", "MIA", "MIL", "NYK", "ORL", "PHI", "TOR", "WAS", "WSB"]
@@ -68,6 +69,20 @@ _STAT_MIN = {
     "PTS": 200, "AST": 100, "REB": 150, "STL": 20, "BLK": 10,
     "3PM": 20, "FGM": 150, "FTM": 50, "TOV": 50,
 }
+
+ACCOLADE_OPTIONS = [
+    "allstar",
+    "top10_draft",
+    "top5_draft",
+    "nba_hof",
+    "all_nba",
+    "all_defensive",
+    "all_rookie_nba",
+    "olympic_team",
+    "nba_mvp",
+    "nba_fmvp",
+    "nba_dpoy",
+]
 
 
 def _accolade_sql(accolade: str) -> str:
@@ -158,26 +173,21 @@ def _build_prompt_where(prompt: dict, stat: str = None, apply_stat_floor: bool =
     return "WHERE " + " AND ".join(clauses), params
 
 
+def _prompt_player_count(conn, prompt: dict, stat: str) -> int:
+    where, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
+    row = conn.execute(
+        f"SELECT COUNT(DISTINCT s.player) FROM nba_stats s {where}",
+        params,
+    ).fetchone()
+    return int(row[0] or 0) if row else 0
+
+
 def _generate_prompts(conn, stat: str) -> list:
-    """Generate 5 varied prompts for a stat category.
-    Uses specific teams and divisions (no conferences, no accolades)."""
-    stat_expr = _stat_expr(stat)
+    """Generate 5 varied prompts for a stat category with viable player pools."""
 
     storied_franchises = ["BOS", "LAL", "GSW", "CHI", "MIA", "SAS", "NYK", "PHI", "DET", "HOU"]
     other_franchises = ["DAL", "OKC", "DEN", "POR", "UTA", "SAC", "MIL", "ATL", "CLE", "IND", "ORL", "MIN", "TOR", "BRK", "NOP"]
     division_names = list(NBA_DIVISIONS.keys())
-
-    team_filter_pool = [
-        random.choice(storied_franchises),
-        random.choice(other_franchises),
-        random.choice(ALL_TEAMS),
-        random.choice(division_names),
-        random.choice(division_names),
-        random.choice(storied_franchises),
-        random.choice(division_names),
-    ]
-    random.shuffle(team_filter_pool)
-    team_filters = team_filter_pool[:5]
 
     year_ranges = [
         (2015, 2024),
@@ -188,43 +198,89 @@ def _generate_prompts(conn, stat: str) -> list:
         (1970, 1990),
         (1995, 2010),
     ]
-    random.shuffle(year_ranges)
+
+    team_filter_pool = (
+        storied_franchises
+        + other_franchises
+        + ALL_TEAMS
+        + division_names
+        + [None, None, None]
+    )
 
     prompts = []
-    for i in range(5):
-        team_filter = team_filters[i]
-        yr_min, yr_max = year_ranges[i]
+    seen = set()
+
+    attempts = 0
+    while len(prompts) < 5 and attempts < 400:
+        attempts += 1
+        team_filter = random.choice(team_filter_pool)
+        yr_min, yr_max = random.choice(year_ranges)
+        accolade = random.choice(ACCOLADE_OPTIONS + [None, None])
+
+        sig = (team_filter, yr_min, yr_max, accolade)
+        if sig in seen:
+            continue
+        seen.add(sig)
 
         prompt = {
             "team_filter": team_filter,
-            "team_filter_label": team_filter,
+            "team_filter_label": team_filter or "Any Team",
             "year_min": yr_min,
             "year_max": yr_max,
-            "accolade": None,
+            "accolade": accolade,
         }
 
-        # Verify prompt returns players
-        where, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
-        row = conn.execute(
-            f"SELECT COUNT(*) FROM nba_stats s {where}", params
-        ).fetchone()
-        count = row[0] if row else 0
+        count = _prompt_player_count(conn, prompt, stat)
+        if count < MIN_PROMPT_PLAYERS:
+            continue
 
-        if count < 5:
-            # Fallback: widen to a division or any
-            prompt["team_filter"] = random.choice(division_names)
-            prompt["team_filter_label"] = prompt["team_filter"]
-            where2, params2 = _build_prompt_where(prompt, stat, apply_stat_floor=True)
-            row2 = conn.execute(
-                f"SELECT COUNT(*) FROM nba_stats s {where2}", params2
-            ).fetchone()
-            if (row2[0] if row2 else 0) < 5:
-                prompt["team_filter"] = None
-                prompt["team_filter_label"] = "Any Team"
-
+        prompt["available_count"] = count
         prompts.append(prompt)
 
-    return prompts
+    fallback_templates = [
+        (None, 2010, 2024, None),
+        (None, 2000, 2024, None),
+        (None, 1990, 2024, None),
+        (random.choice(division_names), 2000, 2024, None),
+    ]
+    for team_filter, yr_min, yr_max, accolade in fallback_templates:
+        if len(prompts) >= 5:
+            break
+        sig = (team_filter, yr_min, yr_max, accolade)
+        if sig in seen:
+            continue
+        seen.add(sig)
+        prompt = {
+            "team_filter": team_filter,
+            "team_filter_label": team_filter or "Any Team",
+            "year_min": yr_min,
+            "year_max": yr_max,
+            "accolade": accolade,
+        }
+        count = _prompt_player_count(conn, prompt, stat)
+        if count >= MIN_PROMPT_PLAYERS:
+            prompt["available_count"] = count
+            prompts.append(prompt)
+
+    if len(prompts) < 5:
+        raise ValueError("Could not generate Bullseye prompts with enough players")
+
+    if not any(prompt.get("accolade") for prompt in prompts):
+        shuffled = ACCOLADE_OPTIONS[:]
+        random.shuffle(shuffled)
+        for idx, prompt in enumerate(prompts):
+            for accolade in shuffled:
+                candidate = dict(prompt)
+                candidate["accolade"] = accolade
+                count = _prompt_player_count(conn, candidate, stat)
+                if count >= MIN_PROMPT_PLAYERS:
+                    candidate["available_count"] = count
+                    prompts[idx] = candidate
+                    break
+            if any(p.get("accolade") for p in prompts):
+                break
+
+    return prompts[:5]
 
 
 def _compute_target(conn, prompts: list, stat: str) -> int:
@@ -291,8 +347,22 @@ def start_game(conn, player_names: list, player_tokens: list | None = None) -> t
     if player_tokens and len(player_tokens) != len(player_names):
         raise ValueError("Player token count mismatch")
 
-    stat = random.choice(STAT_CATEGORIES)
-    prompts = _generate_prompts(conn, stat)
+    last_error = None
+    stat = None
+    prompts = None
+    for _ in range(12):
+        candidate_stat = random.choice(STAT_CATEGORIES)
+        try:
+            candidate_prompts = _generate_prompts(conn, candidate_stat)
+            stat = candidate_stat
+            prompts = candidate_prompts
+            break
+        except ValueError as exc:
+            last_error = exc
+
+    if stat is None or prompts is None:
+        raise ValueError(str(last_error or "Could not start Bullseye"))
+
     target = _compute_target(conn, prompts, stat)
 
     game_id = str(uuid.uuid4())[:8]
@@ -432,20 +502,25 @@ def get_player_seasons(conn, game_id: str, prompt_idx: int, player_name: str) ->
     state = _GAMES.get(game_id)
     if state is None:
         return []
+    if prompt_idx < 0 or prompt_idx >= len(state.get("prompts", [])):
+        return []
 
     stat_expr = _stat_expr(state["stat"])
+    prompt = state["prompts"][prompt_idx]
     used_pairs = [tuple(p) for p in state["used_pairs"]]
     if player_name in _used_players(state):
         return []
 
+    where, params = _build_prompt_where(prompt, state["stat"])
     sql = f"""
         SELECT s.player, s.season, s.team, {stat_expr} AS stat_val
         FROM nba_stats s
-        WHERE s.player = ?
+        {where}
+        AND s.player = ?
         AND {stat_expr} > 0
         ORDER BY s.season DESC
     """
-    rows = conn.execute(sql, [player_name]).fetchall()
+    rows = conn.execute(sql, params + [player_name]).fetchall()
 
     results = []
     for row in rows:
@@ -466,16 +541,22 @@ def search_players(conn, query: str, prompt_idx: int, game_id: str) -> list:
     state = _GAMES.get(game_id)
     if state is None:
         return []
+    if prompt_idx < 0 or prompt_idx >= len(state.get("prompts", [])):
+        return []
 
+    prompt = state["prompts"][prompt_idx]
+    where, params = _build_prompt_where(prompt, state["stat"], apply_stat_floor=True)
     used_players = _used_players(state)
 
     rows = conn.execute(
-        """
+        f"""
         SELECT DISTINCT s.player
         FROM nba_stats s
-        WHERE s.player IS NOT NULL AND s.player != ''
+        {where}
+        AND s.player IS NOT NULL AND s.player != ''
         ORDER BY s.player
-        """
+        """,
+        params,
     ).fetchall()
 
     key = normalize_name(query)

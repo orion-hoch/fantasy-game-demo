@@ -329,7 +329,11 @@
   }
 
   function promptSummary(prompt: BullseyePrompt) {
-    return [teamFilterLabel(prompt), `${prompt.year_min}-${prompt.year_max}`].filter(Boolean).join(' · ');
+    return [
+      teamFilterLabel(prompt),
+      `${prompt.year_min}-${prompt.year_max}`,
+      accoladeLabel(prompt.accolade)
+    ].filter(Boolean).join(' · ');
   }
 
   onMount(() => {
@@ -470,6 +474,7 @@
         <div class="bs-table-row bs-table-header">
           <div class="bs-th bs-th-team">Team / Division</div>
           <div class="bs-th bs-th-years">Years</div>
+          <div class="bs-th bs-th-accolade">Accolade</div>
           {#each gameState.players as name}
             <div class="bs-th bs-th-player">{name}</div>
           {/each}
@@ -479,6 +484,13 @@
           <div class="bs-table-row">
             <div class="bs-td bs-td-team"><span class="bs-team-badge">{teamFilterLabel(prompt)}</span></div>
             <div class="bs-td bs-td-years">{prompt.year_min}-{prompt.year_max}</div>
+            <div class="bs-td bs-td-accolade">
+              {#if accoladeLabel(prompt.accolade)}
+                <span class="bs-accolade-tag">{accoladeLabel(prompt.accolade)}</span>
+              {:else}
+                <span class="bs-accolade-none">Any</span>
+              {/if}
+            </div>
 
             {#each gameState.players as _name, playerIdx}
               {@const pick = gameState.picks[promptIdx][playerIdx]}

@@ -468,6 +468,7 @@
 /* Fixed columns */
 .bs-th-team, .bs-td-team { min-width: 140px; flex: 0 0 140px; }
 .bs-th-years, .bs-td-years { min-width: 90px; flex: 0 0 90px; justify-content: center; }
+.bs-th-accolade, .bs-td-accolade { min-width: 120px; flex: 0 0 120px; justify-content: center; }
 
 /* Player columns — equal width, flex */
 .bs-th-player, .bs-td-pick { flex: 1; min-width: 130px; justify-content: center; }
@@ -945,6 +946,7 @@
 
   .bs-th-team, .bs-td-team { min-width: 90px; flex: 0 0 90px; }
   .bs-th-years, .bs-td-years { min-width: 64px; flex: 0 0 64px; }
+  .bs-th-accolade, .bs-td-accolade { min-width: 96px; flex: 0 0 96px; }
   .bs-th-player, .bs-td-pick { min-width: 100px; }
 
   .bs-results-card { padding: 22px 18px 20px; }

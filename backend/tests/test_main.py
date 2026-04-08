@@ -13,6 +13,7 @@ ensure_repo_on_path()
 
 import lobby_store  # noqa: E402
 import codewords_game  # noqa: E402
+import nfl_bullseye  # noqa: E402
 import nba_bullseye  # noqa: E402
 import nba_starting5_game  # noqa: E402
 import starting6_game  # noqa: E402
@@ -163,6 +164,43 @@ async def test_bullseye_search_seasons_and_pick(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_bullseye_prompts_include_accolades_and_min_player_pool(client: AsyncClient):
+    nfl_start = await client.post(
+        "/api/v1/bullseye/nfl/start",
+        json={"player_names": ["Solo"]},
+    )
+    assert nfl_start.status_code == 200
+    nfl_state = nfl_start.json()["state"]
+
+    nba_start = await client.post(
+        "/api/v1/bullseye/nba/start",
+        json={"player_names": ["Solo"]},
+    )
+    assert nba_start.status_code == 200
+    nba_state = nba_start.json()["state"]
+
+    assert any(prompt.get("accolade") for prompt in nfl_state["prompts"])
+    assert any(prompt.get("accolade") for prompt in nba_state["prompts"])
+
+    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    try:
+        nfl_table = nfl_bullseye._stat_table(nfl_state["stat"])
+        for prompt in nfl_state["prompts"]:
+            where, pos, params = nfl_bullseye._build_prompt_where(prompt, nfl_state["stat"], apply_stat_floor=True)
+            row = conn.execute(f"SELECT COUNT(DISTINCT s.player) FROM {nfl_table} s {where} {pos}", params).fetchone()
+            assert row is not None
+            assert row[0] >= 5
+
+        for prompt in nba_state["prompts"]:
+            where, params = nba_bullseye._build_prompt_where(prompt, nba_state["stat"], apply_stat_floor=True)
+            row = conn.execute(f"SELECT COUNT(DISTINCT s.player) FROM nba_stats s {where}", params).fetchone()
+            assert row is not None
+            assert row[0] >= 5
+    finally:
+        conn.close()
+
+
+@pytest.mark.asyncio
 async def test_lobby_start_redirects_migrated_bullseye_to_svelte_route(client: AsyncClient):
     lobby_store._ROOMS._memory.clear()
     create = await client.post(
@@ -279,6 +317,35 @@ async def test_lobby_start_redirects_migrated_chain_to_svelte_route(client: Asyn
     )
     assert start.status_code == 200
     assert start.json()["room"]["redirect_url"] == f"/games/nfl/chain?room_id={room_id}"
+
+
+@pytest.mark.asyncio
+async def test_chain_lobby_game_state_has_initial_prompt(client: AsyncClient):
+    lobby_store._ROOMS._memory.clear()
+    create = await client.post(
+        "/api/v1/lobbies/create",
+        json={"game_type": "chain_coop", "player_name": "Host", "token": "host-token"},
+    )
+    room_id = create.json()["room"]["room_id"]
+
+    claim = await client.post(
+        f"/api/v1/lobbies/{room_id}/claim-seat",
+        json={"token": "guest-token", "player_name": "Guest", "seat_number": 2},
+    )
+    assert claim.status_code == 200
+
+    start = await client.post(
+        f"/api/v1/lobbies/{room_id}/start",
+        json={"token": "host-token"},
+    )
+    assert start.status_code == 200
+
+    state = await client.get(f"/api/v1/lobbies/{room_id}/game-state", params={"token": "host-token"})
+    assert state.status_code == 200
+    payload = state.json()
+    assert payload["state"]["chain"]
+    assert payload["state"]["chain"][0]["label"]
+    assert payload["state"]["validCount"] >= 1
 
 
 @pytest.mark.asyncio

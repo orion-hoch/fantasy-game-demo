@@ -9,6 +9,7 @@ import uuid
 from session_store import GameStore
 
 _GAMES = GameStore("nfl_bullseye", ttl_seconds=14400)
+MIN_PROMPT_PLAYERS = 5
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -132,6 +133,17 @@ def _min_val(stat: str) -> int:
     return _STAT_CONFIG[stat].get("min_val", 0)
 
 
+NFL_ACCOLADE_OPTIONS = [
+    "pro_bowl",
+    "all_pro",
+    "1st_round",
+    "hof",
+    "all_rookie_nfl",
+    "nfl_mvp",
+    "nfl_dpoy",
+]
+
+
 def _accolade_sql(accolade: str) -> str:
     if accolade == "pro_bowl":
         return "EXISTS (SELECT 1 FROM draft d WHERE d.player = s.player AND d.pro_bowls > 0)"
@@ -207,26 +219,30 @@ def _build_prompt_where(prompt: dict, stat: str, apply_stat_floor: bool = False)
     return where, pos_fragment, params
 
 
-def _generate_prompts(conn, stat: str) -> list:
-    """Generate 5 varied prompts for the stat category.
-    Uses specific teams and divisions (no conferences, no accolades)."""
+def _prompt_player_count(conn, prompt: dict, stat: str) -> int:
     table = _stat_table(stat)
+    where, pos_frag, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
+    row = conn.execute(
+        f"SELECT COUNT(DISTINCT s.player) FROM {table} s {where} {pos_frag}",
+        params,
+    ).fetchone()
+    return int(row[0] or 0) if row else 0
+
+
+def _generate_prompts(conn, stat: str) -> list:
+    """Generate 5 varied prompts for the stat category with viable player pools."""
 
     storied_franchises = ["NWE", "DAL", "GNB", "SFO", "PIT", "SEA", "CHI", "NYG", "MIA", "WAS"]
     modern_franchises = ["KAN", "BUF", "PHI", "LAR", "BAL", "DEN", "TAM", "NOR", "LAC", "CLE"]
     division_names = list(NFL_DIVISIONS.keys())
 
-    team_filter_pool = [
-        random.choice(storied_franchises),
-        random.choice(modern_franchises),
-        random.choice(ALL_TEAMS),
-        random.choice(division_names),
-        random.choice(division_names),
-        random.choice(storied_franchises),
-        random.choice(division_names),
-    ]
-    random.shuffle(team_filter_pool)
-    team_filters = team_filter_pool[:5]
+    team_filter_pool = (
+        storied_franchises
+        + modern_franchises
+        + ALL_TEAMS
+        + division_names
+        + [None, None, None]
+    )
 
     year_ranges = [
         (2015, 2023),
@@ -237,43 +253,81 @@ def _generate_prompts(conn, stat: str) -> list:
         (1970, 1990),
         (2005, 2018),
     ]
-    random.shuffle(year_ranges)
 
     prompts = []
-    for i in range(5):
-        team_filter = team_filters[i]
-        yr_min, yr_max = year_ranges[i]
+    seen = set()
+
+    attempts = 0
+    while len(prompts) < 5 and attempts < 400:
+        attempts += 1
+        team_filter = random.choice(team_filter_pool)
+        yr_min, yr_max = random.choice(year_ranges)
+        accolade = random.choice(NFL_ACCOLADE_OPTIONS + [None, None])
+
+        sig = (team_filter, yr_min, yr_max, accolade)
+        if sig in seen:
+            continue
+        seen.add(sig)
 
         prompt = {
             "team_filter": team_filter,
-            "team_filter_label": team_filter,
+            "team_filter_label": team_filter or "Any Team",
             "year_min": yr_min,
             "year_max": yr_max,
-            "accolade": None,
+            "accolade": accolade,
         }
 
-        # Verify prompt returns enough results
-        where, pos_frag, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
-        row = conn.execute(
-            f"SELECT COUNT(*) FROM {table} s {where} {pos_frag}", params
-        ).fetchone()
-        count = row[0] if row else 0
+        count = _prompt_player_count(conn, prompt, stat)
+        if count < MIN_PROMPT_PLAYERS:
+            continue
 
-        if count < 5:
-            # Fallback: widen to a division or any
-            prompt["team_filter"] = random.choice(division_names)
-            prompt["team_filter_label"] = prompt["team_filter"]
-            where2, pos_frag2, params2 = _build_prompt_where(prompt, stat, apply_stat_floor=True)
-            row2 = conn.execute(
-                f"SELECT COUNT(*) FROM {table} s {where2} {pos_frag2}", params2
-            ).fetchone()
-            if (row2[0] if row2 else 0) < 5:
-                prompt["team_filter"] = None
-                prompt["team_filter_label"] = "Any Team"
-
+        prompt["available_count"] = count
         prompts.append(prompt)
 
-    return prompts
+    fallback_templates = [
+        (None, 2010, 2023, None),
+        (None, 2000, 2023, None),
+        (None, 1990, 2023, None),
+        (random.choice(division_names), 2000, 2023, None),
+    ]
+    for team_filter, yr_min, yr_max, accolade in fallback_templates:
+        if len(prompts) >= 5:
+            break
+        sig = (team_filter, yr_min, yr_max, accolade)
+        if sig in seen:
+            continue
+        seen.add(sig)
+        prompt = {
+            "team_filter": team_filter,
+            "team_filter_label": team_filter or "Any Team",
+            "year_min": yr_min,
+            "year_max": yr_max,
+            "accolade": accolade,
+        }
+        count = _prompt_player_count(conn, prompt, stat)
+        if count >= MIN_PROMPT_PLAYERS:
+            prompt["available_count"] = count
+            prompts.append(prompt)
+
+    if len(prompts) < 5:
+        raise ValueError("Could not generate Bullseye prompts with enough players")
+
+    if not any(prompt.get("accolade") for prompt in prompts):
+        shuffled = NFL_ACCOLADE_OPTIONS[:]
+        random.shuffle(shuffled)
+        for idx, prompt in enumerate(prompts):
+            for accolade in shuffled:
+                candidate = dict(prompt)
+                candidate["accolade"] = accolade
+                count = _prompt_player_count(conn, candidate, stat)
+                if count >= MIN_PROMPT_PLAYERS:
+                    candidate["available_count"] = count
+                    prompts[idx] = candidate
+                    break
+            if any(p.get("accolade") for p in prompts):
+                break
+
+    return prompts[:5]
 
 
 def _compute_target(conn, prompts: list, stat: str) -> int:
@@ -331,8 +385,22 @@ def start_game(conn, player_names: list, player_tokens: list | None = None) -> t
     if player_tokens and len(player_tokens) != len(player_names):
         raise ValueError("Player token count mismatch")
 
-    stat = random.choice(STAT_CATEGORIES)
-    prompts = _generate_prompts(conn, stat)
+    last_error = None
+    stat = None
+    prompts = None
+    for _ in range(12):
+        candidate_stat = random.choice(STAT_CATEGORIES)
+        try:
+            candidate_prompts = _generate_prompts(conn, candidate_stat)
+            stat = candidate_stat
+            prompts = candidate_prompts
+            break
+        except ValueError as exc:
+            last_error = exc
+
+    if stat is None or prompts is None:
+        raise ValueError(str(last_error or "Could not start Bullseye"))
+
     target = _compute_target(conn, prompts, stat)
 
     game_id = str(uuid.uuid4())[:8]
@@ -463,24 +531,28 @@ def get_player_seasons(conn, game_id: str, prompt_idx: int, player_name: str) ->
     state = _GAMES.get(game_id)
     if state is None:
         return []
+    if prompt_idx < 0 or prompt_idx >= len(state.get("prompts", [])):
+        return []
 
     stat = state["stat"]
     table = _stat_table(stat)
     stat_expr = _stat_expr(stat)
+    prompt = state["prompts"][prompt_idx]
     used_pairs = [tuple(p) for p in state["used_pairs"]]
     if player_name in _used_players(state):
         return []
 
-    pos_frag, params = _pos_filter_clause(stat)
+    where, pos_frag, params = _build_prompt_where(prompt, stat)
 
     sql = f"""
         SELECT s.player, s.season, s.team, {stat_expr} AS stat_val
         FROM {table} s
-        WHERE s.player = ?
-        AND {stat_expr} > 0 {pos_frag}
+        {where} {pos_frag}
+        AND s.player = ?
+        AND {stat_expr} > 0
         ORDER BY s.season DESC
     """
-    rows = conn.execute(sql, [player_name] + params).fetchall()
+    rows = conn.execute(sql, params + [player_name]).fetchall()
 
     results = []
     for row in rows:
@@ -501,22 +573,24 @@ def search_players(conn, query: str, prompt_idx: int, game_id: str) -> list:
     state = _GAMES.get(game_id)
     if state is None:
         return []
+    if prompt_idx < 0 or prompt_idx >= len(state.get("prompts", [])):
+        return []
 
     used_players = _used_players(state)
 
     stat = state["stat"]
     table = _stat_table(stat)
-    stat_expr = _stat_expr(stat)
-    pos_frag, pos_params = _pos_filter_clause(stat)
+    prompt = state["prompts"][prompt_idx]
+    where, pos_frag, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
 
     rows = conn.execute(
         f"""
         SELECT DISTINCT s.player
         FROM {table} s
-        WHERE {stat_expr} > 0 {pos_frag}
+        {where} {pos_frag}
         ORDER BY s.player
         """,
-        pos_params,
+        params,
     ).fetchall()
 
     key = normalize_name(query)
