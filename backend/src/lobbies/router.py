@@ -60,6 +60,11 @@ def rematch_lobby(room_id: str, payload: RematchRequest) -> LobbyResponse:
     return LobbyResponse.model_validate(service.rematch_lobby(room_id, payload.token))
 
 
+@router.post("/{room_id}/chain/start", response_model=LobbyGameStateResponse)
+def start_chain_match(room_id: str, payload: StartLobbyRequest) -> LobbyGameStateResponse:
+    return LobbyGameStateResponse.model_validate(service.start_chain_match(room_id, payload.token))
+
+
 @router.get("/{room_id}/game-state", response_model=LobbyGameStateResponse)
 def game_state(room_id: str, token: str = Query(default="")) -> LobbyGameStateResponse:
     return LobbyGameStateResponse.model_validate(service.lobby_game_state(room_id, token))

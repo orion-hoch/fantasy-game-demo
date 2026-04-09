@@ -126,6 +126,7 @@ def start_game(conn, player_names: list, player_tokens: list | None = None, spor
             "mode": mode,
             "players": players,
             "currentPlayer": 0,
+            "started": False,
             "lives_left": 3,
             "chain": [first_chain],
             "validCount": first_chain["valid_count"],
@@ -147,6 +148,7 @@ def start_game(conn, player_names: list, player_tokens: list | None = None, spor
             "mode": mode,
             "players": players,
             "currentPlayer": 0,
+            "started": False,
             "usedPlayers": [],
             "feedback": None,
             "done": False,
@@ -210,6 +212,8 @@ def submit_guess(conn, game_id: str, player_guess: str, player_token: str | None
         return None, "Game not found"
     if state.get("done"):
         return state, "Game is already complete"
+    if not state.get("started", True):
+        return state, "Match has not started yet"
     actor_err = _validate_actor(state, player_token)
     if actor_err:
         return state, actor_err
@@ -300,6 +304,61 @@ def submit_guess(conn, game_id: str, player_guess: str, player_token: str | None
         }
         _advance_turn(state)
         _finalize_if_needed(state)
+
+    _GAMES[state["game_id"]] = state
+    return state, None
+
+
+def start_match(conn, game_id: str, player_token: str | None = None) -> tuple:
+    state = get_game(game_id)
+    if state is None:
+        return None, "Game not found"
+    if state.get("done"):
+        return state, "Game is already complete"
+
+    players = state.get("players") or []
+    if not players:
+        return None, "No players found for this match"
+
+    first_player = players[0]
+    first_token = first_player.get("token")
+    if not player_token:
+        return state, "Player token required"
+    if first_token and first_token != player_token:
+        return state, "Only Player 1 can start the match"
+
+    if state.get("started"):
+        return state, None
+
+    used_players = set(state.get("usedPlayers") or [])
+    if state["mode"] == "coop":
+        current_chain = state.get("chain") or []
+        current_valid = state.get("validCount", 0)
+        if not current_chain or current_valid <= 0:
+            fresh = _fresh_chain(conn, state["sport"], used_players)
+            if not fresh:
+                return state, "Could not create starting chain"
+            state["chain"] = [fresh]
+            state["validCount"] = fresh["valid_count"]
+        state["chainGuesses"] = list(state.get("chainGuesses") or [])
+    else:
+        for player in players:
+            current_chain = player.get("chain") or []
+            current_valid = player.get("validCount", 0)
+            if current_chain and current_valid > 0:
+                continue
+            fresh = _fresh_chain(conn, state["sport"], used_players)
+            if not fresh:
+                return state, "Could not create starting chain"
+            player["chain"] = [fresh]
+            player["validCount"] = fresh["valid_count"]
+            player["chainGuesses"] = []
+
+    state["started"] = True
+    state["feedback"] = {
+        "type": "correct",
+        "message": f"{first_player['name']} started the match.",
+    }
 
     _GAMES[state["game_id"]] = state
     return state, None

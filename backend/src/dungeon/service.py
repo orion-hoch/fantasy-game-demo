@@ -8,6 +8,7 @@ from fastapi import HTTPException
 
 import dungeon_adventure as nfl_dungeon
 import nba_dungeon_adventure as nba_dungeon
+from src.player_search import search_players as search_all_players
 from src.dungeon.schemas import Sport
 from src.legacy.bridge import REPO_ROOT
 
@@ -59,11 +60,9 @@ def answer(sport: Sport, question: dict, items: list[dict], answer_text: str) ->
 
 
 def search(sport: Sport, query: str, items: list[dict], question: dict | None) -> dict:
-    if not query.strip():
-        return {"results": []}
     conn = _sync_db()
     try:
-        data = _module_for_sport(sport).search_answers(conn, query.strip(), items, question=question)
+        data = search_all_players(conn, sport, query)
     finally:
         conn.close()
     return {"results": data}

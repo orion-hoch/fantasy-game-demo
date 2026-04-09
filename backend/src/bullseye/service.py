@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from src.bullseye.schemas import Sport
 from src.legacy.bridge import REPO_ROOT
+from src.player_search import search_players as search_all_players
 
 import nba_bullseye as nba_bull
 import nfl_bullseye as nfl_bull
@@ -55,10 +56,10 @@ def state(sport: Sport, game_id: str) -> dict[str, Any]:
 
 
 def search(sport: Sport, game_id: str, prompt_idx: int, query: str) -> dict[str, Any]:
-    module = _module_for_sport(sport)
     conn = _sync_db()
     try:
-        return {"results": module.search_players(conn, query, prompt_idx, game_id)}
+        names = search_all_players(conn, sport, query)
+        return {"results": [{"player": name, "season": None, "team": None, "stat_val": 0} for name in names]}
     finally:
         conn.close()
 

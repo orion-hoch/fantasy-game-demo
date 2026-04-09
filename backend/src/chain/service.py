@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from src.chain.schemas import Sport
 from src.legacy.bridge import REPO_ROOT
+from src.player_search import search_players as search_all_players
 
 import chain_categories as nfl_cc
 import chain_game as chain_game_mod
@@ -116,14 +117,9 @@ def guess(sport: Sport, payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def search(sport: Sport, term: str, game_id: str | None = None) -> dict[str, Any]:
-    if not term:
-        return {"results": []}
     conn = _sync_db()
     try:
-        if game_id:
-            names = chain_game_mod.search_players(conn, game_id, term)
-        else:
-            names = _categories_for_sport(sport).search_players(conn, term)
+        names = search_all_players(conn, sport, term)
     finally:
         conn.close()
     return {"results": [{"name": name} for name in names]}

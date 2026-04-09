@@ -195,6 +195,31 @@ def rematch_lobby(room_id: str, token: str) -> dict[str, Any]:
     return {"room": lobby_store.room_payload(room, token), "room_url": room_url(room["room_id"])}
 
 
+def start_chain_match(room_id: str, token: str) -> dict[str, Any]:
+    room = lobby_store.get_room(room_id)
+    if room is None:
+        _raise_not_found()
+    if room.get("status") != "in_game" or not room.get("game_id"):
+        _raise_bad_request("Lobby is not in game state")
+    if room["game_type"] not in {"chain_coop", "chain_comp", "nba_chain_coop", "nba_chain_comp"}:
+        _raise_bad_request("Start button is only available for Chain lobbies")
+
+    conn = _sync_db()
+    try:
+        state, err = chain_game_mod.start_match(conn, room["game_id"], player_token=token)
+        conn.commit()
+    finally:
+        conn.close()
+
+    if err:
+        _raise_bad_request(err)
+
+    return {
+        "room": lobby_store.room_payload(room, token),
+        "state": state,
+    }
+
+
 def lobby_game_state(room_id: str, token: str | None = None) -> dict[str, Any]:
     room = lobby_store.get_room(room_id)
     if room is None:

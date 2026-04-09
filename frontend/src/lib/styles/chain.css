@@ -326,6 +326,18 @@
 .gold-btn { background: var(--yellow); border-color: var(--border); color: var(--text-dark); }
 .gold-btn:hover { filter: brightness(1.1); }
 
+.waiting-chip {
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 3px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.88rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 3px 3px 0 var(--border);
+}
+
 /* ── Multiplayer board (Svelte addition) ─────────────────────────────────── */
 
 #mp-board {

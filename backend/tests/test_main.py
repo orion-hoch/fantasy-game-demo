@@ -7,6 +7,7 @@ from httpx import ASGITransport, AsyncClient
 
 from src.legacy.bridge import ensure_repo_on_path
 from src.main import app
+from src.player_search import all_players as all_sport_players
 from src.redis_client import get_redis_client
 
 ensure_repo_on_path()
@@ -203,6 +204,96 @@ async def test_bullseye_prompts_include_accolades_and_min_player_pool(client: As
 
 
 @pytest.mark.asyncio
+async def test_multiplayer_bullseye_search_and_seasons_use_full_player_pool(client: AsyncClient):
+    module_specs = [
+        ("nfl", nfl_bullseye),
+        ("nba", nba_bullseye),
+    ]
+
+    for sport, module in module_specs:
+        start = await client.post(
+            f"/api/v1/bullseye/{sport}/start",
+            json={"player_names": ["Host", "Guest"]},
+        )
+        assert start.status_code == 200
+        game_id = start.json()["game_id"]
+        state = module.get_game(game_id)
+        assert state is not None
+
+        chosen_prompt_idx = None
+        outside_player = None
+
+        conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+        try:
+            stat = state["stat"]
+            if sport == "nfl":
+                table = module._stat_table(stat)
+                stat_expr = module._stat_expr(stat)
+                pos_frag, pos_params = module._pos_filter_clause(stat)
+                stat_floor = module._min_val(stat)
+                all_rows = conn.execute(
+                    f"SELECT DISTINCT s.player FROM {table} s WHERE games >= 4 AND {stat_expr} >= ? {pos_frag}",
+                    [stat_floor] + pos_params,
+                ).fetchall()
+                all_players = {row[0] for row in all_rows}
+
+                for prompt_idx, prompt in enumerate(state["prompts"]):
+                    where, prompt_pos_frag, prompt_params = module._build_prompt_where(prompt, stat, apply_stat_floor=True)
+                    prompt_rows = conn.execute(
+                        f"SELECT DISTINCT s.player FROM {table} s {where} {prompt_pos_frag}",
+                        prompt_params,
+                    ).fetchall()
+                    prompt_players = {row[0] for row in prompt_rows}
+                    outside = sorted(all_players - prompt_players)
+                    if outside:
+                        chosen_prompt_idx = prompt_idx
+                        outside_player = outside[0]
+                        break
+            else:
+                stat_expr = module._stat_expr(stat)
+                stat_floor = module._STAT_MIN.get(stat, 0)
+                all_rows = conn.execute(
+                    f"SELECT DISTINCT s.player FROM nba_stats s WHERE games >= 4 AND {stat_expr} >= ? AND s.player IS NOT NULL AND s.player != ''",
+                    [stat_floor],
+                ).fetchall()
+                all_players = {row[0] for row in all_rows}
+
+                for prompt_idx, prompt in enumerate(state["prompts"]):
+                    where, prompt_params = module._build_prompt_where(prompt, stat, apply_stat_floor=True)
+                    prompt_rows = conn.execute(
+                        f"SELECT DISTINCT s.player FROM nba_stats s {where} AND s.player IS NOT NULL AND s.player != ''",
+                        prompt_params,
+                    ).fetchall()
+                    prompt_players = {row[0] for row in prompt_rows}
+                    outside = sorted(all_players - prompt_players)
+                    if outside:
+                        chosen_prompt_idx = prompt_idx
+                        outside_player = outside[0]
+                        break
+        finally:
+            conn.close()
+
+        assert chosen_prompt_idx is not None
+        assert outside_player is not None
+
+        query = outside_player[:4]
+        search = await client.get(
+            f"/api/v1/bullseye/{sport}/search",
+            params={"game_id": game_id, "prompt_idx": chosen_prompt_idx, "q": query},
+        )
+        assert search.status_code == 200
+        found_players = {row["player"] for row in search.json()["results"]}
+        assert outside_player in found_players
+
+        seasons = await client.get(
+            f"/api/v1/bullseye/{sport}/seasons",
+            params={"game_id": game_id, "prompt_idx": chosen_prompt_idx, "player": outside_player},
+        )
+        assert seasons.status_code == 200
+        assert seasons.json()["seasons"]
+
+
+@pytest.mark.asyncio
 async def test_lobby_start_redirects_migrated_bullseye_to_svelte_route(client: AsyncClient):
     lobby_store._ROOMS._memory.clear()
     create = await client.post(
@@ -348,6 +439,52 @@ async def test_chain_lobby_game_state_has_initial_prompt(client: AsyncClient):
     assert payload["state"]["chain"]
     assert payload["state"]["chain"][0]["label"]
     assert payload["state"]["validCount"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_chain_lobby_requires_player_one_start_button_flow(client: AsyncClient):
+    lobby_store._ROOMS._memory.clear()
+    create = await client.post(
+        "/api/v1/lobbies/create",
+        json={"game_type": "chain_coop", "player_name": "Host", "token": "host-token"},
+    )
+    room_id = create.json()["room"]["room_id"]
+
+    claim = await client.post(
+        f"/api/v1/lobbies/{room_id}/claim-seat",
+        json={"token": "guest-token", "player_name": "Guest", "seat_number": 2},
+    )
+    assert claim.status_code == 200
+
+    start = await client.post(
+        f"/api/v1/lobbies/{room_id}/start",
+        json={"token": "host-token"},
+    )
+    assert start.status_code == 200
+
+    game_id = start.json()["room"]["game_id"]
+    assert game_id
+
+    pre_guess = await client.post(
+        "/api/v1/chain/nfl/guess",
+        json={"game_id": game_id, "player": "Tom Brady", "token": "host-token"},
+    )
+    assert pre_guess.status_code == 200
+    assert pre_guess.json()["ok"] is False
+    assert "not started" in pre_guess.json()["error"].lower()
+
+    guest_start = await client.post(
+        f"/api/v1/lobbies/{room_id}/chain/start",
+        json={"token": "guest-token"},
+    )
+    assert guest_start.status_code == 400
+
+    host_start = await client.post(
+        f"/api/v1/lobbies/{room_id}/chain/start",
+        json={"token": "host-token"},
+    )
+    assert host_start.status_code == 200
+    assert host_start.json()["state"]["started"] is True
 
 
 @pytest.mark.asyncio
@@ -506,6 +643,74 @@ async def test_balatro_compat_start_alias(client: AsyncClient):
     body = response.json()
     assert body["game_id"]
     assert body["hand"]
+
+
+@pytest.mark.asyncio
+async def test_all_game_search_endpoints_use_full_sport_player_pool(client: AsyncClient):
+    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    try:
+        samples = {
+            "nfl": next((name for name in all_sport_players(conn, "nfl") if len(name) >= 4), None),
+            "nba": next((name for name in all_sport_players(conn, "nba") if len(name) >= 4), None),
+        }
+    finally:
+        conn.close()
+
+    assert samples["nfl"]
+    assert samples["nba"]
+
+    for sport, sample_player in samples.items():
+        assert sample_player is not None
+        query = sample_player[:4]
+
+        bull_start = await client.post(
+            f"/api/v1/bullseye/{sport}/start",
+            json={"player_names": ["Solo"]},
+        )
+        assert bull_start.status_code == 200
+        bull_game_id = bull_start.json()["game_id"]
+
+        duel_start = await client.post(
+            f"/api/v1/fantasy-duel/{sport}/start",
+            json={"player_names": ["A", "B"]},
+        )
+        assert duel_start.status_code == 200
+        duel_game_id = duel_start.json()["game_id"]
+
+        bull_search = await client.get(
+            f"/api/v1/bullseye/{sport}/search",
+            params={"game_id": bull_game_id, "prompt_idx": 0, "q": query},
+        )
+        assert bull_search.status_code == 200
+        assert sample_player in {entry["player"] for entry in bull_search.json()["results"]}
+
+        duel_search = await client.get(
+            f"/api/v1/fantasy-duel/{sport}/search",
+            params={"game_id": duel_game_id, "q": query},
+        )
+        assert duel_search.status_code == 200
+        assert sample_player in set(duel_search.json()["results"])
+
+        chain_search = await client.get(
+            f"/api/v1/chain/{sport}/search",
+            params={"q": query},
+        )
+        assert chain_search.status_code == 200
+        assert sample_player in {entry["name"] for entry in chain_search.json()["results"]}
+
+        ttb_search = await client.get(
+            f"/api/v1/ttb/{sport}/search",
+            params={"q": query},
+        )
+        assert ttb_search.status_code == 200
+        assert sample_player in {entry["name"] for entry in ttb_search.json()["results"]}
+
+        dungeon_search = await client.post(
+            f"/api/v1/dungeon/{sport}/search",
+            json={"query": query, "items": [], "question": None},
+        )
+        assert dungeon_search.status_code == 200
+        assert sample_player in set(dungeon_search.json()["results"])
 
 
 @pytest.mark.asyncio

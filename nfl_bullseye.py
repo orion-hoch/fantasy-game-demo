@@ -521,6 +521,11 @@ def _compute_winner(state: dict) -> dict:
     }
 
 
+def _show_entire_pool(state: dict) -> bool:
+    """Use full stat pool for multiplayer search/season lookup."""
+    return len(state.get("players", [])) > 1
+
+
 def get_valid_years(conn, game_id: str, prompt_idx: int, player_name: str) -> list:
     seasons = get_player_seasons(conn, game_id, prompt_idx, player_name)
     return [season["season"] for season in seasons]
@@ -537,22 +542,35 @@ def get_player_seasons(conn, game_id: str, prompt_idx: int, player_name: str) ->
     stat = state["stat"]
     table = _stat_table(stat)
     stat_expr = _stat_expr(stat)
-    prompt = state["prompts"][prompt_idx]
     used_pairs = [tuple(p) for p in state["used_pairs"]]
     if player_name in _used_players(state):
         return []
 
-    where, pos_frag, params = _build_prompt_where(prompt, stat)
+    if _show_entire_pool(state):
+        pos_frag, pos_params = _pos_filter_clause(stat)
+        sql = f"""
+            SELECT s.player, s.season, s.team, {stat_expr} AS stat_val
+            FROM {table} s
+            WHERE games >= 4
+            AND s.player = ?
+            AND {stat_expr} > 0
+            {pos_frag}
+            ORDER BY s.season DESC
+        """
+        rows = conn.execute(sql, [player_name] + pos_params).fetchall()
+    else:
+        prompt = state["prompts"][prompt_idx]
+        where, pos_frag, params = _build_prompt_where(prompt, stat)
 
-    sql = f"""
-        SELECT s.player, s.season, s.team, {stat_expr} AS stat_val
-        FROM {table} s
-        {where} {pos_frag}
-        AND s.player = ?
-        AND {stat_expr} > 0
-        ORDER BY s.season DESC
-    """
-    rows = conn.execute(sql, params + [player_name]).fetchall()
+        sql = f"""
+            SELECT s.player, s.season, s.team, {stat_expr} AS stat_val
+            FROM {table} s
+            {where} {pos_frag}
+            AND s.player = ?
+            AND {stat_expr} > 0
+            ORDER BY s.season DESC
+        """
+        rows = conn.execute(sql, params + [player_name]).fetchall()
 
     results = []
     for row in rows:
@@ -580,18 +598,33 @@ def search_players(conn, query: str, prompt_idx: int, game_id: str) -> list:
 
     stat = state["stat"]
     table = _stat_table(stat)
-    prompt = state["prompts"][prompt_idx]
-    where, pos_frag, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
+    if _show_entire_pool(state):
+        stat_floor = _min_val(stat)
+        pos_frag, pos_params = _pos_filter_clause(stat)
+        rows = conn.execute(
+            f"""
+            SELECT DISTINCT s.player
+            FROM {table} s
+            WHERE games >= 4
+            AND {_stat_expr(stat)} >= ?
+            {pos_frag}
+            ORDER BY s.player
+            """,
+            [stat_floor] + pos_params,
+        ).fetchall()
+    else:
+        prompt = state["prompts"][prompt_idx]
+        where, pos_frag, params = _build_prompt_where(prompt, stat, apply_stat_floor=True)
 
-    rows = conn.execute(
-        f"""
-        SELECT DISTINCT s.player
-        FROM {table} s
-        {where} {pos_frag}
-        ORDER BY s.player
-        """,
-        params,
-    ).fetchall()
+        rows = conn.execute(
+            f"""
+            SELECT DISTINCT s.player
+            FROM {table} s
+            {where} {pos_frag}
+            ORDER BY s.player
+            """,
+            params,
+        ).fetchall()
 
     key = normalize_name(query)
     candidates = [row[0] for row in rows if row[0] not in used_players]

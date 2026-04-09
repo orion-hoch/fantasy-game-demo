@@ -6,10 +6,9 @@ import sqlite3
 
 from fastapi import HTTPException
 
-import chain_categories as nfl_chain_categories
-import nba_chain_categories as nba_chain_categories
 import nba_ttb as nba_ttb_mod
 import ttb as ttb_mod
+from src.player_search import search_players as search_all_players
 from src.ttb.schemas import Sport
 from src.legacy.bridge import REPO_ROOT
 
@@ -74,11 +73,9 @@ def guess(sport: Sport, game_id: str, guess_text: str, reveal: bool = False, ski
 
 
 def search(sport: Sport, query: str) -> dict:
-    if not query:
-        return {"results": []}
     conn = _sync_db()
     try:
-        names = nfl_chain_categories.search_players(conn, query) if sport == "nfl" else nba_chain_categories.search_players(conn, query)
+        names = search_all_players(conn, sport, query)
     finally:
         conn.close()
     return {"results": [{"name": name} for name in names]}

@@ -31,6 +31,7 @@ export type ChainState = {
   game_id: string;
   sport: Sport;
   mode: 'coop' | 'comp';
+  started?: boolean;
   players: ChainPlayer[];
   currentPlayer: number;
   lives_left?: number;
@@ -95,4 +96,15 @@ export async function searchChainPlayers(sport: Sport, query: string, gameId?: s
 
 export async function fetchChainState(sport: Sport, gameId: string) {
   return jsonFetch<{ state: ChainState }>(`${sportUrl(sport, '/state')}?game_id=${encodeURIComponent(gameId)}`);
+}
+
+export async function startLobbyChainMatch(roomId: string, token: string) {
+  return jsonFetch<{ room: Record<string, unknown>; state: ChainState | null }>(
+    `${apiBaseUrl}/lobbies/${encodeURIComponent(roomId)}/chain/start`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    }
+  );
 }

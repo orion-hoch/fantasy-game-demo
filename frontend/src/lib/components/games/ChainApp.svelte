@@ -12,6 +12,7 @@
     fetchChainState,
     guessChain,
     searchChainPlayers,
+    startLobbyChainMatch,
     startChain,
     teammateStartChain
   } from '$lib/api/chain';
@@ -60,8 +61,18 @@
     if (!onlineState?.players?.length) return null;
     return onlineState.players[onlineState.currentPlayer];
   });
+  const isMatchStarted = $derived.by(() => {
+    if (!isOnlineMode) return true;
+    if (!onlineState) return false;
+    return Boolean(onlineState.started);
+  });
+  const isPlayerOne = $derived.by(() => {
+    if (!isOnlineMode || !onlineState?.players?.length) return false;
+    return onlineState.players[0]?.token === playerToken();
+  });
   const isMyTurn = $derived.by(() => {
     if (!isOnlineMode) return true;
+    if (!onlineState?.started) return false;
     return currentOnlinePlayer?.token === playerToken();
   });
   const displayedScore = $derived.by(() => {
@@ -104,6 +115,12 @@
         promptText = onlineState.winner.winner_names.length === 1
           ? `${onlineState.winner.winner_names[0]} wins the match!`
           : `Tie game: ${onlineState.winner.winner_names.join(' & ')}`;
+        return;
+      }
+      if (!onlineState.started) {
+        promptText = isPlayerOne
+          ? 'Press Start Game to begin the multiplayer chain.'
+          : `Waiting for ${onlineState.players[0]?.name || 'Player 1'} to start the match.`;
         return;
       }
       if (onlineState.mode === 'coop') {
@@ -293,6 +310,23 @@
     if (data.state) hydrateOnlineState(data.state as ChainState);
   }
 
+  async function startOnlineMatch() {
+    if (!roomId) return;
+    loading = true;
+    clearFeedback();
+    try {
+      const data = await startLobbyChainMatch(roomId, playerToken());
+      if (data.state) {
+        hydrateOnlineState(data.state);
+      }
+      updatePrompt();
+    } catch (error) {
+      feedback = { type: 'wrong', message: error instanceof Error ? error.message : 'Could not start match' };
+    } finally {
+      loading = false;
+    }
+  }
+
   function onKeydown(event: KeyboardEvent) {
     if (!searchResults.length) {
       if (event.key === 'Enter' && selectedFromResults && currentGuess.trim()) {
@@ -409,9 +443,13 @@
       <input
         id="chain-input"
         type="text"
-        placeholder={isOnlineMode && !isMyTurn ? 'Waiting for current player...' : 'Search player name...'}
+        placeholder={isOnlineMode && !isMatchStarted
+          ? (isPlayerOne ? 'Press Start Game below to begin...' : 'Waiting for Player 1 to start...')
+          : isOnlineMode && !isMyTurn
+            ? 'Waiting for current player...'
+            : 'Search player name...'}
         value={currentGuess}
-        disabled={(isOnlineMode && !isMyTurn) || loading || (!isOnlineMode && !gameActive)}
+        disabled={(isOnlineMode && (!isMatchStarted || !isMyTurn)) || loading || (!isOnlineMode && !gameActive)}
         oninput={(event) => onSearchInput((event.currentTarget as HTMLInputElement).value)}
         onkeydown={onKeydown}
       />
@@ -431,7 +469,7 @@
     <button
       id="submit-btn"
       type="button"
-      disabled={loading || !selectedFromResults || !currentGuess.trim() || (isOnlineMode && !isMyTurn) || (!isOnlineMode && !gameActive)}
+      disabled={loading || !selectedFromResults || !currentGuess.trim() || (isOnlineMode && (!isMatchStarted || !isMyTurn)) || (!isOnlineMode && !gameActive)}
       onclick={() => submitGuess(currentGuess.trim())}
     >Submit</button>
   </div>
@@ -481,6 +519,12 @@
       {/if}
     {:else if onlineState?.done}
       <button class="action-btn gold-btn" type="button" onclick={playAgain}>Play Again</button>
+    {:else if onlineState && !isMatchStarted}
+      {#if isPlayerOne}
+        <button class="action-btn primary-btn" type="button" disabled={loading} onclick={startOnlineMatch}>Start Game</button>
+      {:else}
+        <div class="waiting-chip">Waiting for {onlineState.players[0]?.name || 'Player 1'} to start...</div>
+      {/if}
     {/if}
   </div>
 </div>

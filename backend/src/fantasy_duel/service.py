@@ -9,6 +9,7 @@ from fastapi import HTTPException
 
 from src.fantasy_duel.schemas import Sport
 from src.legacy.bridge import REPO_ROOT
+from src.player_search import search_players as search_all_players
 
 import nba_starting5_game as nba_game
 import starting6_game as nfl_game
@@ -55,10 +56,9 @@ def get_state(sport: Sport, game_id: str) -> dict[str, Any]:
 
 
 def search_players(sport: Sport, game_id: str, query: str) -> dict[str, Any]:
-    module = _module_for_sport(sport)
     conn = _sync_db()
     try:
-        return {"results": module.search_players(conn, query, game_id)}
+        return {"results": search_all_players(conn, sport, query)}
     finally:
         conn.close()
 

@@ -48,7 +48,7 @@
     box-shadow: 0 3px 0 var(--border);
 }
 
-.mode-btn {
+#ttb-app #ttb-mode-bar .mode-btn {
     padding: 10px 20px;
     background: none;
     border: none;
@@ -63,12 +63,16 @@
     text-transform: uppercase;
     font-family: 'Barlow Condensed', Impact, sans-serif;
 }
-.mode-btn:hover { color: var(--text); }
-.mode-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
-.mode-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+#ttb-app #ttb-mode-bar .mode-btn:hover { color: var(--text); }
+#ttb-app #ttb-mode-bar .mode-btn.active {
+    background: none;
+    color: var(--yellow);
+    border-bottom-color: var(--yellow);
+}
+#ttb-app #ttb-mode-bar .mode-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
 /* Vintage active tab */
-#ttb-app.vintage .mode-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
+#ttb-app.vintage #ttb-mode-bar .mode-btn.active { color: var(--yellow); border-bottom-color: var(--yellow); }
 
 /* ── Draft year filter bar ───────────────────────────────────────────────── */
 
@@ -662,10 +666,10 @@
 /* ── Defense & Hard toggles ──────────────────────────────────────────────── */
 
 .mode-bar-sep { flex: 1; }
-.mode-defense-toggle { color: var(--text-muted); }
-.mode-defense-toggle.defense-active { color: var(--teal-bright); border-bottom-color: var(--teal-bright); }
-.mode-hard-toggle { color: var(--text-muted); }
-.mode-hard-toggle.hard-active { color: #ff6644; border-bottom-color: #ff6644; }
+#ttb-app #ttb-mode-bar .mode-defense-toggle { color: var(--text-muted); }
+#ttb-app #ttb-mode-bar .mode-defense-toggle.defense-active { color: var(--teal-bright); border-bottom-color: var(--teal-bright); }
+#ttb-app #ttb-mode-bar .mode-hard-toggle { color: var(--text-muted); }
+#ttb-app #ttb-mode-bar .mode-hard-toggle.hard-active { color: #ff6644; border-bottom-color: #ff6644; }
 
 /* ── Mobile ──────────────────────────────────────────────────────────────── */
 
