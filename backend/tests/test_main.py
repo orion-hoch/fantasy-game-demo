@@ -203,8 +203,68 @@ async def test_bullseye_prompts_include_accolades_and_min_player_pool(client: As
         conn.close()
 
 
+def _bullseye_outside_player(module, sport: str, state: dict) -> tuple[int, str]:
+    """Find a (prompt_idx, player) where the player is in the full sport pool
+    but NOT among the prompt's "correct answers". Used to assert search/season
+    pickers never pre-filter to the answer set."""
+    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    try:
+        stat = state["stat"]
+        if sport == "nfl":
+            table = module._stat_table(stat)
+            stat_expr = module._stat_expr(stat)
+            pos_frag, pos_params = module._pos_filter_clause(stat)
+            stat_floor = module._min_val(stat)
+            all_rows = conn.execute(
+                f"SELECT DISTINCT s.player FROM {table} s WHERE games >= 4 AND {stat_expr} >= ? {pos_frag}",
+                [stat_floor] + pos_params,
+            ).fetchall()
+            all_players = {row[0] for row in all_rows}
+
+            for prompt_idx, prompt in enumerate(state["prompts"]):
+                where, prompt_pos_frag, prompt_params = module._build_prompt_where(prompt, stat, apply_stat_floor=True)
+                prompt_rows = conn.execute(
+                    f"SELECT DISTINCT s.player FROM {table} s {where} {prompt_pos_frag}",
+                    prompt_params,
+                ).fetchall()
+                prompt_players = {row[0] for row in prompt_rows}
+                outside = sorted(all_players - prompt_players)
+                if outside:
+                    return prompt_idx, outside[0]
+        else:
+            stat_expr = module._stat_expr(stat)
+            stat_floor = module._STAT_MIN.get(stat, 0)
+            all_rows = conn.execute(
+                f"SELECT DISTINCT s.player FROM nba_stats s WHERE games >= 4 AND {stat_expr} >= ? AND s.player IS NOT NULL AND s.player != ''",
+                [stat_floor],
+            ).fetchall()
+            all_players = {row[0] for row in all_rows}
+
+            for prompt_idx, prompt in enumerate(state["prompts"]):
+                where, prompt_params = module._build_prompt_where(prompt, stat, apply_stat_floor=True)
+                prompt_rows = conn.execute(
+                    f"SELECT DISTINCT s.player FROM nba_stats s {where} AND s.player IS NOT NULL AND s.player != ''",
+                    prompt_params,
+                ).fetchall()
+                prompt_players = {row[0] for row in prompt_rows}
+                outside = sorted(all_players - prompt_players)
+                if outside:
+                    return prompt_idx, outside[0]
+    finally:
+        conn.close()
+
+    raise AssertionError(f"No 'outside' player found for {sport} bullseye state")
+
+
 @pytest.mark.asyncio
-async def test_multiplayer_bullseye_search_and_seasons_use_full_player_pool(client: AsyncClient):
+@pytest.mark.parametrize("player_names", [["Solo"], ["Host", "Guest"]], ids=["solo", "multiplayer"])
+async def test_bullseye_search_and_seasons_never_leak_answers(client: AsyncClient, player_names: list[str]):
+    """Bullseye picker UI must never pre-filter to "correct" players or seasons.
+
+    Regression guard for the bug where solo bullseye filtered the search bar
+    down to the prompt's answer set. The same invariant is enforced for the
+    season dropdown so wrong-team players still expose all their seasons.
+    """
     module_specs = [
         ("nfl", nfl_bullseye),
         ("nba", nba_bullseye),
@@ -213,68 +273,14 @@ async def test_multiplayer_bullseye_search_and_seasons_use_full_player_pool(clie
     for sport, module in module_specs:
         start = await client.post(
             f"/api/v1/bullseye/{sport}/start",
-            json={"player_names": ["Host", "Guest"]},
+            json={"player_names": player_names},
         )
         assert start.status_code == 200
         game_id = start.json()["game_id"]
         state = module.get_game(game_id)
         assert state is not None
 
-        chosen_prompt_idx = None
-        outside_player = None
-
-        conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
-        try:
-            stat = state["stat"]
-            if sport == "nfl":
-                table = module._stat_table(stat)
-                stat_expr = module._stat_expr(stat)
-                pos_frag, pos_params = module._pos_filter_clause(stat)
-                stat_floor = module._min_val(stat)
-                all_rows = conn.execute(
-                    f"SELECT DISTINCT s.player FROM {table} s WHERE games >= 4 AND {stat_expr} >= ? {pos_frag}",
-                    [stat_floor] + pos_params,
-                ).fetchall()
-                all_players = {row[0] for row in all_rows}
-
-                for prompt_idx, prompt in enumerate(state["prompts"]):
-                    where, prompt_pos_frag, prompt_params = module._build_prompt_where(prompt, stat, apply_stat_floor=True)
-                    prompt_rows = conn.execute(
-                        f"SELECT DISTINCT s.player FROM {table} s {where} {prompt_pos_frag}",
-                        prompt_params,
-                    ).fetchall()
-                    prompt_players = {row[0] for row in prompt_rows}
-                    outside = sorted(all_players - prompt_players)
-                    if outside:
-                        chosen_prompt_idx = prompt_idx
-                        outside_player = outside[0]
-                        break
-            else:
-                stat_expr = module._stat_expr(stat)
-                stat_floor = module._STAT_MIN.get(stat, 0)
-                all_rows = conn.execute(
-                    f"SELECT DISTINCT s.player FROM nba_stats s WHERE games >= 4 AND {stat_expr} >= ? AND s.player IS NOT NULL AND s.player != ''",
-                    [stat_floor],
-                ).fetchall()
-                all_players = {row[0] for row in all_rows}
-
-                for prompt_idx, prompt in enumerate(state["prompts"]):
-                    where, prompt_params = module._build_prompt_where(prompt, stat, apply_stat_floor=True)
-                    prompt_rows = conn.execute(
-                        f"SELECT DISTINCT s.player FROM nba_stats s {where} AND s.player IS NOT NULL AND s.player != ''",
-                        prompt_params,
-                    ).fetchall()
-                    prompt_players = {row[0] for row in prompt_rows}
-                    outside = sorted(all_players - prompt_players)
-                    if outside:
-                        chosen_prompt_idx = prompt_idx
-                        outside_player = outside[0]
-                        break
-        finally:
-            conn.close()
-
-        assert chosen_prompt_idx is not None
-        assert outside_player is not None
+        chosen_prompt_idx, outside_player = _bullseye_outside_player(module, sport, state)
 
         query = outside_player[:4]
         search = await client.get(
@@ -283,14 +289,33 @@ async def test_multiplayer_bullseye_search_and_seasons_use_full_player_pool(clie
         )
         assert search.status_code == 200
         found_players = {row["player"] for row in search.json()["results"]}
-        assert outside_player in found_players
+        assert outside_player in found_players, (
+            f"{sport} bullseye search ({player_names}) leaked answers: "
+            f"non-matching player {outside_player!r} missing from results"
+        )
+
+        # Direct call into the legacy engine's search — guards the still-live
+        # Flask compatibility routes (/api/nba_bullseye/search etc.) which call
+        # module.search_players directly without going through the FastAPI service.
+        conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+        try:
+            engine_results = module.search_players(conn, query, chosen_prompt_idx, game_id)
+        finally:
+            conn.close()
+        engine_names = {row["player"] for row in engine_results}
+        assert outside_player in engine_names, (
+            f"{sport} bullseye engine search_players ({player_names}) leaked answers"
+        )
 
         seasons = await client.get(
             f"/api/v1/bullseye/{sport}/seasons",
             params={"game_id": game_id, "prompt_idx": chosen_prompt_idx, "player": outside_player},
         )
         assert seasons.status_code == 200
-        assert seasons.json()["seasons"]
+        assert seasons.json()["seasons"], (
+            f"{sport} bullseye seasons ({player_names}) returned empty for "
+            f"non-matching player {outside_player!r} — picker is filtering by prompt"
+        )
 
 
 @pytest.mark.asyncio
