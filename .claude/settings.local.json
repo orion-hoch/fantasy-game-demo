@@ -37,7 +37,10 @@
       "Bash(grep -E '\\\\.\\(css|html\\)$')",
       "Bash(awk:*)",
       "Bash(cat /Users/orionhoch/fantasy_game_demo/backend/README*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(rm -f render.yaml vercel.json runtime.txt requirements.txt requirements-etl.txt)",
+      "Bash(rm -rf api/ templates/ static/)"
     ]
   }
 }

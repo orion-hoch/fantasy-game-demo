@@ -643,7 +643,7 @@ async def test_nba_dungeon_encounter(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_balatro_start_and_legacy_page(client: AsyncClient):
+async def test_balatro_start(client: AsyncClient):
     nfl_start = await client.post("/api/v1/balatro/nfl/start", json={"mode": "normal"})
     assert nfl_start.status_code == 200
     nfl_body = nfl_start.json()
@@ -655,19 +655,6 @@ async def test_balatro_start_and_legacy_page(client: AsyncClient):
     nba_body = nba_start.json()
     assert nba_body["game_id"]
     assert nba_body["hand"]
-
-    legacy_page = await client.get("/legacy-balatro/nfl")
-    assert legacy_page.status_code == 200
-    assert "NFL BALATRO" in legacy_page.text
-
-
-@pytest.mark.asyncio
-async def test_balatro_compat_start_alias(client: AsyncClient):
-    response = await client.post("/api/nba_balatro/start", json={})
-    assert response.status_code == 200
-    body = response.json()
-    assert body["game_id"]
-    assert body["hand"]
 
 
 @pytest.mark.asyncio

@@ -6,9 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api/v1': 'http://127.0.0.1:8000',
-      '/legacy-static': 'http://127.0.0.1:8000',
-      '/legacy-balatro': 'http://127.0.0.1:8000'
+      '/api/v1': 'http://127.0.0.1:8000'
     }
   }
 });

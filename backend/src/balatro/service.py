@@ -14,7 +14,6 @@ from src.legacy.bridge import REPO_ROOT
 
 
 DB_PATH = REPO_ROOT / "fantasy.db"
-TEMPLATE_DIR = REPO_ROOT / "templates"
 
 
 def _sync_db() -> sqlite3.Connection:
@@ -289,11 +288,3 @@ def start_infinity(sport: Sport, game_id: str) -> dict:
     if err:
         _bad_request(err)
     return result
-
-
-def legacy_page_html(sport: Sport) -> str:
-    template_name = "nfl_balatro.html" if sport == "nfl" else "nba_balatro.html"
-    html = (TEMPLATE_DIR / template_name).read_text(encoding="utf-8")
-    html = html.replace('href="/?tab=nfl" class="back-link">&#8592; Back</a>', 'href="#" class="back-link" onclick="window.top.history.back(); return false;">&#8592; Back</a>')
-    html = html.replace('href="/?tab=nba" class="back-link">&#8592; Back</a>', 'href="#" class="back-link" onclick="window.top.history.back(); return false;">&#8592; Back</a>')
-    return html

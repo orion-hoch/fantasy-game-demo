@@ -9,8 +9,8 @@ class GameStore:
         self.namespace = namespace
         self.ttl_seconds = ttl_seconds
         self._memory = {}
-        self._rest_url = os.environ.get("KV_REST_API_URL")
-        self._rest_token = os.environ.get("KV_REST_API_TOKEN")
+        self._rest_url = os.environ.get("KV_REST_API_URL") or os.environ.get("UPSTASH_REDIS_REST_URL")
+        self._rest_token = os.environ.get("KV_REST_API_TOKEN") or os.environ.get("UPSTASH_REDIS_REST_TOKEN")
         self.backend = "vercel-kv" if self._rest_url and self._rest_token else "memory"
 
     def _key(self, game_id):

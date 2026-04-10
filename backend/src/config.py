@@ -1,5 +1,6 @@
 """Application settings for the FastAPI strangler backend."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,6 +16,13 @@ class Settings(BaseSettings):
         "http://localhost:4173",
         "http://localhost:3000",
     ]
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str) and not v.startswith("["):
+            return [o.strip() for o in v.split(",") if o.strip()]
+        return v
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

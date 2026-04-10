@@ -1,7 +1,21 @@
-import pandas as pd
 import sqlite3
 import glob
 import os
+
+# Pandas is only needed for offline data-loading / ETL functions.  It takes
+# ~1.3s to import, so we defer it to avoid penalizing runtime cold-starts
+# (the running web app only imports `repair_db_text`, which does its own
+# local import).  Offline entry-points like `build_db`, `load_folder`, etc.
+# call `_ensure_pd()` at the top so `pd` is available for the rest of the
+# module once any ETL function runs.
+pd = None  # type: ignore[assignment]
+
+
+def _ensure_pd():
+    global pd
+    if pd is None:
+        import pandas as _pd
+        pd = _pd
 
 SUSPECT_TEXT_MARKERS = ("Ã", "Â", "â", "Ä", "Å")
 
@@ -58,6 +72,8 @@ def _clean_text_columns(df, columns):
 
 
 def repair_db_text(db_path="fantasy.db"):
+    import pandas as pd  # heavy import — only needed for this offline repair step
+
     conn = sqlite3.connect(db_path)
     targets = {
         "stats": ["player", "team", "pos"],
@@ -128,12 +144,13 @@ def normalize_team(team, season):
     if not isinstance(team, str):
         return team
     # Houston Oilers (through 1996) → Tennessee Titans
-    if team == "HOU" and pd.notna(season) and season <= 1996:
+    if team == "HOU" and season is not None and season == season and season <= 1996:
         return "TEN"
     return TEAM_MAP.get(team, team)
 
 
 def load_folder(folder):
+    _ensure_pd()
     combined_path = os.path.join(folder, "combined.xlsx")
 
     if os.path.exists(combined_path):
@@ -168,6 +185,7 @@ def load_folder(folder):
 
 def load_total_stats(base_dir, db_path="fantasy.db"):
     """Load season_stats.xlsx and Draft_stats/combined.xlsx into the database."""
+    _ensure_pd()
     conn = sqlite3.connect(db_path)
 
     # ── season_stats ──────────────────────────────────────────────────────────
@@ -324,6 +342,7 @@ _SACK_TACKLE_COL_MAP = {
 
 def _load_def_folder(folder, col_map):
     """Load all XLS files from a defensive stats folder, return cleaned DataFrame."""
+    _ensure_pd()
     files = glob.glob(os.path.join(folder, "*.xls"))
     if not files:
         return pd.DataFrame()
@@ -348,6 +367,7 @@ def _load_def_folder(folder, col_map):
 
 def load_defensive_stats(base_dir, db_path="fantasy.db"):
     """Load INTs, Sacks, and Tackles into the def_stats table."""
+    _ensure_pd()
     conn = sqlite3.connect(db_path)
     def_base = os.path.join(base_dir, "Total_stats", "Defensive_stats")
 
@@ -458,6 +478,7 @@ NBA_POS_NORM = {
 
 def load_nba_stats(base_dir, db_path="fantasy.db"):
     """Load NBA single-season stats and draft stats into the database."""
+    _ensure_pd()
     import glob as _glob
     conn = sqlite3.connect(db_path)
 
@@ -573,6 +594,7 @@ def load_nba_stats(base_dir, db_path="fantasy.db"):
 
 
 def _seed_missing_nba_players(conn):
+    _ensure_pd()
     """Insert Cincinnati Royals players whose data is absent from source files.
 
     The source Excel files never included CIN data. CIN → SAC per NBA_TEAM_MAP.
@@ -703,6 +725,7 @@ def _seed_missing_nba_players(conn):
 
 def load_nba_allstars(db_path="fantasy.db", csv_path="NBA_AllStars.csv"):
     """Parse NBA_AllStars.csv and load into the nba_allstars table."""
+    _ensure_pd()
     import re
     import unicodedata
 
@@ -785,6 +808,7 @@ _AWARD_FILE_MAP = {
 
 def _read_sportsref_xls(path):
     """Read a Sports Reference XLS (HTML table) and flatten MultiIndex columns."""
+    _ensure_pd()
     try:
         df = pd.read_html(path)[0]
     except Exception:
@@ -803,6 +827,7 @@ def _strip_pos_suffix(name):
 
 
 def load_new_nba_data(new_data_dir="new_data", db_path="fantasy.db"):
+    _ensure_pd()
     """Load all supplemental NBA data from new_data/ into the database.
 
     Tables created/replaced:
@@ -1174,6 +1199,7 @@ _CHAMP_ONE_RE  = r"^(.+?)\s+\((\w+),[\d-]+\)$"
 
 
 def load_new_nfl_data(new_data_dir="new_data_nfl", db_path="fantasy.db"):
+    _ensure_pd()
     """Load supplemental NFL data from new_data_nfl/ into the database.
 
     Tables created/replaced:
@@ -1413,6 +1439,7 @@ def load_new_nfl_data(new_data_dir="new_data_nfl", db_path="fantasy.db"):
 
 
 def build_db(folders, db_path="fantasy.db"):
+    _ensure_pd()
     conn = sqlite3.connect(db_path)
     all_dfs = []
     for folder in folders:

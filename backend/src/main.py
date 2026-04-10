@@ -6,13 +6,10 @@ from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.staticfiles import StaticFiles
-
 from src.config import settings
 from src.legacy.bridge import REPO_ROOT  # must be first — adds repo root to sys.path
 from src.redis_client import check_redis_health
 
-from src.balatro.router import compat_router as balatro_compat_router
 from src.balatro.router import router as balatro_router
 from src.bullseye.router import router as bullseye_router
 from src.chain.router import router as chain_router
@@ -49,9 +46,6 @@ app.include_router(chain_router, prefix=settings.api_prefix)
 app.include_router(codewords_router, prefix=settings.api_prefix)
 app.include_router(ttb_router, prefix=settings.api_prefix)
 app.include_router(dungeon_router, prefix=settings.api_prefix)
-app.include_router(balatro_compat_router)
-app.mount("/static", StaticFiles(directory=str(REPO_ROOT / "static")), name="legacy-static-root")
-app.mount("/legacy-static", StaticFiles(directory=str(REPO_ROOT / "static")), name="legacy-static")
 
 
 @app.get("/")
