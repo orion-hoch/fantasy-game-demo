@@ -1349,6 +1349,7 @@ def claim_fight_reward(gid, choice, joker_id=None, conn=None):
         "shop_packs": g["shop_packs"],
         "joker_enhancements": g.get("joker_enhancements", {}),
         "held_items": g.get("held_items", []),
+        "deck_pool": g.get("deck_pool", []),
         "next_fight": g.get("next_fight", 1),
         "next_boss_effect": BOSS_EFFECT_MAP.get(g.get("pending_boss_effect")) if g.get("pending_boss_effect") else None,
     }, None
@@ -1513,6 +1514,7 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
         "max_jokers": g.get("max_jokers", 5),
         "joker_enhancements": g.get("joker_enhancements", {}),
         "held_items": g.get("held_items", []),
+        "deck_pool": g.get("deck_pool", []),
     }
     if updated_card:
         result["updated_card"] = updated_card
@@ -2069,6 +2071,7 @@ def confirm_pack_picks(gid, selected_ids):
     return {
         "coins": g["coins"],
         "deck_pool_size": len(g["deck_pool"]),
+        "deck_pool": g["deck_pool"],
         "added_cards": selected,
         "card_effects": g["card_effects"],
         "shop_items": g.get("shop_items", []),

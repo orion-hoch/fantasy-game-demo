@@ -288,8 +288,10 @@
 }#bal-app #score-bar {
   height: 100%;
   width: 0%;
-  background: var(--accent-yellow);
+  background: linear-gradient(90deg, var(--accent-yellow), #f59e0b);
   border-radius: 2px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  box-shadow: 0 0 8px rgba(245,199,0,0.4);
   transition: width 0.4s;
 }#bal-app #score-text {
   font-size: 0.8rem;
@@ -2096,53 +2098,188 @@
   min-width: 320px;
   max-width: 620px;
   pointer-events: none;
-}#bal-app #score-anim-panel.hidden { display: none; }#bal-app #score-anim-panel.fading { opacity: 0; }#bal-app #anim-hand-type-label {
+}
+#bal-app #score-anim-panel.hidden { display: none; }
+#bal-app #score-anim-panel.fading { opacity: 0; }
+
+/* Panel glow shimmer */
+@keyframes panel-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+#bal-app .anim-panel-glow {
+  animation: panel-entrance 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+#bal-app .anim-panel-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%, rgba(245,199,0,0.06) 25%,
+    rgba(245,199,0,0.12) 50%, rgba(245,199,0,0.06) 75%, transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: panel-shimmer 2.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+@keyframes panel-entrance {
+  0%   { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+#bal-app #anim-hand-type-label {
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 1.1rem;
-  letter-spacing: 3px;
+  font-size: 1.25rem;
+  letter-spacing: 4px;
   color: var(--accent-yellow);
   text-transform: uppercase;
-}#bal-app #anim-counters-row {
+  text-shadow: 0 0 12px rgba(245,199,0,0.5);
+  position: relative;
+  z-index: 1;
+}
+#bal-app #anim-counters-row {
   display: flex;
   align-items: center;
   gap: 10px;
-}#bal-app .anim-counter-box {
+  position: relative;
+  z-index: 1;
+}
+#bal-app .anim-counter-box {
   background: var(--bg-secondary);
   border: 2px solid var(--card-border);
-  border-radius: 6px;
-  padding: 6px 14px;
+  border-radius: 8px;
+  padding: 8px 16px;
   text-align: center;
-  min-width: 80px;
+  min-width: 90px;
   box-shadow: 2px 2px 0 var(--card-border);
-}#bal-app .anim-counter-box.hidden { display: none; }#bal-app .anim-counter-label {
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+#bal-app .anim-counter-box.hidden { display: none; }
+#bal-app .anim-counter-label {
   font-family: 'Oswald', Arial, sans-serif;
   font-size: 0.55rem;
   letter-spacing: 2px;
-  color: #888;
   text-transform: uppercase;
-}#bal-app .anim-counter-val {
+}
+#bal-app .anim-counter-val {
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 1.8rem;
+  font-size: 2rem;
   color: var(--text-light);
   line-height: 1;
-  transition: color 0.15s;
-}#bal-app .anim-counter-val.bumping { color: var(--accent-yellow); }#bal-app .anim-score-val { color: var(--accent-yellow); font-size: 2rem; }#bal-app #anim-xmult-box { border-color: #f97316; }#bal-app #anim-xmult-box .anim-counter-label { color: #f97316; }#bal-app #anim-xmult-box .anim-counter-val { color: #f97316; }#bal-app .anim-op {
+  transition: color 0.15s, text-shadow 0.2s;
+  font-variant-numeric: tabular-nums;
+}
+#bal-app .anim-val-pending {
+  color: #555;
+}
+
+/* ── Color-coded counter boxes ── */
+#bal-app .anim-chips-color {
+  border-color: #3b82f6;
+  box-shadow: 2px 2px 0 #1d4ed8, 0 0 16px rgba(59,130,246,0.2);
+}
+#bal-app .anim-chips-color .anim-counter-label { color: #60a5fa; }
+#bal-app .anim-chips-color .anim-counter-val { color: #93c5fd; }
+
+#bal-app .anim-mult-color {
+  border-color: #ef4444;
+  box-shadow: 2px 2px 0 #b91c1c, 0 0 16px rgba(239,68,68,0.2);
+}
+#bal-app .anim-mult-color .anim-counter-label { color: #f87171; }
+#bal-app .anim-mult-color .anim-counter-val { color: #fca5a5; }
+
+#bal-app .anim-xmult-color {
+  border-color: #f97316;
+  box-shadow: 2px 2px 0 #c2410c, 0 0 16px rgba(249,115,22,0.2);
+}
+#bal-app .anim-xmult-color .anim-counter-label { color: #fb923c; }
+#bal-app .anim-xmult-color .anim-counter-val { color: #fdba74; }
+
+#bal-app .anim-score-color {
+  border-color: #eab308;
+  box-shadow: 2px 2px 0 #a16207, 0 0 20px rgba(234,179,8,0.3);
+  background: linear-gradient(135deg, rgba(234,179,8,0.12), var(--bg-secondary));
+}
+#bal-app .anim-score-color .anim-counter-label { color: #facc15; }
+
+/* Chip bump on each card score */
+@keyframes chip-bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+#bal-app .anim-counter-box.chip-bump {
+  animation: chip-bump 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+#bal-app .anim-score-val {
+  color: var(--accent-yellow) !important;
+  font-size: 2.2rem;
+  text-shadow: 0 0 20px rgba(245,199,0,0.6);
+}
+
+/* Score burst glow */
+@keyframes score-burst-glow {
+  0%   { box-shadow: 2px 2px 0 #a16207, 0 0 20px rgba(234,179,8,0.3); }
+  50%  { box-shadow: 2px 2px 0 #a16207, 0 0 40px rgba(234,179,8,0.7), 0 0 80px rgba(234,179,8,0.3); }
+  100% { box-shadow: 2px 2px 0 #a16207, 0 0 24px rgba(234,179,8,0.4); }
+}
+#bal-app .anim-counter-box.score-burst {
+  animation: score-burst-glow 0.8s ease-out;
+}
+
+#bal-app .anim-op {
   font-family: 'Bebas Neue', Impact, sans-serif;
   font-size: 1.8rem;
-  color: #666;
-}#bal-app .anim-op.hidden { display: none; }/* Card scoring states */@keyframes card-score-pop {0% { transform: translateY(0)   scale(1); }25% { transform: translateY(-12px) scale(1.08); }55% { transform: translateY(-6px)  scale(1.04); }100% { transform: translateY(0)   scale(1); }}#bal-app .card.scoring-active .card-inner {
-  animation: card-score-pop 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}#bal-app .card.scoring-active .card-front {
+  color: #888;
+  text-shadow: 0 0 6px rgba(255,255,255,0.1);
+}
+#bal-app .anim-op.hidden { display: none; }
+
+/* ── Card scoring states ── */
+@keyframes card-score-pop {
+  0%   { transform: translateY(0)    scale(1); }
+  20%  { transform: translateY(-18px) scale(1.12); }
+  50%  { transform: translateY(-10px) scale(1.06); }
+  75%  { transform: translateY(-3px)  scale(1.02); }
+  100% { transform: translateY(0)    scale(1); }
+}
+#bal-app .card.scoring-active .card-inner {
+  animation: card-score-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes card-glow-pulse {
+  0%   { box-shadow: 0 0 8px rgba(245,199,0,0.6); }
+  50%  { box-shadow: 0 0 24px rgba(245,199,0,1), 0 0 48px rgba(245,199,0,0.4); }
+  100% { box-shadow: 0 0 8px rgba(245,199,0,0.6); }
+}
+#bal-app .card.scoring-active .card-front {
   border-color: var(--accent-yellow) !important;
-  box-shadow: 0 0 14px rgba(245,199,0,0.8), var(--shadow-comic) !important;
-}#bal-app .card.scoring-dim .card-front {
-  opacity: 0.3;
-  filter: grayscale(0.6);
-  transition: opacity 0.2s, filter 0.2s;
-}#bal-app .card.scoring-done .card-front {
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}/* Floating chip/mult numbers */@keyframes chip-rise {0% { opacity: 1; transform: translateY(0)   scale(0.8); }40% { opacity: 1; transform: translateY(-28px) scale(1.1); }100% { opacity: 0; transform: translateY(-56px) scale(0.9); }}#bal-app .chip-float-el {
+  animation: card-glow-pulse 0.5s ease-in-out;
+  box-shadow: 0 0 20px rgba(245,199,0,0.8), var(--shadow-comic) !important;
+}
+
+#bal-app .card.scoring-dim .card-front {
+  opacity: 0.25;
+  filter: grayscale(0.7) brightness(0.7);
+  transition: opacity 0.3s, filter 0.3s;
+}
+#bal-app .card.scoring-done .card-front {
+  opacity: 0.75;
+  border-color: rgba(245,199,0,0.3) !important;
+  transition: opacity 0.3s, border-color 0.3s;
+}
+
+/* Floating chip/mult numbers */
+@keyframes chip-rise {
+  0%   { opacity: 1; transform: translateY(0)    scale(0.8); }
+  40%  { opacity: 1; transform: translateY(-28px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-56px) scale(0.9); }
+}
+#bal-app .chip-float-el {
   position: fixed;
   pointer-events: none;
   z-index: 300;
@@ -2152,10 +2289,29 @@
   text-shadow: 1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.8);
   animation: chip-rise 0.65s ease forwards;
   white-space: nowrap;
-}/* Mult box reveal pulse */@keyframes mult-pop {0% { transform: scale(0.6) rotate(-5deg); opacity: 0; }60% { transform: scale(1.18) rotate(2deg); opacity: 1; }100% { transform: scale(1) rotate(0deg); opacity: 1; }}#bal-app .anim-counter-box.mult-popping {
-  animation: mult-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}/* Final score reveal */@keyframes score-bang {0% { transform: scale(0.4); opacity: 0; }65% { transform: scale(1.2); opacity: 1; }82% { transform: scale(0.93); }100% { transform: scale(1); opacity: 1; }}#bal-app #anim-score-box.score-banging {
-  animation: score-bang 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Mult box reveal pulse */
+@keyframes mult-pop {
+  0%   { transform: scale(0.5) rotate(-8deg); opacity: 0; }
+  50%  { transform: scale(1.2)  rotate(3deg);  opacity: 1; }
+  75%  { transform: scale(0.95) rotate(-1deg); opacity: 1; }
+  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+#bal-app .anim-counter-box.mult-popping {
+  animation: mult-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Final score reveal */
+@keyframes score-bang {
+  0%   { transform: scale(0.3);  opacity: 0; }
+  40%  { transform: scale(1.25); opacity: 1; }
+  65%  { transform: scale(0.9);  opacity: 1; }
+  80%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
+}
+#bal-app #anim-score-box.score-banging {
+  animation: score-bang 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }/* ── Player Name Split Layout ───────────────────────────────────── */#bal-app .card-player-first {
   font-family: 'Barlow Condensed', 'Oswald', sans-serif;
   font-size: 0.62rem;
@@ -3280,11 +3436,17 @@ body.bal-page .layout-shell {
   width: 118px;
   height: 178px;
   transition:
-    transform 0.28s cubic-bezier(0.34, 1.4, 0.5, 1),
-    box-shadow 0.25s ease;
+    transform 0.2s cubic-bezier(0.34, 1.4, 0.5, 1),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+#bal-app #hand-cards > .card:hover:not(.scoring-active):not(.scoring-dim):not(.scoring-done) {
+  transform: translateY(-6px);
+  filter: brightness(1.08);
 }
 #bal-app .card.selected {
-  transform: translateY(-14px);
+  transform: translateY(-16px);
+  filter: brightness(1.1);
 }
 #bal-app .card-headshot {
   min-height: 60px;
@@ -3334,16 +3496,6 @@ body.bal-page .layout-shell {
 }
 #bal-app .card.dealing {
   animation: card-deal-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes card-score-pop {
-  0%   { transform: translateY(0)    scale(1); }
-  35%  { transform: translateY(-16px) scale(1.10); }
-  65%  { transform: translateY(-8px)  scale(1.05); }
-  100% { transform: translateY(0)    scale(1); }
-}
-#bal-app .card.scoring-active .card-inner {
-  animation: card-score-pop 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -3550,4 +3702,76 @@ body.bal-page #app > header {
   padding: 14px 12px;
   font-size: clamp(1rem, 2.6vw, 1.25rem);
   letter-spacing: 2px;
+}
+
+/* Roster cards grid in shop */
+#bal-app .roster-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+#bal-app .roster-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+}
+#bal-app .roster-card.card-pos-g { border-left: 3px solid #3498db; }
+#bal-app .roster-card.card-pos-f { border-left: 3px solid #e74c3c; }
+#bal-app .roster-card.card-pos-c { border-left: 3px solid #f39c12; }
+#bal-app .roster-card.card-pos-qb { border-left: 3px solid #e74c3c; }
+#bal-app .roster-card.card-pos-rb { border-left: 3px solid #3498db; }
+#bal-app .roster-card.card-pos-wr { border-left: 3px solid #2ecc71; }
+#bal-app .roster-card.card-pos-te { border-left: 3px solid #f39c12; }
+
+#bal-app .roster-card-headshot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.3);
+}
+#bal-app .roster-headshot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#bal-app .roster-card-info {
+  min-width: 0;
+  flex: 1;
+}
+#bal-app .roster-card-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #eee;
+}
+#bal-app .roster-card-meta {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#bal-app .roster-card-pts {
+  font-size: 0.55rem;
+  color: #f1c40f;
+  font-weight: 600;
+}
+
+/* Pack actions row */
+#bal-app .pack-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 12px;
 }

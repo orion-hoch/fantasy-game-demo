@@ -48,6 +48,7 @@
   let jokerState = $state<Record<string, unknown>>({});
   let heldCards: Card[] = $state([]);
   let deckCards: Card[] = $state([]);
+  let deckPool: Card[] = $state([]);
   let restockCount = $state(0);
   let maxHandSize = $state(9);
   let baseDiscards = $state(3);
@@ -72,9 +73,11 @@
   let scoringActive = $state(false);
   let animHandType = $state('');
   let animChips = $state(0);
+  let animDisplayChips = $state(0);
   let animMult = $state(0);
   let animXmult = $state(0);
   let animScore = $state(0);
+  let animDisplayScore = $state(0);
   let animShowMult = $state(false);
   let animShowXmult = $state(false);
   let animShowScore = $state(false);
@@ -82,6 +85,8 @@
   let animActiveId = $state('');
   let animDimIds = $state<Set<string>>(new Set());
   let animDoneIds = $state<Set<string>>(new Set());
+  let animChipsBumping = $state(false);
+  let animScoreBurst = $state(false);
 
   // Reward state
   let rewardOptions: Joker[] = $state([]);
@@ -195,6 +200,17 @@
 
   const deckGroups = $derived.by(() => getDeckGroups());
 
+  // Normalize pack objects from backend (uses "id") to frontend (uses "pack_id")
+  function normalizePacks(packs: ShopPack[]): ShopPack[] {
+    return (packs || []).map(p => {
+      const raw = p as Record<string, unknown>;
+      if (!p.pack_id && raw.id) {
+        return { ...p, pack_id: raw.id as string };
+      }
+      return p;
+    });
+  }
+
   function addLog(msg: string) {
     logEntries = [msg, ...logEntries.slice(0, 49)];
   }
@@ -236,12 +252,17 @@
     return cardStatsCache[card.player + '_' + card.season] || null;
   }
 
-  async function fetchPreview() {
-    if (!gameId || selectedIds.size === 0) return;
-    try {
-      const data = await previewBalatroHand(sport, gameId, Array.from(selectedIds));
-      previewData = data;
-    } catch { /* ignore preview errors */ }
+  let previewTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function fetchPreview() {
+    if (!gameId || selectedIds.size === 0) { previewData = null; return; }
+    if (previewTimer) clearTimeout(previewTimer);
+    previewTimer = setTimeout(async () => {
+      try {
+        const data = await previewBalatroHand(sport, gameId, Array.from(selectedIds));
+        previewData = data;
+      } catch { /* ignore preview errors */ }
+    }, 250);
   }
 
   // ── Apply server state ───────────────────────────────────────────
@@ -263,11 +284,12 @@
     if (data.combo_boosts) comboBoosts = data.combo_boosts;
     if (data.card_effects) cardEffects = data.card_effects;
     if (data.shop_items) shopItems = data.shop_items;
-    if (data.shop_packs) shopPacks = data.shop_packs;
+    if (data.shop_packs) shopPacks = normalizePacks(data.shop_packs);
     if (data.max_jokers !== undefined) maxJokers = data.max_jokers;
     if (data.joker_state) jokerState = data.joker_state;
     if (data.held_cards !== undefined) heldCards = data.held_cards;
     if (data.deck_cards !== undefined) deckCards = data.deck_cards;
+    if (data.deck_pool !== undefined) deckPool = data.deck_pool as Card[];
     if (data.max_hand_size !== undefined) maxHandSize = data.max_hand_size;
     if (data.base_discards !== undefined) baseDiscards = data.base_discards;
     selectedIds = new Set();
@@ -278,68 +300,106 @@
   // ── Sleep helper ─────────────────────────────────────────────────
   function sleep(ms: number) { return new Promise(r => setTimeout(r, ms)); }
 
+  // Smooth counter: animate from current displayed value to target over duration
+  function tweenCounter(
+    getCurrent: () => number,
+    setter: (v: number) => void,
+    target: number,
+    duration: number = 300,
+  ) {
+    const start = getCurrent();
+    const diff = target - start;
+    if (diff === 0) { setter(target); return; }
+    const t0 = performance.now();
+    function frame() {
+      const elapsed = performance.now() - t0;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out quad
+      const eased = 1 - (1 - progress) * (1 - progress);
+      setter(Math.round(start + diff * eased));
+      if (progress < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
   // ── Scoring animation ───────────────────────────────────────────
   async function animateScore(data: PlayResult, playedIds: string[]) {
     if (!data.card_contributions || data.card_contributions.length === 0) return;
     scoringActive = true;
 
+    try {
     const scoringIds = new Set(data.scoring_card_ids || data.card_contributions.map(c => c.id));
     animScoringIds = scoringIds;
     animDimIds = new Set(playedIds.filter(id => !scoringIds.has(id)));
     animDoneIds = new Set();
     animHandType = (data.hand_name || '').toUpperCase();
     animChips = 0;
+    animDisplayChips = 0;
     animMult = 0;
     animXmult = 1;
     animScore = 0;
+    animDisplayScore = 0;
     animShowMult = false;
     animShowXmult = false;
     animShowScore = false;
     animActiveId = '';
+    animChipsBumping = false;
+    animScoreBurst = false;
 
     await tick();
-    await sleep(200);
+    await sleep(100);
 
-    // Phase 1: card by card chips
+    // Phase 1: card by card chips — smooth counter tween per card
     let runningChips = 0;
     for (const contrib of data.card_contributions) {
       animActiveId = contrib.id;
-      await sleep(180);
+      await sleep(60);
       runningChips += contrib.contribution;
       animChips = Math.round(runningChips);
+      // Bump effect on chips box
+      animChipsBumping = false;
+      await tick();
+      animChipsBumping = true;
+      tweenCounter(() => animDisplayChips, (v) => animDisplayChips = v, animChips, 180);
       SFX.play('score_tick');
       animDoneIds = new Set([...animDoneIds, contrib.id]);
       animActiveId = '';
-      await sleep(280);
+      await sleep(140);
     }
-    await sleep(220);
+    animChipsBumping = false;
+    await sleep(80);
 
     // Phase 2: mult reveal
     animShowMult = true;
     animMult = data.total_mult || 0;
     SFX.play('score_tick');
-    await sleep(420);
+    await sleep(300);
 
     // Phase 2b: xmult
     if (data.mult_factor && data.mult_factor > 1.0) {
       animShowXmult = true;
       animXmult = data.mult_factor;
       SFX.play('score_tick');
-      await sleep(420);
+      await sleep(300);
     }
 
-    // Phase 3: score bang
+    // Phase 3: score bang — smooth count up to final score
     animShowScore = true;
     animScore = data.score || 0;
+    animScoreBurst = true;
+    tweenCounter(() => animDisplayScore, (v) => animDisplayScore = v, animScore, 500);
     SFX.play('reward');
-    await sleep(1000);
+    await sleep(800);
+    animScoreBurst = false;
 
-    // Fade out
-    scoringActive = false;
-    animScoringIds = new Set();
-    animDimIds = new Set();
-    animDoneIds = new Set();
-    animActiveId = '';
+    } finally {
+      // Fade out — always reset even if animation errors
+      scoringActive = false;
+      animScoringIds = new Set();
+      animDimIds = new Set();
+      animDoneIds = new Set();
+      animActiveId = '';
+    }
   }
 
   // ── Deal animation ──────────────────────────────────────────────
@@ -491,7 +551,7 @@
       if (data.error) { errorMsg = data.error; return; }
       applyState(data);
       shopItems = data.shop_items ?? [];
-      shopPacks = data.shop_packs ?? [];
+      shopPacks = normalizePacks(data.shop_packs ?? []);
       restockCount = 0;
       screen = 'shop';
     } catch (err) {
@@ -508,7 +568,7 @@
       if (data.error) { errorMsg = data.error; return; }
       applyState(data);
       if (data.shop_items) shopItems = data.shop_items;
-      if (data.shop_packs) shopPacks = data.shop_packs;
+      if (data.shop_packs) shopPacks = normalizePacks(data.shop_packs);
       restockCount = 0;
       screen = 'shop';
     } catch (err) {
@@ -526,7 +586,7 @@
       SFX.play('buy');
       applyState(data);
       if (data.shop_items) shopItems = data.shop_items;
-      if (data.shop_packs) shopPacks = data.shop_packs;
+      if (data.shop_packs) shopPacks = normalizePacks(data.shop_packs);
       addLog(`Bought ${itemType}`);
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Buy failed';
@@ -558,7 +618,7 @@
       SFX.play('buy');
       applyState(data);
       if (data.shop_items) shopItems = data.shop_items;
-      if (data.shop_packs) shopPacks = data.shop_packs;
+      if (data.shop_packs) shopPacks = normalizePacks(data.shop_packs);
       restockCount += 1;
     } catch (err) {
       errorMsg = err instanceof Error ? err.message : 'Restock failed';
@@ -574,7 +634,7 @@
       if (data.error) { errorMsg = data.error as string; return; }
       SFX.play('buy');
 
-      if (data.shop_packs) shopPacks = data.shop_packs as ShopPack[];
+      if (data.shop_packs) shopPacks = normalizePacks(data.shop_packs as ShopPack[]);
 
       const candidates = (Array.isArray(data.candidates) ? data.candidates : data.cards ?? []) as Record<string, unknown>[];
       const isJokerPack = Boolean(data.is_joker_pack) || (candidates.length > 0 && !('player' in candidates[0]));
@@ -605,7 +665,7 @@
       if (data.error) { errorMsg = data.error; return; }
       applyState(data);
       if (data.shop_items) shopItems = data.shop_items;
-      if (data.shop_packs) shopPacks = data.shop_packs;
+      if (data.shop_packs) shopPacks = normalizePacks(data.shop_packs);
       packOpen = false;
       packCards = [];
       packJokerOptions = [];
@@ -690,6 +750,10 @@
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
     if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
     return String(Math.round(n));
+  }
+
+  function formatFull(n: number): string {
+    return Math.round(n).toLocaleString();
   }
 
   function scorePercent(): number {
@@ -1001,37 +1065,37 @@
 
       <!-- Score Animation Panel -->
       {#if scoringActive}
-        <div id="score-anim-panel">
+        <div id="score-anim-panel" class="anim-panel-glow">
           <div id="anim-hand-type-label">{animHandType}</div>
           <div id="anim-counters-row">
-            <div class="anim-counter-box" id="anim-chips-box">
+            <div class="anim-counter-box anim-chips-color" class:chip-bump={animChipsBumping} id="anim-chips-box">
               <div class="anim-counter-label">CHIPS</div>
-              <div class="anim-counter-val">{formatNum(animChips)}</div>
+              <div class="anim-counter-val">{formatFull(animDisplayChips)}</div>
             </div>
             <div class="anim-op">x</div>
             {#if animShowMult}
-              <div class="anim-counter-box mult-popping" id="anim-mult-box">
+              <div class="anim-counter-box mult-popping anim-mult-color" id="anim-mult-box">
                 <div class="anim-counter-label">MULT</div>
                 <div class="anim-counter-val">{animMult}</div>
               </div>
             {:else}
               <div class="anim-counter-box" id="anim-mult-box">
                 <div class="anim-counter-label">MULT</div>
-                <div class="anim-counter-val">--</div>
+                <div class="anim-counter-val anim-val-pending">--</div>
               </div>
             {/if}
             {#if animShowXmult}
               <div class="anim-op">x</div>
-              <div class="anim-counter-box mult-popping" id="anim-xmult-box">
+              <div class="anim-counter-box mult-popping anim-xmult-color" id="anim-xmult-box">
                 <div class="anim-counter-label">XMULT</div>
                 <div class="anim-counter-val">{animXmult}</div>
               </div>
             {/if}
             {#if animShowScore}
               <div class="anim-op">=</div>
-              <div class="anim-counter-box score-banging" id="anim-score-box">
+              <div class="anim-counter-box score-banging anim-score-color" class:score-burst={animScoreBurst} id="anim-score-box">
                 <div class="anim-counter-label">SCORE</div>
-                <div class="anim-counter-val anim-score-val">{formatNum(animScore)}</div>
+                <div class="anim-counter-val anim-score-val">{formatFull(animDisplayScore)}</div>
               </div>
             {/if}
           </div>
@@ -1042,7 +1106,7 @@
       {#if lastPlayResult && !scoringActive}
         <div id="play-log-wrapper">
           <div id="play-log">
-            <div class="log-entry">{lastPlayResult.hand_name}: +{formatNum(lastPlayResult.score ?? 0)} ({lastPlayResult.base_pts} x {lastPlayResult.total_mult})</div>
+            <div class="log-entry">{lastPlayResult.hand_name}: +{formatFull(lastPlayResult.score ?? 0)} ({formatFull(lastPlayResult.base_pts ?? 0)} x {lastPlayResult.total_mult})</div>
           </div>
         </div>
       {/if}
@@ -1399,6 +1463,40 @@
             </div>
           {/if}
 
+          <!-- Your Roster (Deck Pool Cards) -->
+          {#if deckPool.length > 0}
+            <div class="shop-locker-section">
+              <div class="shop-section-header">
+                <span class="shop-section-title" style="color:#2980b9;">YOUR ROSTER ({deckPool.length} cards)</span>
+              </div>
+              <div class="roster-cards-grid">
+                {#each deckPool as card}
+                  {@const divInfo = getDivInfo(card.team)}
+                  {@const splitName = card.player.split(' ')}
+                  {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
+                  {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
+                  <div class="roster-card {posClass(card.pos)}">
+                    <div class="roster-card-headshot">
+                      {#if card.headshot_url}
+                        <img class="roster-headshot-img" src={card.headshot_url} alt="" onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                      {:else}
+                        <img class="roster-headshot-img" src="/img/blank_player.png" alt="">
+                      {/if}
+                    </div>
+                    <div class="roster-card-info">
+                      <div class="roster-card-name">{lastName}</div>
+                      <div class="roster-card-meta">
+                        <span class="card-pos-badge" style="font-size:0.6rem;padding:1px 4px;">{card.pos}</span>
+                        {#if divInfo}<span class="card-div-badge {divInfo.cls}" style="font-size:0.55rem;padding:1px 3px;">{divInfo.label}</span>{/if}
+                        <span class="roster-card-pts">{pts} FP</span>
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            </div>
+          {/if}
+
           <!-- Shop Actions -->
           <div class="shop-actions">
             <button id="restock-btn" class="btn-secondary" type="button" disabled={actionPending || coins < (2 + restockCount * 2)}
@@ -1492,9 +1590,14 @@
                 {/each}
               </div>
             {/if}
-            <button id="pack-close-btn" class="btn-primary" type="button" disabled={actionPending} onclick={handleConfirmPackPicks}>
-              Confirm ({packSelectedIds.size}/{packMaxPicks})
-            </button>
+            <div class="pack-actions">
+              <button id="pack-close-btn" class="btn-primary" type="button" disabled={actionPending || packSelectedIds.size === 0} onclick={handleConfirmPackPicks}>
+                Confirm ({packSelectedIds.size}/{packMaxPicks})
+              </button>
+              <button class="btn-secondary" type="button" disabled={actionPending} onclick={() => { packOpen = false; packCards = []; packJokerOptions = []; packIsJoker = false; }}>
+                Skip
+              </button>
+            </div>
           </div>
         </div>
       {/if}
