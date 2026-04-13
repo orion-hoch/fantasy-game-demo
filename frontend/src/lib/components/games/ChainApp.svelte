@@ -40,6 +40,7 @@
   let selectedFromResults = $state(false);
   let searchTimer: ReturnType<typeof setTimeout> | null = null;
   let pollTimer: ReturnType<typeof setInterval> | null = null;
+  let chainBarEl: HTMLElement | undefined = $state();
 
   const isOnlineMode = $derived(!!roomId);
   const displayedChain = $derived.by(() => {
@@ -79,6 +80,14 @@
     if (!isOnlineMode || !onlineState) return score;
     if (onlineState.mode === 'coop') return onlineState.players.reduce((sum, player) => sum + (player.score || 0), 0);
     return currentOnlinePlayer?.score || 0;
+  });
+
+  $effect(() => {
+    // Scroll chain bar to the rightmost link whenever the chain grows
+    const _len = displayedChain.length;
+    if (chainBarEl) {
+      chainBarEl.scrollLeft = chainBarEl.scrollWidth;
+    }
   });
 
   function playerToken() {
@@ -420,7 +429,7 @@
 
   <div id="chain-section">
     <div class="section-label">Current Chain</div>
-    <div id="chain-bar">
+    <div id="chain-bar" bind:this={chainBarEl}>
       {#if !displayedChain.length}
         <div id="chain-empty-msg">Start a new chain below!</div>
       {:else}
