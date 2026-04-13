@@ -301,7 +301,7 @@ def _get_effective_pos_mult(pos, joker_ids, skill_levels, card_effects_for_card=
 
 
 def _get_effective_ppr(card, skill_levels, card_effects):
-    ppr = card["fantasy_ppr"]
+    ppr = card["fantasy_pts"]
     level = skill_levels.get(card["pos"], 0)
     ppr *= (1 + level * 0.08)
     effects = card_effects.get(card["id"], [])
@@ -358,7 +358,7 @@ def _build_deck_pool(conn):
             "season": r[1],
             "pos": r[2],
             "team": r[3],
-            "fantasy_ppr": round(r[4], 1),
+            "fantasy_pts": round(r[4], 1),
             "pro_bowls": int(r[5]) if r[5] else 0,
             "college": college,
             "draft_year": r[7],
@@ -408,7 +408,7 @@ def _build_deck(conn):
             "season": r[1],
             "pos": r[2],
             "team": r[3],
-            "fantasy_ppr": round(r[4], 1),
+            "fantasy_pts": round(r[4], 1),
             "pro_bowls": int(r[5]) if r[5] else 0,
             "college": college,
             "draft_year": r[7],
@@ -488,24 +488,24 @@ def evaluate_hand(cards):
     # Quad: 4 of same position (use highest 4 by score)
     for pos, cnt in sorted(pos_counts.items(), key=lambda x: -x[1]):
         if cnt >= 4:
-            quad_cards = sorted([c for c in cards if c["pos"] == pos], key=lambda c: c["fantasy_ppr"] * POS_MULT.get(c["pos"], 1), reverse=True)[:4]
+            quad_cards = sorted([c for c in cards if c["pos"] == pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:4]
             return "quad", quad_cards
 
     # Trips: 3 of same position
     for pos, cnt in sorted(pos_counts.items(), key=lambda x: -x[1]):
         if cnt >= 3:
-            trip_cards = sorted([c for c in cards if c["pos"] == pos], key=lambda c: c["fantasy_ppr"] * POS_MULT.get(c["pos"], 1), reverse=True)[:3]
+            trip_cards = sorted([c for c in cards if c["pos"] == pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:3]
             return "trips", trip_cards
 
     # Double: best pair by total score
     pairs = [pos for pos, cnt in pos_counts.items() if cnt >= 2]
     if pairs:
-        best_pos = max(pairs, key=lambda p: sum(c["fantasy_ppr"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p))
-        pair_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_ppr"] * POS_MULT.get(c["pos"], 1), reverse=True)[:2]
+        best_pos = max(pairs, key=lambda p: sum(c["fantasy_pts"] * POS_MULT.get(c["pos"], 1) for c in cards if c["pos"] == p))
+        pair_cards = sorted([c for c in cards if c["pos"] == best_pos], key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1), reverse=True)[:2]
         return "double", pair_cards
 
     # Single: highest scoring card
-    best = max(cards, key=lambda c: c["fantasy_ppr"] * POS_MULT.get(c["pos"], 1))
+    best = max(cards, key=lambda c: c["fantasy_pts"] * POS_MULT.get(c["pos"], 1))
     return "single", [best]
 
 
@@ -616,7 +616,7 @@ def _calc_joker_mult(hand_type, scoring_cards, all_played, joker_ids, joker_stat
             jbonus = joker_state.get("restock_stacks", 0)
         # ── On-scored per-card attribute jokers ──────────────────────────────
         elif jid == "high_scorer_chip":
-            jpts = sum(300 for c in scoring_cards if c.get("fantasy_ppr", 0) >= 200)
+            jpts = sum(300 for c in scoring_cards if c.get("fantasy_pts", 0) >= 200)
         elif jid == "pro_bowl_chip":
             jpts = sum(300 for c in scoring_cards if (c.get("pro_bowls") or 0) >= 3)
         elif jid == "veteran_chip":
@@ -965,7 +965,7 @@ def _generate_shop(conn, state):
                 "season": row[1],
                 "pos": row[2],
                 "team": row[3],
-                "fantasy_ppr": round(row[4], 1),
+                "fantasy_pts": round(row[4], 1),
                 "pro_bowls": int(row[5]) if row[5] else 0,
                 "college": college,
                 "draft_year": row[7],
@@ -1628,13 +1628,13 @@ def buy_shop_item(gid, item_type, shop_id, target_card_id=None, target_year=None
             r = rows[0]
             target_card["season"] = r[0]
             target_card["team"] = r[1]
-            target_card["fantasy_ppr"] = round(r[2], 1)
+            target_card["fantasy_pts"] = round(r[2], 1)
             # Also update in hand if present
             for hcard in g["hand"]:
                 if hcard["id"] == target_card_id:
                     hcard["season"] = r[0]
                     hcard["team"] = r[1]
-                    hcard["fantasy_ppr"] = round(r[2], 1)
+                    hcard["fantasy_pts"] = round(r[2], 1)
             updated_card = target_card
 
     elif item["type"] == "cut_card":
@@ -1959,7 +1959,7 @@ def get_player_seasons(conn, player_name):
         "SELECT season, fantasy_ppr, team FROM stats WHERE player = ? AND fantasy_ppr IS NOT NULL ORDER BY season DESC",
         (player_name,)
     ).fetchall()
-    return [{"season": r[0], "fantasy_ppr": round(r[1], 1), "team": r[2]} for r in rows]
+    return [{"season": r[0], "fantasy_pts": round(r[1], 1), "team": r[2]} for r in rows]
 
 
 def get_card_stats(conn, player, season):
@@ -2035,7 +2035,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
         card = {
             "id": f"{r[0]}_{r[1]}_{r[2]}_pack{idx_start + i}",
             "player": r[0], "season": r[1], "pos": r[2], "team": r[3],
-            "fantasy_ppr": round(r[4], 1),
+            "fantasy_pts": round(r[4], 1),
             "pro_bowls": int(r[5]) if r[5] else 0,
             "college": college, "draft_year": r[7], "draft_round": r[8], "draft_pick": draft_pick,
             "undrafted": draft_pick is None,

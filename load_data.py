@@ -213,6 +213,10 @@ def load_total_stats(base_dir, db_path="fantasy.db"):
         num_cols = [c for c in ss.columns if c not in ("player", "team", "pos")]
         for col in num_cols:
             ss[col] = pd.to_numeric(ss[col], errors="coerce")
+        # Normalize franchise relocations (SDG→LAC, STL→LAR, etc.)
+        ss["team"] = ss.apply(
+            lambda r: normalize_team(r["team"], r.get("season")), axis=1
+        )
         ss.drop_duplicates(subset=["player", "season", "team"], inplace=True)
 
         for (name, team), new_name in PLAYER_RENAMES_BY_TEAM.items():
@@ -826,6 +830,23 @@ def _strip_pos_suffix(name):
     return re.sub(r"\s+[CFG]$", "", name.strip())
 
 
+def _parse_tied_players(raw):
+    """Parse a tied/multi-player cell into individual clean names.
+
+    e.g. 'Jason Kidd, Dwyane Wade (T)' → ['Jason Kidd', 'Dwyane Wade']
+         'Zelmo Beaty C, Dan Issel C (T)' → ['Zelmo Beaty', 'Dan Issel']
+    Returns a list of stripped names (empty list if not a tied entry).
+    """
+    import re
+    if not isinstance(raw, str):
+        return []
+    if "," not in raw and "(T)" not in raw:
+        return []
+    s = raw.replace("(T)", "").strip()
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    return [_strip_pos_suffix(p) for p in parts if _strip_pos_suffix(p)]
+
+
 def load_new_nba_data(new_data_dir="new_data", db_path="fantasy.db"):
     _ensure_pd()
     """Load all supplemental NBA data from new_data/ into the database.
@@ -927,7 +948,11 @@ def load_new_nba_data(new_data_dir="new_data", db_path="fantasy.db"):
                 if not isinstance(val, str) or not val.strip():
                     continue
                 player = _strip_pos_suffix(val)
-                if player:
+                if "," in val or "(T)" in val:
+                    # Tied entry — split into individual players
+                    for p in _parse_tied_players(val):
+                        rows.append({"player": p, "season": season, "team_num": team_num})
+                elif player:
                     rows.append({"player": player, "season": season, "team_num": team_num})
 
         if rows:

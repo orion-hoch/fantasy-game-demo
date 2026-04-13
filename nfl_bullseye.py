@@ -37,6 +37,14 @@ NFL_DIVISIONS = {
     "NFC West": ["SFO", "SEA", "LAR", "STL", "RAM", "ARI"],
 }
 
+# Historical → modern franchise mapping (same direction as TEAM_MAP in load_data.py)
+_NFL_HIST_TO_MOD = {
+    "SDG": "LAC",
+    "STL": "LAR", "RAM": "LAR",
+    "RAI": "LVR", "OAK": "LVR",
+    "CRD": "ARI", "CHR": "ARI", "PHO": "ARI",
+}
+
 # ── Stat configuration ────────────────────────────────────────────────────────
 
 _STAT_CONFIG = {
@@ -189,8 +197,15 @@ def _build_prompt_where(prompt: dict, stat: str, apply_stat_floor: bool = False)
         clauses.append(f"s.team IN {ph}")
         params.extend(p)
     elif team_filter and team_filter not in ("any", None):
-        clauses.append("s.team = ?")
-        params.append(team_filter)
+        # Expand to historical equivalents so SDG/LAC, OAK/LVR, etc. match each other
+        equiv = {team_filter}
+        for hist, mod in _NFL_HIST_TO_MOD.items():
+            if hist == team_filter or mod == team_filter:
+                equiv.add(hist)
+                equiv.add(mod)
+        ph, p = _teams_in_clause(list(equiv))
+        clauses.append(f"s.team IN {ph}")
+        params.extend(p)
 
     yr_min = prompt.get("year_min")
     yr_max = prompt.get("year_max")

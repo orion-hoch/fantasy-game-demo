@@ -67,7 +67,7 @@
 
   // Card flip state
   let flippedCardIds = $state<Set<string>>(new Set());
-  let cardStatsCache: Record<string, CardStats> = {};
+  let cardStatsCache: Record<string, CardStats> = $state({});
 
   // Scoring animation state
   let scoringActive = $state(false);
@@ -1228,8 +1228,9 @@
                     <div class="card-back-name">{card.player}</div>
                     <div class="card-back-season">{displayYear(card.season)}</div>
                     <div class="card-back-college">{(card.college && card.college !== 'Unknown') ? card.college : 'Undrafted'}</div>
-                    {#if card.allstar_count && card.allstar_count > 0}
-                      <div class="card-back-pb">★ {card.allstar_count}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}</div>
+                    {@const accoladeCount = (card.allstar_count as number | undefined) || (card.pro_bowls as number | undefined) || 0}
+                    {#if accoladeCount > 0}
+                      <div class="card-back-pb">★ {accoladeCount}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}</div>
                     {:else if card.draft_pick && card.draft_pick > 0}
                       <div class="card-back-pb">Pick #{card.draft_pick}</div>
                     {/if}
@@ -1239,7 +1240,10 @@
                         <div class="stat-row"><span>REB</span><span>{(stats.trb_pg || 0).toFixed(1)} rpg</span></div>
                         <div class="stat-row"><span>AST</span><span>{(stats.ast_pg || 0).toFixed(1)} apg</span></div>
                       {:else}
-                        {#if stats.pts_pg}<div class="stat-row"><span>FP</span><span>{stats.pts_pg}</span></div>{/if}
+                        {@const s = stats as Record<string, number | null>}
+                        {#if s.pass_yds}<div class="stat-row"><span>PASS</span><span>{s.pass_yds} yds · {s.pass_td ?? 0} TD</span></div>{/if}
+                        {#if s.rush_yds}<div class="stat-row"><span>RUSH</span><span>{s.rush_yds} yds · {s.rush_td ?? 0} TD</span></div>{/if}
+                        {#if s.rec_yds}<div class="stat-row"><span>REC</span><span>{s.rec_yds} yds · {s.rec_td ?? 0} TD</span></div>{/if}
                       {/if}
                     </div>
                     <div class="card-back-ppr">{card.fantasy_pts !== undefined ? card.fantasy_pts.toFixed(1) : pts} FP</div>
