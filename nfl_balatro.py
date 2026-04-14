@@ -286,7 +286,7 @@ def cleanup_old_games():
 
 
 def _pfr_headshot_url(pfr_id, draft_year=None):
-    """PFR uses `{pfr_id}_{draft_year}.jpg` for recent rookies (2023+)."""
+    """Primary PFR headshot URL. Frontend tries alternate year-suffix forms on error."""
     if not pfr_id:
         return None
     try:

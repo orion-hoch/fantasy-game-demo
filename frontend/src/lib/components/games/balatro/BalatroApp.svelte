@@ -159,23 +159,38 @@
     return String(season);
   }
 
-  function handleHeadshotError(e: Event) {
-    const img = e.target as HTMLImageElement;
-    const tried = img.dataset.fallback || '0';
-    const src = img.src;
-    if (tried === '0' && sport === 'nfl' && src.includes('/headshots/')) {
-      const m = src.match(/\/headshots\/([^/]+?)(_\d{4})?\.jpg/);
-      if (m) {
-        const id = m[1];
-        const hadSuffix = !!m[2];
-        img.dataset.fallback = '1';
-        img.src = hadSuffix
-          ? `https://www.pro-football-reference.com/req/20230307/images/headshots/${id}.jpg`
-          : `https://www.pro-football-reference.com/req/20230307/images/headshots/${id}_2024.jpg`;
-        return;
-      }
+  function headshotCandidates(card: Card): string[] {
+    if (sport !== 'nfl') {
+      return card.headshot_url ? [card.headshot_url] : [];
     }
-    img.dataset.fallback = '2';
+    const pfrId = (card as Record<string, unknown>).pfr_id as string | undefined;
+    if (!pfrId) return card.headshot_url ? [card.headshot_url] : [];
+    const base = 'https://www.pro-football-reference.com/req/20230307/images/headshots';
+    const years = new Set<number>();
+    const season = card.season as number | undefined;
+    const draftYear = (card as Record<string, unknown>).draft_year as number | undefined;
+    const maxSeason = (card as Record<string, unknown>).max_season as number | undefined;
+    if (season) years.add(season);
+    if (draftYear) years.add(draftYear);
+    if (maxSeason) years.add(maxSeason);
+    const yearUrls = [...years].sort((a, b) => b - a).map(y => `${base}/${pfrId}_${y}.jpg`);
+    return [`${base}/${pfrId}.jpg`, ...yearUrls];
+  }
+
+  function headshotSrc(card: Card): string {
+    const list = headshotCandidates(card);
+    return list[0] || '/img/blank_player.png';
+  }
+
+  function handleHeadshotError(e: Event, card: Card) {
+    const img = e.target as HTMLImageElement;
+    const list = headshotCandidates(card);
+    const idx = parseInt(img.dataset.tier || '0', 10) + 1;
+    if (idx < list.length) {
+      img.dataset.tier = String(idx);
+      img.src = list[idx];
+      return;
+    }
     img.src = '/img/blank_player.png';
     img.classList.add('card-headshot-blank');
   }
@@ -1203,9 +1218,9 @@
                     {#if card.headshot_url}
                       <img
                         class="card-headshot-img"
-                        src={card.headshot_url}
+                        src={headshotSrc(card)}
                         alt=""
-                        onerror={handleHeadshotError}
+                        onerror={(e) => handleHeadshotError(e, card)}
                       >
                     {:else}
                       <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
@@ -1488,8 +1503,8 @@
                       </div>
                       <div class="card-headshot">
                         {#if card.headshot_url}
-                          <img class="card-headshot-img" src={card.headshot_url} alt=""
-                            onerror={handleHeadshotError}>
+                          <img class="card-headshot-img" src={headshotSrc(card)} alt=""
+                            onerror={(e) => handleHeadshotError(e, card)}>
                         {:else}
                           <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
                         {/if}
@@ -1581,7 +1596,7 @@
                       </div>
                       <div class="card-headshot">
                         {#if card.headshot_url}
-                          <img class="card-headshot-img" src={card.headshot_url} alt="" onerror={handleHeadshotError}>
+                          <img class="card-headshot-img" src={headshotSrc(card)} alt="" onerror={(e) => handleHeadshotError(e, card)}>
                         {:else}
                           <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
                         {/if}
