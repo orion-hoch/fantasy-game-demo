@@ -811,20 +811,6 @@
     return `animation: card-deal-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms both;`;
   }
 
-  // Vendor lines for the shop
-  const VENDOR_LINES = [
-    'Stock up before tip-off!', 'Fresh talent just arrived!', "Get 'em while they last!",
-    'Best roster in the league!', 'Playoffs gear is here!', 'Limited stock - act fast!',
-    "Today's deals won't last!", 'Draft your dream team!', 'Championship season calls!',
-    'That last quarter was ELITE!', 'Running low on coins? Choose wisely!',
-    'A new fan could change everything!', 'Trust the process. Buy the pack.',
-  ];
-  let vendorLine = $state(VENDOR_LINES[0]);
-
-  function randomVendorLine() {
-    vendorLine = VENDOR_LINES[Math.floor(Math.random() * VENDOR_LINES.length)];
-  }
-
   // Item type labels and icons for shop
   const ITEM_ICON: Record<string, string> = {
     joker: 'Fan', skill_card: 'SK', combo_card: 'CMB', effect_card: 'EF',
@@ -1521,14 +1507,6 @@
             </button>
           </div>
 
-          <!-- Vendor NPC -->
-          <div class="npc-panel">
-            <div class="npc-nameplate">Vendor Vic</div>
-            <div class="npc-char">
-              <div class="npc-avatar">VIC</div>
-            </div>
-            <div class="vendor-bubble">{vendorLine}</div>
-          </div>
         </div>
       </div>
 
