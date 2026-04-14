@@ -459,6 +459,7 @@
             : 'Search player name...'}
         value={currentGuess}
         disabled={(isOnlineMode && (!isMatchStarted || !isMyTurn)) || loading || (!isOnlineMode && !gameActive)}
+        autocomplete="off"
         oninput={(event) => onSearchInput((event.currentTarget as HTMLInputElement).value)}
         onkeydown={onKeydown}
       />
