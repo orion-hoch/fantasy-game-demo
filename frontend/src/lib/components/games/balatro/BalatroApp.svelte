@@ -126,14 +126,14 @@
 
   // NFL Division lookup
   const NFL_DIV: Record<string, string> = {
-    BUF:'AFC East',MIA:'AFC East',NE:'AFC East',NYJ:'AFC East',
+    BUF:'AFC East',MIA:'AFC East',NE:'AFC East',NWE:'AFC East',NYJ:'AFC East',
     BAL:'AFC North',CIN:'AFC North',CLE:'AFC North',PIT:'AFC North',
-    HOU:'AFC South',IND:'AFC South',JAX:'AFC South',TEN:'AFC South',
-    DEN:'AFC West',KC:'AFC West',LV:'AFC West',LAC:'AFC West',OAK:'AFC West',SD:'AFC West',
-    DAL:'NFC East',NYG:'NFC East',PHI:'NFC East',WAS:'NFC East',
-    CHI:'NFC North',DET:'NFC North',GB:'NFC North',MIN:'NFC North',
-    ATL:'NFC South',CAR:'NFC South',NO:'NFC South',TB:'NFC South',
-    ARI:'NFC West',LAR:'NFC West',SF:'NFC West',SEA:'NFC West',STL:'NFC West',
+    HOU:'AFC South',IND:'AFC South',JAX:'AFC South',JAC:'AFC South',TEN:'AFC South',
+    DEN:'AFC West',KC:'AFC West',KAN:'AFC West',LV:'AFC West',LVR:'AFC West',LAC:'AFC West',OAK:'AFC West',SD:'AFC West',SDG:'AFC West',
+    DAL:'NFC East',NYG:'NFC East',PHI:'NFC East',WAS:'NFC East',WSH:'NFC East',
+    CHI:'NFC North',DET:'NFC North',GB:'NFC North',GNB:'NFC North',MIN:'NFC North',
+    ATL:'NFC South',CAR:'NFC South',NO:'NFC South',NOR:'NFC South',TB:'NFC South',TAM:'NFC South',
+    ARI:'NFC West',PHO:'NFC West',LAR:'NFC West',SF:'NFC West',SFO:'NFC West',SEA:'NFC West',STL:'NFC West',
   };
   const NFL_DIV_LABEL: Record<string, string> = {
     'AFC East':'AFCE','AFC North':'AFCN','AFC South':'AFCS','AFC West':'AFCW',
@@ -1170,9 +1170,10 @@
                       <div class="card-player-last">{lastName}</div>
                     </div>
                     <div class="card-top-right">
-                      {#if card.allstar_count && card.allstar_count > 0}
-                        <div class="card-stars-box" title="{card.allstar_count}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}">
-                          {'★'.repeat(Math.min(card.allstar_count, 5))}
+                      {@const accoladesFront = (card.allstar_count as number | undefined) || (card.pro_bowls as number | undefined) || 0}
+                      {#if accoladesFront > 0}
+                        <div class="card-stars-box" title="{accoladesFront}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}">
+                          {'★'.repeat(Math.min(accoladesFront, 5))}
                         </div>
                       {/if}
                       <div class="card-score-box">{pts}</div>
@@ -1258,6 +1259,7 @@
       </div>
 
       <!-- Action Buttons -->
+      {#if !deckViewOpen}
       <div id="action-buttons">
         <button id="play-btn" class="btn-play" type="button" disabled={selectedIds.size === 0 || actionPending || scoringActive} onclick={handlePlayHand}>
           PLAY HAND ({selectedIds.size})
@@ -1266,6 +1268,7 @@
           DISCARD ({discardsRemaining})
         </button>
       </div>
+      {/if}
 
       {#if deckViewOpen}
         <div class="full-overlay" id="deck-viewer-overlay">
@@ -1398,7 +1401,7 @@
                     {@const isPack = 'pack_id' in item}
                     {@const cost = item.cost}
                     {@const canAfford = coins >= cost}
-                    {@const itemType = isPack ? 'pack' : ((item as ShopItem).item_type || '')}
+                    {@const itemType = isPack ? 'pack' : ((item as ShopItem).item_type || (item as Record<string, unknown>).type as string || '')}
                     {@const shopId = isPack ? (item as ShopPack).pack_id : (item as ShopItem).shop_id}
                     {@const rarity = (item as Record<string, unknown>).rarity as string}
                     {@const cardData = (item as Record<string, unknown>).card_data as Record<string, unknown> | undefined}
@@ -1409,13 +1412,19 @@
                       <div class="shop-item-icon-area">
                         {#if itemType === 'joker'}
                           <img class="shop-item-img joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
-                        {:else if itemType === 'buy_card' && headshotUrl}
-                          <img class="shop-item-img headshot-img" src={headshotUrl} alt={cardData?.player as string ?? ''} onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                        {:else if itemType === 'buy_card'}
+                          <img class="shop-item-img" src={sport === 'nfl' ? '/img/helmet.png' : '/img/jersey.png'} alt="">
                           {#if cardPos}
                             <div class="shop-item-pos-badge card-pos-{cardPos}">{(cardData?.pos as string ?? '').toUpperCase()}</div>
                           {/if}
+                        {:else if isPack}
+                          <img class="shop-item-img" src="/img/pack.png" alt="Pack">
+                        {:else if itemType === 'skill_card'}
+                          <img class="shop-item-img" src="/img/syringe.png" alt="Position Upgrade">
+                        {:else if itemType === 'upgrade'}
+                          <img class="shop-item-img" src="/img/upgrade.png" alt="Upgrade">
                         {:else}
-                          <span class="shop-item-icon-text">{isPack ? 'PACK' : (ITEM_ICON[itemType] || 'ITM')}</span>
+                          <span class="shop-item-icon-text">{ITEM_ICON[itemType] || 'ITM'}</span>
                         {/if}
                         {#if rarity}
                           <div class="shop-item-rarity-bar rarity-bar-{rarity}"></div>

@@ -822,7 +822,7 @@ def _generate_shop(conn, state):
 
     owned_joker_ids = set(state["jokers"])
     available_jokers = [j for j in JOKERS if j["id"] not in owned_joker_ids]
-    available_jokers = _weighted_joker_sample(available_jokers, shop_weights, 4)
+    available_jokers = _weighted_joker_sample(available_jokers, shop_weights, 3)
 
     items = []
     slot_idx = 0
@@ -845,8 +845,8 @@ def _generate_shop(conn, state):
         })
         slot_idx += 1
 
-    # Player cards — always 3
-    roster_player_count = 3
+    # Player cards — always 2
+    roster_player_count = 2
     try:
         fp_min = 80 if floor <= 3 else (120 if floor <= 6 else 180)
         # Scale to raw fantasy_score (multiply by 10)
@@ -903,7 +903,7 @@ def _generate_shop(conn, state):
     # 2 skill cards (different positions)
     skill_options = list(SHOP_SKILL_CARDS)
     random.shuffle(skill_options)
-    for sk in skill_options[:2]:
+    for sk in skill_options[:1]:
         level = state["skill_levels"].get(sk["pos"], 0)
         training_pool.append({
             "shop_id": str(uuid.uuid4())[:8],
@@ -920,7 +920,7 @@ def _generate_shop(conn, state):
     # 2 effect/mod cards
     effect_pool = list(SHOP_EFFECT_CARDS) + [SHOP_YEAR_CARD, SHOP_CUT_CARD] + list(SHOP_MOD_CARDS)
     random.shuffle(effect_pool)
-    for ey in effect_pool[:2]:
+    for ey in effect_pool[:1]:
         eitem = {
             "shop_id": str(uuid.uuid4())[:8],
             "section": "training",
@@ -937,7 +937,7 @@ def _generate_shop(conn, state):
     # 2 upgrades
     upgrade_options = list(SHOP_UPGRADES)
     random.shuffle(upgrade_options)
-    for ug in upgrade_options[:2]:
+    for ug in upgrade_options[:1]:
         training_pool.append({
             "shop_id": str(uuid.uuid4())[:8],
             "section": "training",
@@ -1331,7 +1331,7 @@ def claim_fight_reward(gid, choice, joker_id=None, conn=None):
 
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
-    g["shop_packs"] = shop_packs[:4]
+    g["shop_packs"] = shop_packs[:3]
 
     if conn:
         g["shop_items"] = _generate_shop(conn, g)
@@ -1408,7 +1408,7 @@ def select_joker(gid, joker_id):
 
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
-    g["shop_packs"] = shop_packs[:4]
+    g["shop_packs"] = shop_packs[:3]
 
     g["pending_shop_generation"] = True
 
@@ -1537,7 +1537,7 @@ def restock_shop(gid, conn):
     g["shop_items"] = _generate_shop(conn, g)
     shop_packs = list(PACKS)
     random.shuffle(shop_packs)
-    g["shop_packs"] = shop_packs[:4]
+    g["shop_packs"] = shop_packs[:3]
     _GAMES[gid] = g
     return {
         "coins": g["coins"],
