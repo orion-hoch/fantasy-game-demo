@@ -1116,6 +1116,7 @@
             {@const firstName = splitName.length > 1 ? splitName[0] : ''}
             {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
             {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
+            {@const accoladesFront = (card.allstar_count as number | undefined) || (card.pro_bowls as number | undefined) || 0}
             <div
               class="card {posClass(card.pos)}"
               class:selected={selectedIds.has(card.id)}
@@ -1156,7 +1157,6 @@
                       <div class="card-player-last">{lastName}</div>
                     </div>
                     <div class="card-top-right">
-                      {@const accoladesFront = (card.allstar_count as number | undefined) || (card.pro_bowls as number | undefined) || 0}
                       {#if accoladesFront > 0}
                         <div class="card-stars-box" title="{accoladesFront}x {sport === 'nfl' ? 'Pro Bowl' : 'All-Star'}">
                           {'★'.repeat(Math.min(accoladesFront, 5))}
