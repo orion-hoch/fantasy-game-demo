@@ -42,11 +42,11 @@
   background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
   background-size: 14px 14px;
   color: var(--text-light);
-  font-family: 'Impact', 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   overflow-x: hidden;
 }body.bal-page .layout-shell { max-width: none; width: 100%; padding: 0; }body.bal-page .layout-shell > header { display: none; }body.bal-page.scoring {
   background-image: none;
-}#bal-app { width: 100%; min-height: 100vh; color: var(--text-light); font-family: 'Impact', 'Arial Black', sans-serif; }/* NBA position color overrides */body.bal-nba {
+}#bal-app { width: 100%; min-height: 100vh; color: var(--text-light); font-family: 'Bebas Neue', sans-serif; }/* NBA position color overrides */body.bal-nba {
   --pos-qb: #1e6fcc;
   --pos-rb: #1e7a3c;
   --pos-wr: #cc5500;
@@ -77,7 +77,7 @@
 }#bal-app .start-logo {
   text-align: center;
 }#bal-app .start-ball {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 3rem;
   letter-spacing: 10px;
   color: var(--accent-yellow);
@@ -95,7 +95,7 @@
   margin: 0 auto 4px;
   animation: pulse-ball 3s ease-in-out infinite;
 }@keyframes pulse-ball {0%, 100% { filter: drop-shadow(0 0 12px rgba(245,199,0,0.3)); }50% { filter: drop-shadow(0 0 32px rgba(245,199,0,0.7)); }}#bal-app .start-title {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(2.5rem, 8vw, 3.5rem);
   font-weight: 900;
   letter-spacing: 4px;
@@ -110,13 +110,13 @@
   text-transform: uppercase;
   color: var(--accent-yellow);
   margin-top: 4px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .start-tagline {
   color: var(--nb-dim);
   text-align: center;
   line-height: 1.6;
   font-size: 0.9rem;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .rules-preview {
   width: 100%;
   background: var(--nb-surface);
@@ -130,7 +130,7 @@
   text-transform: uppercase;
   margin-bottom: 14px;
   text-align: center;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .hand-types-grid {
   display: grid;
   gap: 6px;
@@ -148,18 +148,18 @@
   color: var(--text-light);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .ht-mult {
   font-size: 1rem;
   font-weight: 900;
   color: var(--accent-yellow);
   text-align: center;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .ht-desc {
   font-size: 0.68rem;
   color: var(--nb-dim);
   text-align: right;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .back-link {
   color: var(--accent-yellow);
   text-decoration: none;
@@ -180,7 +180,7 @@
   border: 3px solid var(--card-border);
   box-shadow: var(--shadow-comic);
   padding: 14px 40px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
   font-weight: 900;
   letter-spacing: 3px;
@@ -205,7 +205,7 @@
   padding: 14px 28px;
   font-size: 1.1rem;
   font-weight: 700;
-  font-family: 'Oswald', Arial, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 1px;
   cursor: pointer;
   border-radius: 4px;
@@ -223,7 +223,7 @@
   color: var(--text-light);
   border: 2px solid var(--nb-border);
   padding: 10px 24px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
   letter-spacing: 2px;
@@ -259,7 +259,7 @@
   color: var(--accent-yellow);
   letter-spacing: 2px;
   text-transform: uppercase;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }#bal-app #floor-display {
   font-size: 0.65rem;
@@ -269,7 +269,7 @@
   background: var(--card-border);
   color: var(--accent-yellow);
   padding: 2px 8px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   border-radius: 3px;
   display: inline-block;
 }#bal-app #score-section {
@@ -299,7 +299,7 @@
   color: white;
   letter-spacing: 1px;
   font-variant-numeric: tabular-nums;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app #actions-info {
   display: flex;
   gap: 10px;
@@ -317,20 +317,20 @@
 }#bal-app .action-icon {
   font-size: 0.7rem;
   line-height: 1;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 1px;
 }#bal-app .action-icon-coin { background: var(--accent-yellow); color: #1a1a1a; padding: 1px 5px; border-radius: 3px; }#bal-app .action-icon-hands { background: #5533aa; color: #fff; padding: 1px 5px; border-radius: 3px; }#bal-app .action-icon-discards { background: #cc3333; color: #fff; padding: 1px 5px; border-radius: 3px; }#bal-app .action-badge span[id] {
   font-size: 1.4rem;
   font-weight: 900;
   color: var(--accent-yellow);
   line-height: 1.1;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .action-label {
   font-size: 0.56rem;
   letter-spacing: 2px;
   text-transform: uppercase;
   color: rgba(255,255,255,0.7);
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .action-badge.danger span[id] {
   color: #ff6666;
 }/* ── Jokers Section ─────────────────────────────────────────────── */#bal-app #jokers-section {
@@ -352,7 +352,7 @@
   writing-mode: horizontal-tb;
   flex-shrink: 0;
   min-width: 52px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app #jokers-container {
   display: flex;
   gap: 8px;
@@ -369,7 +369,7 @@
   writing-mode: horizontal-tb;
   flex-shrink: 0;
   min-width: 52px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app #held-cards-container {
   display: flex;
   gap: 6px;
@@ -378,7 +378,7 @@
 }#bal-app .held-empty {
   font-size: 0.55rem;
   color: #666;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   padding: 8px;
 }#bal-app .joker-slot {
   width: 90px;
@@ -405,7 +405,7 @@
   letter-spacing: 2px;
   color: #555;
   text-transform: uppercase;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .joker-slot.filled {
   background: var(--accent-yellow);
   border: 3px solid var(--card-border);
@@ -430,7 +430,7 @@
   letter-spacing: 0.5px;
   line-height: 1.2;
   padding: 0 4px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .joker-slot .joker-rarity-dot {
   width: 6px;
   height: 6px;
@@ -454,7 +454,7 @@
   pointer-events: none;
   white-space: normal;
   box-shadow: var(--shadow-comic);
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .joker-slot.filled:hover .joker-desc-tooltip {
   display: block;
 }/* ── Boss Effect Banner ─────────────────────────────────────────── */#bal-app #boss-effect-banner {
@@ -473,7 +473,7 @@
   font-size: 1.2rem;
   flex-shrink: 0;
 }#bal-app .boss-banner-name {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
   letter-spacing: 3px;
   color: #ff6666;
@@ -482,7 +482,7 @@
 }#bal-app .boss-banner-desc {
   font-size: 0.65rem;
   color: #ffaaaa;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   flex: 1;
 }/* ── Fight Timeline ─────────────────────────────────────────────── */#bal-app #fight-timeline {
   display: flex;
@@ -507,7 +507,7 @@
   background: #222;
   transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }#bal-app .timeline-label {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.9rem;
   letter-spacing: 2px;
   color: #555;
@@ -571,7 +571,7 @@
   color: var(--nb-dim);
   letter-spacing: 1px;
   text-transform: uppercase;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app #preview-hand-type.active {
   color: var(--accent-yellow);
   text-shadow: 0 0 8px rgba(245,199,0,0.4);
@@ -582,7 +582,7 @@
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app #preview-score-details .preview-chunk {
   display: flex;
   align-items: center;
@@ -596,13 +596,13 @@
   color: var(--accent-yellow);
   font-weight: 700;
   font-size: 0.85rem;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app #preview-score-details .preview-total {
   color: var(--accent-yellow);
   font-weight: 900;
   font-size: 1rem;
   text-shadow: 0 0 6px rgba(245,199,0,0.4);
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }/* ── Play Log ───────────────────────────────────────────────────── */#bal-app #play-log-wrapper {
   padding: 4px 16px;
   min-height: 28px;
@@ -627,7 +627,7 @@
   animation: log-slide-in 0.3s ease;
   text-transform: uppercase;
 }#bal-app .log-entry .hand-type {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   letter-spacing: 1px;
 }#bal-app .log-entry .score-earned {
@@ -652,7 +652,7 @@
   text-transform: uppercase;
   color: var(--nb-dim);
   text-align: center;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app #hand-cards {
   flex: 1;
   display: flex;
@@ -806,7 +806,7 @@
   color: rgba(255,255,255,0.85);
   text-shadow: 0 1px 3px rgba(0,0,0,0.8);
   font-style: italic;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   padding: 0;
   line-height: 1;
 }/* Deck viewer adjustments */#bal-app .deck-cards-grid .card .card-meta-corner { display: none; }#bal-app .deck-cards-grid .card .card-headshot {
@@ -837,7 +837,7 @@
   color: var(--accent-yellow);
   text-shadow: 0 0 6px rgba(245,199,0,0.8);
   z-index: 20;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .card-back {
   transform: rotateY(180deg);
   background: var(--card-face);
@@ -845,7 +845,7 @@
   border-radius: 6px;
   color: var(--text-dark);
   padding: 6px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.6rem;
   display: flex;
   flex-direction: column;
@@ -874,7 +874,7 @@
   margin: -6px -6px 4px;
   display: flex;
   justify-content: space-between;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
 }#bal-app .card-back-pos {
   font-size: 0.58rem;
@@ -883,13 +883,13 @@
   border-width: 1px;
   border-style: solid;
   letter-spacing: 0.5px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .card-back-team {
   font-size: 0.58rem;
   color: var(--card-face);
   letter-spacing: 0.5px;
 }#bal-app .card-back-name {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.75rem;
   text-transform: uppercase;
   border-bottom: 1px solid #aaa;
@@ -925,7 +925,7 @@
   text-align: right;
 }#bal-app .card-back-ppr {
   text-align: center;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.2rem;
   font-weight: 900;
   margin-top: 4px;
@@ -939,7 +939,7 @@
   margin: auto;
   letter-spacing: 1px;
   text-transform: uppercase;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }/* Card header: pos badge + team */#bal-app .card-header {
   display: flex;
   align-items: center;
@@ -954,9 +954,9 @@
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
   text-transform: uppercase;
   line-height: 1;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .card-pos-qb .card-pos-badge { background: var(--pos-qb); }#bal-app .card-pos-rb .card-pos-badge { background: var(--pos-rb); }#bal-app .card-pos-wr .card-pos-badge { background: var(--pos-wr); }#bal-app .card-pos-te .card-pos-badge { background: var(--pos-te); }#bal-app .card-pos-qb .card-back-pos { color: var(--pos-qb); border-color: var(--pos-qb-dim); }#bal-app .card-pos-rb .card-back-pos { color: var(--pos-rb); border-color: var(--pos-rb-dim); }#bal-app .card-pos-wr .card-back-pos { color: var(--pos-wr); border-color: var(--pos-wr-dim); }#bal-app .card-pos-te .card-back-pos { color: var(--pos-te); border-color: var(--pos-te-dim); }#bal-app .card-team {
-  font-family: 'Oswald', 'Barlow Condensed', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 2px;
@@ -970,7 +970,7 @@
   white-space: nowrap;
   max-width: 50px;
 }/* Card body */#bal-app .card-player {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -982,9 +982,9 @@
   color: #555;
   padding: 0 5px 2px;
   font-style: italic;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }/* Card score — the big number */#bal-app .card-score {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2rem;
   font-weight: 900;
   text-align: right;
@@ -998,7 +998,7 @@
   font-size: 0.58rem;
   text-align: right;
   color: #777;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   padding: 0 8px 3px 0;
   letter-spacing: 1px;
   text-transform: uppercase;
@@ -1023,7 +1023,7 @@
   padding: 1px 3px;
   border: 1px solid var(--card-border);
   border-radius: 2px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }/* ── Action Buttons ─────────────────────────────────────────────── */#bal-app #action-buttons {
   display: flex;
   gap: 12px;
@@ -1037,7 +1037,7 @@
   border: 3px solid var(--card-border);
   box-shadow: var(--shadow-comic);
   padding: 20px 72px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
   font-weight: 900;
   letter-spacing: 3px;
@@ -1059,7 +1059,7 @@
   border: 3px solid var(--accent-yellow);
   box-shadow: 3px 3px 0 var(--accent-yellow);
   padding: 20px 48px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
   font-weight: 900;
   letter-spacing: 2px;
@@ -1086,7 +1086,7 @@
   border: 2px solid var(--nb-border);
   box-shadow: 2px 2px 0 var(--card-border);
   padding: 4px 10px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 1px;
@@ -1114,7 +1114,7 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 1px;
 }#bal-app .btn-stats:hover {
   border-color: var(--accent-yellow);
@@ -1142,7 +1142,7 @@
   filter: drop-shadow(0 0 16px rgba(245,199,0,0.6));
   animation: trophy-bounce 0.6s ease;
 }@keyframes trophy-bounce {0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }60% { transform: scale(1.15) rotate(3deg); }100% { transform: scale(1) rotate(0deg); opacity: 1; }}#bal-app .reward-title {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2rem;
   font-weight: 900;
   letter-spacing: 5px;
@@ -1154,7 +1154,7 @@
   color: var(--nb-dim);
   letter-spacing: 2px;
   text-transform: uppercase;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app #joker-options {
   width: 100%;
   display: grid;
@@ -1179,7 +1179,7 @@
   letter-spacing: 3px;
   text-transform: uppercase;
   font-weight: 700;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .joc-rarity.common { color: var(--rarity-common); }#bal-app .joc-rarity.uncommon { color: var(--rarity-uncommon); }#bal-app .joc-rarity.rare { color: var(--rarity-rare); }#bal-app .joc-rarity.legendary { color: var(--accent-yellow); }#bal-app .joc-name {
   font-size: 0.9rem;
   font-weight: 900;
@@ -1187,12 +1187,12 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   line-height: 1.2;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }#bal-app .joc-desc {
   font-size: 0.72rem;
   color: #555;
   line-height: 1.5;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }/* ── Reward Choice Screen ───────────────────────────────────────── */#bal-app .reward-choice-area {
   display: flex;
   gap: 16px;
@@ -1222,7 +1222,7 @@
   font-size: 2.5rem;
   filter: drop-shadow(0 0 8px rgba(245,199,0,0.5));
 }#bal-app .reward-icon-coins {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2.2rem;
   color: var(--accent-yellow);
   background: #1a1a1a;
@@ -1231,7 +1231,7 @@
   border-radius: 50%;
   border: 3px solid var(--accent-yellow);
 }#bal-app .reward-icon-joker {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2.2rem;
   color: #cc44ee;
   background: #1a1a1a;
@@ -1240,20 +1240,20 @@
   border-radius: 50%;
   border: 3px solid #cc44ee;
 }#bal-app .reward-choice-label {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
   letter-spacing: 2px;
   color: var(--text-dark);
   text-transform: uppercase;
 }#bal-app .reward-choice-value {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2.2rem;
   color: var(--accent-yellow);
   text-shadow: 2px 2px 0 #a07000;
 }#bal-app .reward-choice-desc {
   font-size: 0.72rem;
   color: var(--nb-dim);
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   letter-spacing: 1px;
 }#bal-app .reward-choice-joker-card {
   flex: 1.6;
@@ -1276,20 +1276,20 @@
   background: rgba(0,0,0,0.15);
   transform: translateX(3px);
 }#bal-app .rjo-name {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   letter-spacing: 1px;
   text-transform: uppercase;
 }#bal-app .rjo-name.rarity-common { color: var(--rarity-common, #888); }#bal-app .rjo-name.rarity-uncommon { color: var(--rarity-uncommon, #4caf50); }#bal-app .rjo-name.rarity-rare { color: var(--rarity-rare, #2196f3); }#bal-app .rjo-name.rarity-legendary { color: var(--accent-yellow, #f5c700); }#bal-app .rjo-desc {
   font-size: 0.65rem;
   color: #555;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   line-height: 1.4;
   margin-top: 2px;
 }#bal-app .reward-full-note {
   font-size: 0.7rem;
   color: var(--accent-red);
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   text-align: center;
   padding: 4px;
 }#bal-app .reward-boss-warning {
@@ -1300,7 +1300,7 @@
   font-size: 0.75rem;
   letter-spacing: 1px;
   color: var(--accent-red);
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   text-align: center;
   width: 100%;
 }/* ── Game Over Screen ───────────────────────────────────────────── */#bal-app #gameover-screen {
@@ -1320,7 +1320,7 @@
   font-size: 4rem;
   line-height: 1;
 }#bal-app .go-title {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(1.8rem, 6vw, 3rem);
   font-weight: 900;
   letter-spacing: 5px;
@@ -1337,7 +1337,7 @@
   color: var(--nb-dim);
   letter-spacing: 2px;
   text-transform: uppercase;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .go-stats {
   background: var(--card-face);
   border: 3px solid var(--card-border);
@@ -1357,12 +1357,12 @@
   letter-spacing: 2px;
   text-transform: uppercase;
   color: #666;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .go-stat-val {
   font-size: 1.1rem;
   font-weight: 900;
   color: var(--text-dark);
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
 }/* ── Score Popup ────────────────────────────────────────────────── */#bal-app #score-popup {
   position: fixed;
   top: 50%;
@@ -1378,7 +1378,7 @@
 }#bal-app #score-popup.hidden {
   display: none;
 }#bal-app .popup-hand-name {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 3px;
@@ -1389,7 +1389,7 @@
   box-shadow: var(--shadow-comic);
   padding: 4px 16px;
 }#bal-app .popup-score {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 3.5rem;
   font-weight: 900;
   color: var(--accent-yellow);
@@ -1401,7 +1401,7 @@
   font-size: 0.78rem;
   color: var(--text-light);
   letter-spacing: 1px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   background: rgba(0,0,0,0.7);
   padding: 2px 8px;
 }@keyframes popup-show {0% { opacity: 0; transform: translate(-50%, -30%) scale(0.6); }20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }35% { transform: translate(-50%, -50%) scale(1); }70% { opacity: 1; transform: translate(-50%, -50%) scale(1); }100% { opacity: 0; transform: translate(-50%, -70%) scale(0.9); }}#bal-app #score-popup.showing {
@@ -1426,7 +1426,7 @@
   background: #0a0a1e;
   padding: 5px 0;
   text-align: center;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.78rem;
   letter-spacing: 6px;
   color: var(--accent-yellow);
@@ -1442,7 +1442,7 @@
 }#bal-app .store-title-area {
   flex: 1;
 }#bal-app .store-title-main {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.8rem;
   letter-spacing: 8px;
   color: var(--accent-yellow);
@@ -1461,7 +1461,7 @@
   gap: 10px;
   flex-shrink: 0;
 }#bal-app .shop-coins {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
   color: var(--text-dark);
   background: var(--accent-yellow);
@@ -1502,7 +1502,7 @@
 }#bal-app .shop-q-label {
   background: #12122a;
   color: #8888bb;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.82rem;
   letter-spacing: 4px;
   padding: 6px 14px;
@@ -1529,7 +1529,7 @@
 }#bal-app .shop-section-icon {
   font-size: 0.9rem;
 }#bal-app .shop-section-title {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.88rem;
   letter-spacing: 4px;
   color: #8888bb;
@@ -1560,7 +1560,7 @@
   transform: translateX(-50%);
   background: #1a1a1a;
   color: #f5c700;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.9rem;
   letter-spacing: 1px;
   padding: 2px 10px;
@@ -1590,7 +1590,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.82rem;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 2px;
   color: var(--accent-yellow);
   padding: 10px 6px;
@@ -1616,7 +1616,7 @@
   color: #7878aa;
   font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .shop-item-name {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   color: #e0e0ff;
   text-transform: uppercase;
@@ -1627,7 +1627,7 @@
   color: #9898c8;
   line-height: 1.35;
   flex: 1;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .shop-item-footer {
   display: flex;
   justify-content: center;
@@ -1636,12 +1636,12 @@
   padding: 5px 8px;
   background: rgba(0,0,0,0.2);
 }#bal-app .shop-item-cost {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.88rem;
   color: #44cc66;
   letter-spacing: 1px;
 }#bal-app .shop-item-sold-label {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.8rem;
   letter-spacing: 3px;
   color: #5a5a8a;
@@ -1652,7 +1652,7 @@
   border: 2px solid #1a1a1a;
   box-shadow: 2px 2px 0 #1a1a1a;
   padding: 3px 8px;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.72rem;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -1679,7 +1679,7 @@
   gap: 8px;
   height: 100%;
 }#bal-app .npc-nameplate {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.82rem;
   letter-spacing: 4px;
   color: var(--accent-yellow);
@@ -1691,7 +1691,7 @@
   align-items: center;
   line-height: 1;
 }#bal-app .npc-avatar {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   letter-spacing: 4px;
   color: var(--accent-yellow);
@@ -1706,7 +1706,7 @@
   border: 2px solid #2a2a6a;
   box-shadow: 3px 3px 0 #1a1a1a;
   padding: 10px 12px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.7rem;
   line-height: 1.5;
   text-align: center;
@@ -1756,7 +1756,7 @@
   border-bottom: 2px solid var(--card-border);
   padding-bottom: 12px;
 }#bal-app .overlay-title {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   font-weight: 900;
   letter-spacing: 3px;
@@ -1769,7 +1769,7 @@
   cursor: pointer;
   font-size: 0.85rem;
   padding: 4px 8px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   transition: background 0.15s;
 }#bal-app .overlay-close:hover {
   background: var(--accent-red);
@@ -1780,7 +1780,7 @@
   padding: 10px 0;
   border-bottom: 1px dotted #aaa;
 }#bal-app .stats-row:last-child { border-bottom: none; }#bal-app .stats-pos-badge {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   font-weight: 900;
   letter-spacing: 1px;
@@ -1797,7 +1797,7 @@
   flex-direction: column;
   gap: 4px;
 }#bal-app .stats-level {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-dark);
@@ -1811,7 +1811,7 @@
   background: #ddd;
   border: 1px solid #aaa;
 }#bal-app .stats-bar-seg.filled.pos-fill-qb { background: var(--pos-qb); border-color: var(--pos-qb-dim); }#bal-app .stats-bar-seg.filled.pos-fill-rb { background: var(--pos-rb); border-color: var(--pos-rb-dim); }#bal-app .stats-bar-seg.filled.pos-fill-wr { background: var(--pos-wr); border-color: var(--pos-wr-dim); }#bal-app .stats-bar-seg.filled.pos-fill-te { background: var(--pos-te); border-color: var(--pos-te-dim); }#bal-app .stats-boosts {
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.65rem;
   color: #555;
   letter-spacing: 1px;
@@ -1823,11 +1823,11 @@
   margin-bottom: 14px;
   line-height: 1.5;
   letter-spacing: 0.5px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .target-pos-section {
   margin-bottom: 16px;
 }#bal-app .target-pos-header {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.65rem;
   font-weight: 900;
   letter-spacing: 3px;
@@ -1850,7 +1850,7 @@
   text-transform: uppercase;
   padding: 20px;
   text-align: center;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }/* ── Joker Drag-and-Drop ────────────────────────────────────────── */#bal-app .joker-slot.drag-over {
   outline: 2px dashed var(--accent-yellow);
   opacity: 0.7;
@@ -1871,7 +1871,7 @@
   z-index: 20;
   line-height: 1.4;
   letter-spacing: 0.5px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .joker-slot.filled:hover .joker-sell-btn {
   display: block;
 }#bal-app .joker-sell-btn:hover {
@@ -1894,7 +1894,7 @@
   border: none;
   cursor: pointer;
   border-radius: 3px;
-  font-family: 'Oswald', Arial, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 3px 7px;
@@ -1943,9 +1943,9 @@
   font-size: 0.55rem;
   color: var(--accent-red);
   letter-spacing: 1px;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .year-num {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
   font-weight: 900;
   color: var(--text-dark);
@@ -1955,9 +1955,9 @@
   color: #666;
   flex: 1;
   text-align: center;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }#bal-app .year-ppr {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--pos-rb);
@@ -1976,7 +1976,7 @@
   border-bottom: 3px solid var(--accent-yellow);
   padding-bottom: 12px;
 }#bal-app .deck-viewer-title {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.2rem;
   font-weight: 900;
   letter-spacing: 4px;
@@ -1984,7 +1984,7 @@
   color: var(--accent-yellow);
   text-shadow: 2px 2px 0 var(--accent-red);
 }#bal-app .deck-empty-msg {
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 1rem;
   color: var(--text-light);
   background: rgba(18,18,42,0.88);
@@ -1994,7 +1994,7 @@
 }#bal-app .deck-pos-group {
   margin-bottom: 24px;
 }#bal-app .deck-pos-header {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.9rem;
   font-weight: 900;
   letter-spacing: 2px;
@@ -2030,7 +2030,7 @@
   color: var(--text-dark);
   padding: 8px 18px;
   font-size: 0.78rem;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 1px;
   z-index: 500;
   animation: toast-in 0.2s ease;
@@ -2131,7 +2131,7 @@
 }
 
 #bal-app #anim-hand-type-label {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.25rem;
   letter-spacing: 4px;
   color: var(--accent-yellow);
@@ -2159,13 +2159,13 @@
 }
 #bal-app .anim-counter-box.hidden { display: none; }
 #bal-app .anim-counter-label {
-  font-family: 'Oswald', Arial, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.55rem;
   letter-spacing: 2px;
   text-transform: uppercase;
 }
 #bal-app .anim-counter-val {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2rem;
   color: var(--text-light);
   line-height: 1;
@@ -2232,7 +2232,7 @@
 }
 
 #bal-app .anim-op {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.8rem;
   color: #888;
   text-shadow: 0 0 6px rgba(255,255,255,0.1);
@@ -2283,7 +2283,7 @@
   position: fixed;
   pointer-events: none;
   z-index: 300;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
   color: var(--accent-yellow);
   text-shadow: 1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.8);
@@ -2313,7 +2313,7 @@
 #bal-app #anim-score-box.score-banging {
   animation: score-bang 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }/* ── Player Name Split Layout ───────────────────────────────────── */#bal-app .card-player-first {
-  font-family: 'Barlow Condensed', 'Oswald', sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.62rem;
   font-weight: 600;
   color: #444;
@@ -2322,7 +2322,7 @@
   padding: 0;
   line-height: 1.1;
 }#bal-app .card-player-last {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.05rem;
   font-weight: 400;
   color: var(--text-dark);
@@ -2350,7 +2350,7 @@
   flex-direction: column;
   justify-content: flex-start;
 }#bal-app .card-year-line {
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.5rem;
   color: #777;
   font-style: italic;
@@ -2379,7 +2379,7 @@
   border-radius: 3px;
   padding: 2px 3px;
   background: rgba(255,255,255,0.5);
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
   font-weight: 900;
   color: var(--text-dark);
@@ -2420,13 +2420,13 @@
   text-align: center;
   cursor: pointer;
   color: var(--text-light);
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }#bal-app .pack-item:hover {
   transform: translateY(-3px);
   box-shadow: 5px 5px 0 var(--card-border), 0 0 18px rgba(245,199,0,0.35);
 }#bal-app .pack-item-name {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   letter-spacing: 1px;
   color: var(--accent-yellow);
@@ -2463,7 +2463,7 @@
   gap: 20px;
   padding: 30px;
 }#bal-app #pack-opening-title {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2.2rem;
   letter-spacing: 4px;
   color: var(--accent-yellow);
@@ -2502,7 +2502,7 @@
   border-color: #990000;
 }/* ── Mult float overlay ──────────────────────────────────────────── */#bal-app .mult-float-overlay {
   position: fixed;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   font-weight: 900;
   pointer-events: none;
@@ -2544,14 +2544,14 @@
   transform: translate(-1px, -3px);
   box-shadow: 4px 6px 0 var(--card-border);
 }#bal-app .held-slot.pos-qb { border-color: var(--pos-qb); }#bal-app .held-slot.pos-rb { border-color: var(--pos-rb); }#bal-app .held-slot.pos-wr { border-color: var(--pos-wr); }#bal-app .held-slot.pos-te { border-color: var(--pos-te); }#bal-app .held-card-pos {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.48rem;
   font-weight: 900;
   color: white;
   padding: 1px 4px;
   border-radius: 3px;
 }#bal-app .held-slot.pos-qb .held-card-pos { background: var(--pos-qb); }#bal-app .held-slot.pos-rb .held-card-pos { background: var(--pos-rb); }#bal-app .held-slot.pos-wr .held-card-pos { background: var(--pos-wr); }#bal-app .held-slot.pos-te .held-card-pos { background: var(--pos-te); }#bal-app .held-card-name {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.58rem;
   font-weight: 900;
   color: var(--text-dark);
@@ -2562,7 +2562,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }#bal-app .held-card-pts {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.75rem;
   color: var(--text-dark);
 }/* ── Pack selection state ────────────────────────────────────────── */#bal-app .pack-reveal-card.pack-selecting {
@@ -2574,7 +2574,7 @@
   box-shadow: 0 0 14px var(--accent-yellow);
 }/* ── Shop tier badge ─────────────────────────────────────────────── */#bal-app .shop-item-tier {
   font-size: 0.45rem;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 1px;
   padding: 1px 4px;
   border-radius: 3px;
@@ -2587,7 +2587,7 @@
   max-height: 80vh;
   overflow-y: auto;
 }#bal-app .sticker-modal-title {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   letter-spacing: 3px;
   color: var(--yellow);
@@ -2621,7 +2621,7 @@
   border-radius: 4px;
   font-size: 0.8rem;
   font-weight: 900;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 2px;
   cursor: pointer;
   color: #000;
@@ -2784,7 +2784,7 @@
 }
 
 #bal-app .stats-overlay-title {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.85rem;
   font-weight: 900;
   letter-spacing: 3px;
@@ -2799,7 +2799,7 @@
   cursor: pointer;
   font-size: 0.85rem;
   padding: 4px 8px;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   transition: background 0.15s;
 }
 
@@ -2818,7 +2818,7 @@
 #bal-app .stats-overlay .stats-row:last-child { border-bottom: none; }
 
 #bal-app .stats-overlay .stats-pos-badge {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   font-weight: 900;
   letter-spacing: 1px;
@@ -2839,7 +2839,7 @@
 }
 
 #bal-app .stats-overlay .stats-level {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--text-dark);
@@ -2859,7 +2859,7 @@
 }
 
 #bal-app .stats-overlay .stats-boosts {
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.65rem;
   color: #555;
   letter-spacing: 1px;
@@ -2872,7 +2872,7 @@
 }
 
 #bal-app .stats-combos-title {
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   color: var(--text-dark);
   letter-spacing: 2px;
@@ -2880,7 +2880,7 @@
 }
 
 #bal-app .stats-combo-row {
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.65rem;
   color: #555;
   padding: 2px 0;
@@ -2892,7 +2892,7 @@
   border: 1px solid rgba(255,255,255,0.2);
   color: var(--text-light);
   cursor: pointer;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 1px;
@@ -2928,7 +2928,7 @@
   border: 1px solid rgba(255,255,255,0.15);
   color: var(--text-light);
   cursor: pointer;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 1px;
@@ -2984,7 +2984,7 @@
 }
 
 #bal-app .shop-item-icon-text {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
   color: rgba(255,255,255,0.8);
   letter-spacing: 1px;
@@ -3014,7 +3014,7 @@
 }
 
 #bal-app .shop-section-title {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: 2px;
@@ -3034,7 +3034,7 @@
   font-size: 0.55rem;
   color: var(--nb-dim, #8888bb);
   margin-left: auto;
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }
 
 #bal-app .shop-locker-section .joker-list {
@@ -3057,7 +3057,7 @@
 }
 
 #bal-app .shop-joker .joker-desc {
-  font-family: Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.55rem;
   color: var(--nb-dim, #8888bb);
   text-align: center;
@@ -3069,7 +3069,7 @@
   border: 2px solid #1a1a1a;
   color: white;
   cursor: pointer;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 1px;
@@ -3109,7 +3109,7 @@
 }
 
 #bal-app .npc-nameplate {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   letter-spacing: 2px;
   color: var(--accent-yellow);
@@ -3128,14 +3128,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.7rem;
   color: var(--accent-yellow);
   letter-spacing: 1px;
 }
 
 #bal-app .vendor-bubble {
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.75rem;
   color: var(--nb-dim, #8888bb);
   font-style: italic;
@@ -3189,7 +3189,7 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 0.62rem;
   letter-spacing: 1px;
   padding: 1px 5px;
@@ -3235,7 +3235,7 @@
 #bal-app .store-marquee {
   background: var(--accent-yellow);
   color: var(--text-dark);
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 3px;
@@ -3254,7 +3254,7 @@
 }
 
 #bal-app .store-title-main {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 900;
   letter-spacing: 4px;
@@ -3264,7 +3264,7 @@
 }
 
 #bal-app .store-title-sub {
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
   font-size: 0.65rem;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -3272,7 +3272,7 @@
 }
 
 #bal-app .shop-coins {
-  font-family: Impact, 'Arial Black', sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
   color: var(--text-dark);
   letter-spacing: 1px;
@@ -3283,7 +3283,7 @@
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-family: 'Barlow Condensed', Arial, sans-serif;
+  font-family: 'Barlow Condensed', sans-serif;
 }
 
 /* ── Division badge colors ────────────────────────────────────────── */

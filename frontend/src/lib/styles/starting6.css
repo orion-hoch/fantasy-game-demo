@@ -23,7 +23,7 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 4px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
     margin: 0;
 }
@@ -78,7 +78,7 @@
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 3px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     border-bottom: 2px solid var(--border-dim);
     padding-bottom: 10px;
 }
@@ -97,7 +97,7 @@
     transition: background 0.12s, color 0.12s;
     box-shadow: 3px 3px 0 var(--border);
     margin-right: -3px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     text-align: center;
 }
 .count-btn:last-child { margin-right: 0; }
@@ -181,7 +181,7 @@
     text-transform: uppercase;
     box-shadow: 5px 5px 0 var(--border);
     transition: box-shadow 0.08s, transform 0.08s;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
 }
 #start-btn:hover {
     box-shadow: 6px 6px 0 var(--border);
@@ -223,7 +223,7 @@
     display: block;
     text-transform: uppercase;
     letter-spacing: 3px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
 }
 #turn-label {
@@ -286,7 +286,7 @@
     color: var(--yellow);
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
 }
 .roster-you {
     flex: 0 0 auto;
@@ -326,7 +326,7 @@
 .slot-content { flex: 1; min-width: 0; }
 .slot-top { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
 .slot-player { font-size: 0.82rem; color: #fff; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'Barlow Condensed', sans-serif; text-transform: uppercase; }
-.slot-ppr { font-size: 0.82rem; color: var(--teal-bright); font-weight: 800; white-space: nowrap; flex-shrink: 0; font-family: 'Bebas Neue', Impact, sans-serif; letter-spacing: 0.5px; }
+.slot-ppr { font-size: 0.82rem; color: var(--teal-bright); font-weight: 800; white-space: nowrap; flex-shrink: 0; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; }
 .slot-meta { display: block; font-size: 0.64rem; color: var(--text-dim); margin-top: 1px; font-family: 'Barlow Condensed', sans-serif; }
 .slot-empty-text { color: var(--border-dim); font-size: 0.82rem; font-family: 'Barlow Condensed', sans-serif; }
 
@@ -342,7 +342,7 @@
     letter-spacing: 1px;
     font-family: 'Barlow Condensed', sans-serif;
 }
-.roster-total strong { color: var(--teal-bright); font-family: 'Bebas Neue', Impact, sans-serif; font-size: 1rem; }
+.roster-total strong { color: var(--teal-bright); font-family: 'Bebas Neue', sans-serif; font-size: 1rem; }
 
 .roster-bonus-active {
     margin-top: 6px;
@@ -432,7 +432,7 @@
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
 }
 
 #pick-year-row { display: flex; gap: 8px; align-items: center; }
@@ -462,7 +462,7 @@
     letter-spacing: 1px;
     box-shadow: 3px 3px 0 var(--border);
     transition: background 0.12s, box-shadow 0.08s, transform 0.08s;
-    font-family: 'Barlow Condensed', Impact, sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 #confirm-year-btn:disabled { opacity: 0.3; cursor: default; }
 #confirm-year-btn:not(:disabled):hover {
@@ -617,7 +617,7 @@ body.online-mode-starting6 #pick-results {
 }
 
 #win-name {
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 3.8rem;
     font-weight: 900;
     color: var(--yellow);
@@ -658,7 +658,7 @@ body.online-mode-starting6 #pick-results {
     letter-spacing: 4px;
     box-shadow: 5px 5px 0 #000;
     transition: box-shadow 0.08s, transform 0.08s;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
 }
 #play-again-btn:hover {
     box-shadow: 7px 7px 0 #000;

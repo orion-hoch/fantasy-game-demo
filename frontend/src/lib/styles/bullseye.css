@@ -37,7 +37,7 @@
 .bs-title-bar .bs-back-link:hover { filter: brightness(1.15); }
 
 .bs-title-bar h1 {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -58,7 +58,7 @@
 }
 
 .bs-setup-title {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.8rem;
   letter-spacing: 5px;
   text-transform: uppercase;
@@ -167,7 +167,7 @@
   border: 3px solid var(--border);
   box-shadow: 4px 4px 0 var(--border);
   color: var(--text-dark);
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.4rem;
   letter-spacing: 4px;
   text-transform: uppercase;
@@ -271,7 +271,7 @@
 }
 
 .bs-meta-val {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   letter-spacing: 3px;
   color: var(--text);
@@ -315,7 +315,7 @@
 .bs-score-chip.active .bs-score-total { color: var(--yellow); }
 
 .bs-score-total {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2rem;
   letter-spacing: 1.5px;
   color: var(--text);
@@ -355,7 +355,7 @@
 }
 
 .bs-turn-box-name {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.9rem;
   letter-spacing: 3px;
   color: var(--yellow);
@@ -383,7 +383,7 @@
 }
 
 .bs-turn-banner-name {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.7rem;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -409,20 +409,20 @@
 }
 
 .bs-pick-reveal-name {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   letter-spacing: 3px;
   color: var(--text);
 }
 
 .bs-pick-reveal-sep {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.4rem;
   color: var(--text-muted);
 }
 
 .bs-pick-reveal-val {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.8rem;
   letter-spacing: 2px;
   color: var(--teal-bright);
@@ -486,7 +486,7 @@
 }
 
 .bs-td-years {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1rem;
   letter-spacing: 1px;
   color: var(--text);
@@ -535,7 +535,7 @@
   text-transform: uppercase;
 }
 .bs-pick-val {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.15rem;
   color: var(--teal-bright);
   letter-spacing: 1px;
@@ -555,7 +555,7 @@
 .bs-td-pick.empty.active { background: rgba(245,199,0,0.1); border: 2px solid var(--yellow); }
 
 .bs-add-btn {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.6rem;
   color: var(--yellow);
   line-height: 1;
@@ -620,7 +620,7 @@
   box-shadow: 3px 3px 0 var(--border);
   background: var(--surface-3);
   color: var(--text);
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.1rem;
   letter-spacing: 1px;
   cursor: pointer;
@@ -768,7 +768,7 @@
   white-space: nowrap;
 }
 .bs-res-stat {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.05rem;
   color: var(--teal-bright);
   letter-spacing: 1px;
@@ -805,7 +805,7 @@
 }
 
 .bs-results-title {
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 2rem;
   letter-spacing: 5px;
   text-transform: uppercase;
@@ -899,7 +899,7 @@
   border: 3px solid var(--border);
   box-shadow: 4px 4px 0 var(--border);
   color: var(--text-dark);
-  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-family: 'Bebas Neue', sans-serif;
   font-size: 1.3rem;
   letter-spacing: 4px;
   text-transform: uppercase;

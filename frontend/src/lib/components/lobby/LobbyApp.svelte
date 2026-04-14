@@ -358,7 +358,7 @@
   .lobby-title,
   .room-code,
   .seat-name {
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 3px;
   }
 
@@ -440,7 +440,7 @@
     color: var(--text-dark);
     border: 3px solid var(--border);
     box-shadow: 4px 4px 0 var(--border);
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 2px;
     text-transform: uppercase;
     cursor: pointer;

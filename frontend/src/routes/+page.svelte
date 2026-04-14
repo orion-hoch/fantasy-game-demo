@@ -212,7 +212,7 @@
     cursor: pointer;
     letter-spacing: 3px;
     text-transform: uppercase;
-    font-family: 'Barlow Condensed', Impact, sans-serif;
+    font-family: 'Barlow Condensed', sans-serif;
     box-shadow: 3px 3px 0 var(--border);
     transition: background 0.12s, color 0.12s;
     margin-right: -3px;
@@ -246,7 +246,7 @@
     margin-bottom: 20px;
   }
   .about-intro h2 {
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     color: var(--yellow);
     font-size: 1.6rem;
     letter-spacing: 4px;
@@ -285,7 +285,7 @@
     margin-bottom: 8px;
   }
   .blog-post-title {
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.05rem;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -316,7 +316,7 @@
     padding: 20px;
   }
   .mp-card h3 {
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     font-size: 1.55rem;
     letter-spacing: 3px;
     color: var(--yellow);
@@ -353,7 +353,7 @@
     border: 2px solid var(--border-dim);
     color: var(--text);
     padding: 12px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 2px;
     font-size: 1rem;
     text-transform: uppercase;
@@ -363,7 +363,7 @@
     background: var(--yellow);
     color: var(--text-dark);
     padding: 0 16px;
-    font-family: 'Bebas Neue', Impact, sans-serif;
+    font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 2px;
     font-size: 1rem;
     cursor: pointer;
