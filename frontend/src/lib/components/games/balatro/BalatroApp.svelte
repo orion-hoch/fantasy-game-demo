@@ -1064,7 +1064,7 @@
             <div id="jokers-container">
               {#each jokers as joker}
                 <div class="joker-slot filled" title={joker.description} data-joker-id={joker.id}>
-                  <img class="joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
+                  <img class="joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.webp' : '/img/basketball_fan.webp'} alt="Fan">
                   <div class="joker-name">{joker.name}</div>
                   <div class="joker-rarity rarity-{joker.rarity}">{joker.rarity}</div>
                 </div>
@@ -1375,18 +1375,18 @@
                       <div class="shop-price-badge" class:cant-afford={!canAfford}>${cost}</div>
                       <div class="shop-item-icon-area">
                         {#if itemType === 'joker'}
-                          <img class="shop-item-img joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
+                          <img class="shop-item-img joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.webp' : '/img/basketball_fan.webp'} alt="Fan">
                         {:else if itemType === 'buy_card'}
-                          <img class="shop-item-img" src={sport === 'nfl' ? '/img/helmet.png' : '/img/jersey.png'} alt="">
+                          <img class="shop-item-img" src={sport === 'nfl' ? '/img/helmet.webp' : '/img/jersey.webp'} alt="">
                           {#if cardPos}
                             <div class="shop-item-pos-badge card-pos-{cardPos}">{(cardData?.pos as string ?? '').toUpperCase()}</div>
                           {/if}
                         {:else if isPack}
-                          <img class="shop-item-img" src="/img/pack.png" alt="Pack">
+                          <img class="shop-item-img" src="/img/pack.webp" alt="Pack">
                         {:else if itemType === 'skill_card'}
-                          <img class="shop-item-img" src="/img/syringe.png" alt="Position Upgrade">
+                          <img class="shop-item-img" src="/img/syringe.webp" alt="Position Upgrade">
                         {:else}
-                          <img class="shop-item-img" src="/img/upgrade.png" alt="Upgrade">
+                          <img class="shop-item-img" src="/img/upgrade.webp" alt="Upgrade">
                         {/if}
                         {#if rarity}
                           <div class="shop-item-rarity-bar rarity-bar-{rarity}"></div>
@@ -1423,7 +1423,7 @@
               <div class="joker-list">
                 {#each jokers as joker}
                   <div class="joker-slot filled shop-joker">
-                    <img class="joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.png' : '/img/basketball_fan.png'} alt="Fan">
+                    <img class="joker-fan-img" src={sport === 'nfl' ? '/img/football_fan.webp' : '/img/basketball_fan.webp'} alt="Fan">
                     <div class="joker-name">{joker.name}</div>
                     <div class="joker-desc">{joker.description}</div>
                     <div class="joker-rarity rarity-{joker.rarity}">{joker.rarity}</div>
