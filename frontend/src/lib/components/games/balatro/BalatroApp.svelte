@@ -174,7 +174,7 @@
   function getDeckGroups(): Array<{ pos: string; cards: Card[] }> {
     const posOrder = sport === 'nfl' ? ['QB', 'RB', 'WR', 'TE'] : ['G', 'F', 'C'];
     const seen = new Set<string>();
-    const merged = [...hand, ...deckCards, ...heldCards].filter((card) => {
+    const merged = [...hand, ...deckCards, ...heldCards, ...deckPool].filter((card) => {
       if (!card?.id || seen.has(card.id)) return false;
       seen.add(card.id);
       return true;
@@ -1256,67 +1256,6 @@
       </div>
       {/if}
 
-      {#if deckViewOpen}
-        <div class="full-overlay" id="deck-viewer-overlay">
-          <div class="deck-viewer-header">
-            <div class="deck-viewer-title">Deck View</div>
-            <button class="btn-secondary" type="button" onclick={() => (deckViewOpen = false)}>Close</button>
-          </div>
-
-          {#if deckGroups.length === 0}
-            <div class="deck-empty-msg">No deck cards available yet.</div>
-          {:else}
-            {#each deckGroups as group}
-              <div class="deck-pos-group">
-                <div class="deck-pos-header pos-{group.pos.toLowerCase()}">{group.pos} ({group.cards.length})</div>
-                <div class="deck-cards-grid">
-                  {#each group.cards as card}
-                    {@const divInfo = getDivInfo(card.team)}
-                    {@const splitName = card.player.split(' ')}
-                    {@const firstName = splitName.length > 1 ? splitName[0] : ''}
-                    {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
-                    {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
-                    <div class="card {posClass(card.pos)}">
-                      <div class="card-inner">
-                        <div class="card-front">
-                          <div class="card-top-row">
-                            <div class="card-name-box">
-                              <div class="card-year-line">
-                                {card.season ? "'" + String(displayYear(card.season)).slice(-2) : ''}
-                                {card.team ? ' · ' + card.team : ''}
-                              </div>
-                              {#if firstName}<div class="card-player-first">{firstName}</div>{/if}
-                              <div class="card-player-last">{lastName}</div>
-                            </div>
-                            <div class="card-top-right">
-                              <div class="card-score-box">{pts}</div>
-                            </div>
-                          </div>
-                          <div class="card-headshot">
-                            {#if card.headshot_url}
-                              <img class="card-headshot-img" src={card.headshot_url} alt="" onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
-                            {:else}
-                              <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
-                            {/if}
-                          </div>
-                          <div class="card-bottom-row">
-                            <div class="card-footer-div">
-                              {#if divInfo}
-                                <div class="card-div-badge {divInfo.cls}">{divInfo.label}</div>
-                              {/if}
-                            </div>
-                            <span class="card-pos-badge">{card.pos}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/each}
-          {/if}
-        </div>
-      {/if}
     </div>
 
   <!-- REWARD SCREEN -->
@@ -1370,6 +1309,9 @@
             </div>
             <div class="store-controls">
               <div id="shop-coins-display" class="shop-coins">$ <span id="shop-coins-count">{coins}</span></div>
+              <button class="btn-stats" type="button" onclick={() => (deckViewOpen = true)}>
+                DECK ({deckPool.length})
+              </button>
             </div>
           </div>
         </div>
@@ -1407,10 +1349,8 @@
                           <img class="shop-item-img" src="/img/pack.png" alt="Pack">
                         {:else if itemType === 'skill_card'}
                           <img class="shop-item-img" src="/img/syringe.png" alt="Position Upgrade">
-                        {:else if itemType === 'upgrade'}
-                          <img class="shop-item-img" src="/img/upgrade.png" alt="Upgrade">
                         {:else}
-                          <span class="shop-item-icon-text">{ITEM_ICON[itemType] || 'ITM'}</span>
+                          <img class="shop-item-img" src="/img/upgrade.png" alt="Upgrade">
                         {/if}
                         {#if rarity}
                           <div class="shop-item-rarity-bar rarity-bar-{rarity}"></div>
@@ -1456,40 +1396,6 @@
                         Sell ${joker.sell_value}
                       </button>
                     {/if}
-                  </div>
-                {/each}
-              </div>
-            </div>
-          {/if}
-
-          <!-- Your Roster (Deck Pool Cards) -->
-          {#if deckPool.length > 0}
-            <div class="shop-locker-section">
-              <div class="shop-section-header">
-                <span class="shop-section-title" style="color:#2980b9;">YOUR ROSTER ({deckPool.length} cards)</span>
-              </div>
-              <div class="roster-cards-grid">
-                {#each deckPool as card}
-                  {@const divInfo = getDivInfo(card.team)}
-                  {@const splitName = card.player.split(' ')}
-                  {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
-                  {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
-                  <div class="roster-card {posClass(card.pos)}">
-                    <div class="roster-card-headshot">
-                      {#if card.headshot_url}
-                        <img class="roster-headshot-img" src={card.headshot_url} alt="" onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
-                      {:else}
-                        <img class="roster-headshot-img" src="/img/blank_player.png" alt="">
-                      {/if}
-                    </div>
-                    <div class="roster-card-info">
-                      <div class="roster-card-name">{lastName}</div>
-                      <div class="roster-card-meta">
-                        <span class="card-pos-badge" style="font-size:0.6rem;padding:1px 4px;">{card.pos}</span>
-                        {#if divInfo}<span class="card-div-badge {divInfo.cls}" style="font-size:0.55rem;padding:1px 3px;">{divInfo.label}</span>{/if}
-                        <span class="roster-card-pts">{pts} FP</span>
-                      </div>
-                    </div>
                   </div>
                 {/each}
               </div>
@@ -1612,6 +1518,69 @@
           <a href={backHref} class="back-link" style="margin-top:16px;display:block;">&larr; Back</a>
         </div>
       </div>
+    </div>
+  {/if}
+
+  <!-- DECK VIEW OVERLAY (global) -->
+  {#if deckViewOpen}
+    <div class="full-overlay" id="deck-viewer-overlay">
+      <div class="deck-viewer-header">
+        <div class="deck-viewer-title">Deck View</div>
+        <button class="btn-secondary" type="button" onclick={() => (deckViewOpen = false)}>Close</button>
+      </div>
+
+      {#if deckGroups.length === 0}
+        <div class="deck-empty-msg">No deck cards available yet.</div>
+      {:else}
+        {#each deckGroups as group}
+          <div class="deck-pos-group">
+            <div class="deck-pos-header pos-{group.pos.toLowerCase()}">{group.pos} ({group.cards.length})</div>
+            <div class="deck-cards-grid">
+              {#each group.cards as card}
+                {@const divInfo = getDivInfo(card.team)}
+                {@const splitName = card.player.split(' ')}
+                {@const firstName = splitName.length > 1 ? splitName[0] : ''}
+                {@const lastName = splitName.length > 1 ? splitName.slice(1).join(' ') : splitName[0]}
+                {@const pts = card.fantasy_pts !== undefined ? Math.round(card.fantasy_pts) : card.pts}
+                <div class="card {posClass(card.pos)}">
+                  <div class="card-inner">
+                    <div class="card-front">
+                      <div class="card-top-row">
+                        <div class="card-name-box">
+                          <div class="card-year-line">
+                            {card.season ? "'" + String(displayYear(card.season)).slice(-2) : ''}
+                            {card.team ? ' · ' + card.team : ''}
+                          </div>
+                          {#if firstName}<div class="card-player-first">{firstName}</div>{/if}
+                          <div class="card-player-last">{lastName}</div>
+                        </div>
+                        <div class="card-top-right">
+                          <div class="card-score-box">{pts}</div>
+                        </div>
+                      </div>
+                      <div class="card-headshot">
+                        {#if card.headshot_url}
+                          <img class="card-headshot-img" src={card.headshot_url} alt="" onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                        {:else}
+                          <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
+                        {/if}
+                      </div>
+                      <div class="card-bottom-row">
+                        <div class="card-footer-div">
+                          {#if divInfo}
+                            <div class="card-div-badge {divInfo.cls}">{divInfo.label}</div>
+                          {/if}
+                        </div>
+                        <span class="card-pos-badge">{card.pos}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/each}
+      {/if}
     </div>
   {/if}
 </div>

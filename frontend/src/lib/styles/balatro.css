@@ -1593,9 +1593,9 @@
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 2px;
   color: var(--accent-yellow);
-  padding: 10px 6px;
+  padding: 8px 6px;
   border-bottom: 2px solid #1a1a1a;
-  min-height: 54px;
+  min-height: 72px;
   position: relative;
 }#bal-app .shop-item-rarity-bar {
   position: absolute;

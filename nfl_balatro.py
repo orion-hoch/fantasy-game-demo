@@ -326,10 +326,12 @@ def _build_deck_pool(conn):
                    (SELECT MAX(s2.season) FROM stats s2 WHERE s2.player = s.player) AS max_season
             FROM stats s
             LEFT JOIN draft d ON s.player = d.player
-            LEFT JOIN nfl_player_ids pi ON s.player = pi.pfr_name
+            INNER JOIN nfl_player_ids pi ON s.player = pi.pfr_name
             WHERE (d.draft_year >= 2010 OR d.draft_year IS NULL)
               AND s.pos = ?
               AND s.fantasy_ppr >= 50
+              AND pi.pfr_id IS NOT NULL
+              AND pi.pfr_id != ''
             ORDER BY RANDOM()
         """, (pos,)).fetchall()
         added = 0
@@ -383,10 +385,12 @@ def _build_deck(conn):
                (SELECT MAX(s2.season) FROM stats s2 WHERE s2.player = s.player) AS max_season
         FROM stats s
         LEFT JOIN draft d ON s.player = d.player
-        LEFT JOIN nfl_player_ids pi ON s.player = pi.pfr_name
+        INNER JOIN nfl_player_ids pi ON s.player = pi.pfr_name
         WHERE (d.draft_year >= 2010 OR d.draft_year IS NULL)
           AND s.pos IN ('QB','RB','WR','TE')
           AND s.fantasy_ppr >= 50
+          AND pi.pfr_id IS NOT NULL
+          AND pi.pfr_id != ''
         ORDER BY RANDOM()
     """).fetchall()
 
@@ -947,9 +951,11 @@ def _generate_shop(conn, state):
                    (SELECT MAX(s2.season) FROM stats s2 WHERE s2.player = s.player) AS max_season
             FROM stats s
             LEFT JOIN draft d ON s.player = d.player
-            LEFT JOIN nfl_player_ids pi ON s.player = pi.pfr_name
+            INNER JOIN nfl_player_ids pi ON s.player = pi.pfr_name
             WHERE s.fantasy_ppr >= ?
               AND s.pos IN ('QB','RB','WR','TE')
+              AND pi.pfr_id IS NOT NULL
+              AND pi.pfr_id != ''
             ORDER BY RANDOM()
             LIMIT 20
         """, (ppr_min,)).fetchall()
@@ -1998,11 +2004,15 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
 
     base_q = """
         SELECT s.player, s.season, s.pos, s.team, s.fantasy_ppr,
-               d.pro_bowls, d.college, d.draft_year, d.draft_round, d.draft_pick
+               d.pro_bowls, d.college, d.draft_year, d.draft_round, d.draft_pick,
+               pi.pfr_id
         FROM stats s
         LEFT JOIN draft d ON s.player = d.player
+        INNER JOIN nfl_player_ids pi ON s.player = pi.pfr_name
         WHERE (d.draft_year >= 2010 OR d.draft_year IS NULL)
           AND s.pos IN ('QB','RB','WR','TE')
+          AND pi.pfr_id IS NOT NULL
+          AND pi.pfr_id != ''
     """
 
     existing_ids = {(c["player"], c["season"]) for c in state["deck_pool"]}
@@ -2032,6 +2042,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
         draft_pick = r[9]
         raw_college = r[6]
         college = raw_college if (raw_college and raw_college != "Unknown") else ("No college" if draft_pick is not None else None)
+        pfr_id = r[10] if len(r) > 10 else None
         card = {
             "id": f"{r[0]}_{r[1]}_{r[2]}_pack{idx_start + i}",
             "player": r[0], "season": r[1], "pos": r[2], "team": r[3],
@@ -2040,6 +2051,8 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
             "college": college, "draft_year": r[7], "draft_round": r[8], "draft_pick": draft_pick,
             "undrafted": draft_pick is None,
             "conference": get_conference(raw_college),
+            "pfr_id": pfr_id,
+            "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
         }
         cards.append(card)
         if len(cards) >= candidate_count:

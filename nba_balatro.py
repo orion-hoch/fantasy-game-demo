@@ -296,8 +296,10 @@ def _build_deck_pool(conn):
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
             LEFT JOIN nba_allstars na ON ns.player = na.player
-            LEFT JOIN nba_player_ids pi ON ns.player = pi.bbref_name
+            INNER JOIN nba_player_ids pi ON ns.player = pi.bbref_name
             WHERE ns.pos = ? AND ns.fantasy_score >= 600
+              AND pi.bbref_id IS NOT NULL
+              AND pi.bbref_id != ''
             ORDER BY RANDOM()
         """, (pos,)).fetchall()
         added = 0
@@ -857,9 +859,11 @@ def _generate_shop(conn, state):
             FROM nba_stats ns
             LEFT JOIN nba_draft nd ON ns.player = nd.player
             LEFT JOIN nba_allstars na ON ns.player = na.player
-            LEFT JOIN nba_player_ids pi ON ns.player = pi.bbref_name
+            INNER JOIN nba_player_ids pi ON ns.player = pi.bbref_name
             WHERE ns.fantasy_score >= ?
               AND ns.pos IN ('G','F','C')
+              AND pi.bbref_id IS NOT NULL
+              AND pi.bbref_id != ''
             ORDER BY RANDOM()
             LIMIT 20
         """, (score_min,)).fetchall()
@@ -1873,8 +1877,10 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
         FROM nba_stats ns
         LEFT JOIN nba_draft nd ON ns.player = nd.player
         LEFT JOIN nba_allstars na ON ns.player = na.player
-        LEFT JOIN nba_player_ids pi ON ns.player = pi.bbref_name
+        INNER JOIN nba_player_ids pi ON ns.player = pi.bbref_name
         WHERE ns.pos IN ('G','F','C')
+          AND pi.bbref_id IS NOT NULL
+          AND pi.bbref_id != ''
     """
 
     existing_ids = {(c["player"], c["season"]) for c in state["deck_pool"]}
