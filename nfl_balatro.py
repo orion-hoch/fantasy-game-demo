@@ -285,6 +285,19 @@ def cleanup_old_games():
     _GAMES.cleanup_expired()
 
 
+def _pfr_headshot_url(pfr_id, draft_year=None):
+    """PFR uses `{pfr_id}_{draft_year}.jpg` for recent rookies (2023+)."""
+    if not pfr_id:
+        return None
+    try:
+        dy = int(draft_year) if draft_year else 0
+    except (TypeError, ValueError):
+        dy = 0
+    if dy >= 2023:
+        return f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}_{dy}.jpg"
+    return f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg"
+
+
 def _get_effective_pos_mult(pos, joker_ids, skill_levels, card_effects_for_card=None):
     base = POS_MULT.get(pos, 1.0)
     for jid in joker_ids:
@@ -371,7 +384,7 @@ def _build_deck_pool(conn):
             "division": get_nfl_division(r[3]),
             "pfr_id": pfr_id,
             "max_season": max_season,
-            "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+            "headshot_url": _pfr_headshot_url(pfr_id, r[7] if len(r) > 7 else None),
         })
     return cards
 
@@ -423,7 +436,7 @@ def _build_deck(conn):
             "division": get_nfl_division(r[3]),
             "pfr_id": pfr_id,
             "max_season": max_season,
-            "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+            "headshot_url": _pfr_headshot_url(pfr_id, r[7] if len(r) > 7 else None),
         })
     return cards
 
@@ -981,7 +994,7 @@ def _generate_shop(conn, state):
                 "conference": get_conference(college),
                 "pfr_id": pfr_id,
                 "max_season": max_season,
-                "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+                "headshot_url": _pfr_headshot_url(pfr_id, row[7] if len(row) > 7 else None),
             }
             base_card_cost = random.randint(4, 8)
             items.append({
@@ -2052,7 +2065,7 @@ def _generate_pack_cards(conn, pack_id, state, candidate_count=5):
             "undrafted": draft_pick is None,
             "conference": get_conference(raw_college),
             "pfr_id": pfr_id,
-            "headshot_url": f"https://www.pro-football-reference.com/req/20230307/images/headshots/{pfr_id}.jpg" if pfr_id else None,
+            "headshot_url": _pfr_headshot_url(pfr_id, r[7] if len(r) > 7 else None),
         }
         cards.append(card)
         if len(cards) >= candidate_count:

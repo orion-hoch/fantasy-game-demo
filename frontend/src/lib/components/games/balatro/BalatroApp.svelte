@@ -159,6 +159,27 @@
     return String(season);
   }
 
+  function handleHeadshotError(e: Event) {
+    const img = e.target as HTMLImageElement;
+    const tried = img.dataset.fallback || '0';
+    const src = img.src;
+    if (tried === '0' && sport === 'nfl' && src.includes('/headshots/')) {
+      const m = src.match(/\/headshots\/([^/]+?)(_\d{4})?\.jpg/);
+      if (m) {
+        const id = m[1];
+        const hadSuffix = !!m[2];
+        img.dataset.fallback = '1';
+        img.src = hadSuffix
+          ? `https://www.pro-football-reference.com/req/20230307/images/headshots/${id}.jpg`
+          : `https://www.pro-football-reference.com/req/20230307/images/headshots/${id}_2024.jpg`;
+        return;
+      }
+    }
+    img.dataset.fallback = '2';
+    img.src = '/img/blank_player.png';
+    img.classList.add('card-headshot-blank');
+  }
+
   function bossName(effect: unknown): string {
     if (!effect) return '';
     if (typeof effect === 'string') return effect.replace(/_/g, ' ').toUpperCase();
@@ -1184,7 +1205,7 @@
                         class="card-headshot-img"
                         src={card.headshot_url}
                         alt=""
-                        onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; (e.target as HTMLImageElement).classList.add('card-headshot-blank'); }}
+                        onerror={handleHeadshotError}
                       >
                     {:else}
                       <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
@@ -1468,7 +1489,7 @@
                       <div class="card-headshot">
                         {#if card.headshot_url}
                           <img class="card-headshot-img" src={card.headshot_url} alt=""
-                            onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                            onerror={handleHeadshotError}>
                         {:else}
                           <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
                         {/if}
@@ -1560,7 +1581,7 @@
                       </div>
                       <div class="card-headshot">
                         {#if card.headshot_url}
-                          <img class="card-headshot-img" src={card.headshot_url} alt="" onerror={(e) => { (e.target as HTMLImageElement).src = '/img/blank_player.png'; }}>
+                          <img class="card-headshot-img" src={card.headshot_url} alt="" onerror={handleHeadshotError}>
                         {:else}
                           <img class="card-headshot-img card-headshot-blank" src="/img/blank_player.png" alt="">
                         {/if}
