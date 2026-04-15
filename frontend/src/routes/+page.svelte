@@ -120,7 +120,7 @@
   <!-- NFL Games -->
   {#if activeTab === 'nfl'}
     <div class="tab-panel">
-      <img src="/img/football_logo_nobg.png" alt="NFL" class="tab-banner" />
+      <img src="/img/football_logo_nobg.webp" alt="NFL" class="tab-banner" />
       <div id="question-list">
         {#each nflGames as game}
           <a href={game.href} class="q-btn">
@@ -138,7 +138,7 @@
   <!-- NBA Games -->
   {#if activeTab === 'nba'}
     <div class="tab-panel">
-      <img src="/img/basketball_logo_nobg.png" alt="NBA" class="tab-banner" />
+      <img src="/img/basketball_logo_nobg.webp" alt="NBA" class="tab-banner" />
       <div id="question-list">
         {#each nbaGames as game}
           <a href={game.href} class="q-btn">
