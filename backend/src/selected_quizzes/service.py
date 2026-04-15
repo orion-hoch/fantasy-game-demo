@@ -50,6 +50,7 @@ def _load_quiz_file(path: Path) -> dict[str, Any]:
     answers = raw.get("answers") or []
     parsed_answers = []
     lookup: dict[str, int] = {}
+    hint_keys: set[str] = set()
     for entry in answers:
         if isinstance(entry, str):
             canonical = entry
@@ -64,6 +65,8 @@ def _load_quiz_file(path: Path) -> dict[str, Any]:
                 if isinstance(raw_hints, dict) and raw_hints
                 else None
             )
+        if hints:
+            hint_keys.update(hints.keys())
         if not canonical:
             continue
         idx = len(parsed_answers)
@@ -72,11 +75,19 @@ def _load_quiz_file(path: Path) -> dict[str, Any]:
             key = _normalize(label)
             if key and key not in lookup:
                 lookup[key] = idx
+    raw_default_order_hint = str(raw.get("default_order_hint_key") or "").strip()
+    default_order_hint = raw_default_order_hint if raw_default_order_hint in hint_keys else None
+
+    raw_default_order_direction = str(raw.get("default_order_direction") or "low").strip().lower()
+    default_order_direction = raw_default_order_direction if raw_default_order_direction in {"low", "high"} else "low"
+
     return {
         "id": str(raw.get("id") or path.stem),
         "title": str(raw.get("title") or path.stem),
         "prompt": str(raw.get("prompt") or ""),
         "time_limit_seconds": int(raw.get("time_limit_seconds") or 180),
+        "default_order_hint_key": default_order_hint,
+        "default_order_direction": default_order_direction,
         "answers": parsed_answers,
         "lookup": lookup,
     }
@@ -138,6 +149,8 @@ def start(sport: Sport, quiz_id: str) -> dict[str, Any]:
         "total_answers": len(quiz["answers"]),
         "deadline_ms": int(deadline * 1000),
         "slots": [{"hints": ans.get("hints")} for ans in quiz["answers"]],
+        "default_order_hint_key": quiz.get("default_order_hint_key"),
+        "default_order_direction": quiz.get("default_order_direction") or "low",
     }
 
 

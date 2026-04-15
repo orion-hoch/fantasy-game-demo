@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { SFX } from '$lib/sfx';
   import {
     finishQuiz,
     guessQuiz,
@@ -29,7 +30,11 @@
   let slots = $state<QuizSlot[]>([]);
   let foundBySlot = $state<(string | null)[]>([]);
   let foundCount = $derived(foundBySlot.filter((v) => v !== null).length);
-  let lastFlash = $state<{ kind: 'match' | 'duplicate'; text: string } | null>(null);
+  let flashSlot = $state<number | null>(null);
+  let inputState = $state<'idle' | 'correct' | 'wrong'>('idle');
+  let flashSlotTimer: ReturnType<typeof setTimeout> | null = null;
+  let inputStateTimer: ReturnType<typeof setTimeout> | null = null;
+  let lastFlash = $state<{ kind: 'match' | 'duplicate' | 'wrong'; text: string } | null>(null);
   let flashTimer: ReturnType<typeof setTimeout> | null = null;
   let countdownTimer: ReturnType<typeof setInterval> | null = null;
   let gameId = $state<string | null>(null);
@@ -38,9 +43,52 @@
   let playError = $state('');
   let revealData = $state<QuizFinishResponse | null>(null);
   let inFlight = $state(false);
+  let orderHintKey = $state('');
+  let orderDirection = $state<'low' | 'high'>('low');
 
   const accentBySport = $derived(sport === 'nfl' ? 'yellow' : 'red');
-  const title = $derived(sport === 'nfl' ? 'NFL Selected Quizzes' : 'NBA Selected Quizzes');
+  const title = $derived(sport === 'nfl' ? 'NFL Quizzes' : 'NBA Quizzes');
+  const availableOrderHintKeys = $derived.by(() => {
+    const keys = new Set<string>();
+    for (const slot of slots) {
+      const hints = slot?.hints;
+      if (!hints) continue;
+      for (const [key, value] of Object.entries(hints)) {
+        if (value) keys.add(key);
+      }
+    }
+    if (revealData) {
+      for (const ans of revealData.answers) {
+        const hints = ans?.hints;
+        if (!hints) continue;
+        for (const [key, value] of Object.entries(hints)) {
+          if (value) keys.add(key);
+        }
+      }
+    }
+    return Array.from(keys);
+  });
+
+  $effect(() => {
+    if (orderHintKey && !availableOrderHintKeys.includes(orderHintKey)) {
+      orderHintKey = '';
+    }
+  });
+
+  const orderedSlotIndices = $derived.by(() => {
+    const indices = Array.from({ length: slots.length }, (_, idx) => idx);
+    if (!orderHintKey) return indices;
+    indices.sort((a, b) => compareHintValues(slots[a]?.hints?.[orderHintKey], slots[b]?.hints?.[orderHintKey], a, b));
+    return indices;
+  });
+
+  const orderedRevealIndices = $derived.by(() => {
+    const answers = revealData?.answers ?? [];
+    const indices = Array.from({ length: answers.length }, (_, idx) => idx);
+    if (!orderHintKey) return indices;
+    indices.sort((a, b) => compareHintValues(answers[a]?.hints?.[orderHintKey], answers[b]?.hints?.[orderHintKey], a, b));
+    return indices;
+  });
 
   onMount(() => {
     void loadList();
@@ -68,6 +116,30 @@
       clearTimeout(flashTimer);
       flashTimer = null;
     }
+    if (flashSlotTimer) {
+      clearTimeout(flashSlotTimer);
+      flashSlotTimer = null;
+    }
+    if (inputStateTimer) {
+      clearTimeout(inputStateTimer);
+      inputStateTimer = null;
+    }
+  }
+
+  function pulseSlot(idx: number) {
+    if (flashSlotTimer) clearTimeout(flashSlotTimer);
+    flashSlot = idx;
+    flashSlotTimer = setTimeout(() => {
+      flashSlot = null;
+    }, 700);
+  }
+
+  function pulseInput(state: 'correct' | 'wrong') {
+    if (inputStateTimer) clearTimeout(inputStateTimer);
+    inputState = state;
+    inputStateTimer = setTimeout(() => {
+      inputState = 'idle';
+    }, 500);
   }
 
   onDestroy(clearTimers);
@@ -92,6 +164,56 @@
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
+  function parseHintSortValue(value: string | null | undefined) {
+    const normalized = (value ?? '').trim();
+    if (!normalized) {
+      return { missing: true, isNumber: false, number: 0, text: '' };
+    }
+    const numberMatch = normalized.match(/^-?\d+(?:\.\d+)?/);
+    if (numberMatch) {
+      return {
+        missing: false,
+        isNumber: true,
+        number: Number(numberMatch[0]),
+        text: normalized.toLowerCase()
+      };
+    }
+    return {
+      missing: false,
+      isNumber: false,
+      number: 0,
+      text: normalized.toLowerCase()
+    };
+  }
+
+  function compareHintValues(
+    aValue: string | null | undefined,
+    bValue: string | null | undefined,
+    aIndex: number,
+    bIndex: number
+  ) {
+    const a = parseHintSortValue(aValue);
+    const b = parseHintSortValue(bValue);
+
+    if (a.missing !== b.missing) return a.missing ? 1 : -1;
+
+    let diff = 0;
+    if (a.isNumber && b.isNumber) {
+      diff = a.number - b.number;
+    } else {
+      diff = a.text.localeCompare(b.text, undefined, { numeric: true, sensitivity: 'base' });
+    }
+    if (diff === 0) diff = aIndex - bIndex;
+    return orderDirection === 'high' ? -diff : diff;
+  }
+
+  function formatHintKeyLabel(key: string) {
+    return key
+      .split('_')
+      .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : part))
+      .join(' ');
+  }
+
   async function startSelected(quiz: QuizSummary) {
     if (starting) return;
     starting = true;
@@ -106,6 +228,12 @@
       deadlineMs = data.deadline_ms;
       slots = data.slots ?? [];
       foundBySlot = new Array(data.total_answers).fill(null);
+      const orderDefaults = data as {
+        default_order_hint_key?: string | null;
+        default_order_direction?: 'low' | 'high';
+      };
+      orderHintKey = orderDefaults.default_order_hint_key ?? '';
+      orderDirection = orderDefaults.default_order_direction ?? 'low';
       guess = '';
       lastFlash = null;
       revealData = null;
@@ -118,7 +246,7 @@
     }
   }
 
-  function flash(kind: 'match' | 'duplicate', text: string) {
+  function flash(kind: 'match' | 'duplicate' | 'wrong', text: string) {
     if (flashTimer) clearTimeout(flashTimer);
     lastFlash = { kind, text };
     flashTimer = setTimeout(() => {
@@ -139,9 +267,18 @@
         foundBySlot = next;
         guess = '';
         flash('match', data.matched);
+        pulseSlot(data.matched_index);
+        pulseInput('correct');
+        SFX.play('correct');
       } else if (data.duplicate) {
         flash('duplicate', 'Already found');
         guess = '';
+        pulseInput('wrong');
+        SFX.play('wrong');
+      } else {
+        flash('wrong', `${value} — not a match`);
+        pulseInput('wrong');
+        SFX.play('wrong');
       }
       timeLeft = data.time_left_seconds;
       if (data.finished) {
@@ -176,6 +313,8 @@
     revealData = null;
     slots = [];
     foundBySlot = [];
+    orderHintKey = '';
+    orderDirection = 'low';
     guess = '';
     screen = 'list';
   }
@@ -273,6 +412,8 @@
       <div class="quiz-input-row">
         <input
           class="quiz-input"
+          class:correct={inputState === 'correct'}
+          class:wrong={inputState === 'wrong'}
           type="text"
           autocomplete="off"
           spellcheck="false"
@@ -284,17 +425,59 @@
       </div>
 
       {#if lastFlash}
-        <div class="quiz-flash" class:duplicate={lastFlash.kind === 'duplicate'}>
+        <div
+          class="quiz-flash"
+          class:duplicate={lastFlash.kind === 'duplicate'}
+          class:wrong={lastFlash.kind === 'wrong'}
+        >
           {lastFlash.kind === 'match' ? `+ ${lastFlash.text}` : lastFlash.text}
         </div>
       {/if}
 
+      {#if availableOrderHintKeys.length}
+        <div class="quiz-order-bar">
+          <span class="quiz-order-label">Hint order</span>
+          <select class="quiz-order-select" bind:value={orderHintKey}>
+            <option value="">Quiz order</option>
+            {#each availableOrderHintKeys as hintKey}
+              <option value={hintKey}>{formatHintKeyLabel(hintKey)}</option>
+            {/each}
+          </select>
+          <div class="quiz-order-direction">
+            <button
+              type="button"
+              class="quiz-order-btn"
+              class:active={orderDirection === 'low'}
+              disabled={!orderHintKey}
+              onclick={() => (orderDirection = 'low')}
+            >
+              Low
+            </button>
+            <button
+              type="button"
+              class="quiz-order-btn"
+              class:active={orderDirection === 'high'}
+              disabled={!orderHintKey}
+              onclick={() => (orderDirection = 'high')}
+            >
+              High
+            </button>
+          </div>
+        </div>
+      {/if}
+
       <div class="quiz-found-grid">
-        {#each slots as slot, idx}
-          {@const filled = foundBySlot[idx]}
+        {#each orderedSlotIndices as slotIndex, displayIndex}
+          {@const slot = slots[slotIndex]}
+          {@const filled = foundBySlot[slotIndex]}
           {@const hintText = formatHints(slot?.hints)}
-          <div class="quiz-found-cell" class:empty={!filled}>
-            <span class="cell-num">{idx + 1}.</span>
+          <div
+            class="quiz-found-cell"
+            class:empty={!filled}
+            class:filled={!!filled}
+            class:flash-correct={flashSlot === slotIndex}
+          >
+            <span class="cell-num">{displayIndex + 1}.</span>
             {#if filled}
               <span class="cell-name">{filled}</span>
             {:else if hintText}
@@ -323,11 +506,44 @@
         </div>
       </div>
 
+      {#if availableOrderHintKeys.length}
+        <div class="quiz-order-bar">
+          <span class="quiz-order-label">Hint order</span>
+          <select class="quiz-order-select" bind:value={orderHintKey}>
+            <option value="">Quiz order</option>
+            {#each availableOrderHintKeys as hintKey}
+              <option value={hintKey}>{formatHintKeyLabel(hintKey)}</option>
+            {/each}
+          </select>
+          <div class="quiz-order-direction">
+            <button
+              type="button"
+              class="quiz-order-btn"
+              class:active={orderDirection === 'low'}
+              disabled={!orderHintKey}
+              onclick={() => (orderDirection = 'low')}
+            >
+              Low
+            </button>
+            <button
+              type="button"
+              class="quiz-order-btn"
+              class:active={orderDirection === 'high'}
+              disabled={!orderHintKey}
+              onclick={() => (orderDirection = 'high')}
+            >
+              High
+            </button>
+          </div>
+        </div>
+      {/if}
+
       <div class="quiz-reveal-grid">
-        {#each r.answers as ans, idx (ans.canonical + ':' + idx)}
+        {#each orderedRevealIndices as answerIndex, displayIndex (r.answers[answerIndex].canonical + ':' + answerIndex)}
+          {@const ans = r.answers[answerIndex]}
           {@const hintText = formatHints(ans.hints)}
           <div class="quiz-reveal-cell" class:found={ans.found}>
-            <span class="cell-num">{idx + 1}.</span>
+            <span class="cell-num">{displayIndex + 1}.</span>
             <span class="cell-name">{ans.canonical}</span>
             {#if hintText}
               <span class="cell-hint">{hintText}</span>
@@ -489,6 +705,27 @@
     text-transform: uppercase;
   }
   .quiz-input:focus { outline: none; border-color: var(--yellow); }
+  .quiz-input.correct {
+    border-color: #25c95b;
+    background: rgba(37, 201, 91, 0.18);
+    color: #aef0c2;
+    box-shadow: 0 0 0 3px rgba(37, 201, 91, 0.25), 0 0 14px rgba(37, 201, 91, 0.55);
+    transition: border-color 0.05s, background 0.05s, box-shadow 0.05s;
+  }
+  .quiz-input.wrong {
+    border-color: #e0455a;
+    background: rgba(224, 69, 90, 0.18);
+    color: #f8c4cc;
+    box-shadow: 0 0 0 3px rgba(224, 69, 90, 0.25), 0 0 14px rgba(224, 69, 90, 0.55);
+    animation: shake 0.32s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-3px); }
+    80% { transform: translateX(3px); }
+  }
   .quiz-give-up {
     background: var(--surface);
     border: 3px solid var(--border);
@@ -502,17 +739,75 @@
   .quiz-give-up:hover { background: var(--red, #d33); color: #fff; }
 
   .quiz-flash {
-    background: rgba(245, 199, 0, 0.18);
-    border-left: 4px solid var(--yellow);
+    background: rgba(37, 201, 91, 0.18);
+    border-left: 4px solid #25c95b;
     padding: 8px 12px;
     font-weight: 800;
     letter-spacing: 1px;
-    color: var(--text);
+    color: #aef0c2;
   }
   .quiz-flash.duplicate {
     background: rgba(255, 255, 255, 0.06);
     border-left-color: var(--text-muted);
     color: var(--text-dim);
+  }
+  .quiz-flash.wrong {
+    background: rgba(224, 69, 90, 0.18);
+    border-left-color: #e0455a;
+    color: #f8c4cc;
+  }
+
+  .quiz-order-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    padding: 8px 10px;
+    flex-wrap: wrap;
+  }
+  .quiz-order-label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 800;
+  }
+  .quiz-order-select {
+    min-width: 130px;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 2px solid var(--border);
+    font-size: 0.8rem;
+    padding: 6px 8px;
+    font-weight: 700;
+  }
+  .quiz-order-select:focus {
+    outline: none;
+    border-color: var(--yellow);
+  }
+  .quiz-order-direction {
+    display: flex;
+    gap: 6px;
+  }
+  .quiz-order-btn {
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 2px solid var(--border);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+  .quiz-order-btn.active {
+    background: var(--yellow);
+    color: var(--text-dark);
+  }
+  .quiz-order-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   .quiz-found-grid {
@@ -548,6 +843,21 @@
     opacity: 0.85;
   }
   .quiz-found-cell.empty .cell-hint { color: var(--text-muted); }
+  .quiz-found-cell.filled {
+    background: rgba(37, 201, 91, 0.16);
+    border-color: #25c95b;
+  }
+  .quiz-found-cell.filled .cell-name { color: #d3fadc; }
+  .quiz-found-cell.flash-correct {
+    background: rgba(37, 201, 91, 0.45);
+    box-shadow: 0 0 16px rgba(37, 201, 91, 0.7);
+    animation: cellPop 0.7s ease-out;
+  }
+  @keyframes cellPop {
+    0%   { transform: scale(0.95); }
+    35%  { transform: scale(1.06); }
+    100% { transform: scale(1); }
+  }
 
   .quiz-reveal {
     display: flex;
@@ -617,5 +927,22 @@
     letter-spacing: 2px;
     cursor: pointer;
     font-size: 1rem;
+  }
+
+  @media (max-width: 760px) {
+    .quiz-order-bar {
+      gap: 8px;
+      padding: 8px;
+    }
+    .quiz-order-select {
+      flex: 1;
+      min-width: 120px;
+    }
+    .quiz-order-direction {
+      width: 100%;
+    }
+    .quiz-order-btn {
+      flex: 1;
+    }
   }
 </style>

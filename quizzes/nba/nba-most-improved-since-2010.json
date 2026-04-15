@@ -1,23 +1,264 @@
 {
   "id": "nba-most-improved-since-2010",
-  "title": "NBA Most Improved Player Since 2010",
-  "prompt": "Name every NBA Most Improved Player from the 2009-10 season through 2023-24.",
+  "title": "NBA Most Improved Player Since 1995",
+  "prompt": "Name every NBA Most Improved Player from the 1995 season through 2024.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Aaron Brooks", "aliases": ["Brooks"] },
-    { "canonical": "Kevin Love", "aliases": ["Love"] },
-    { "canonical": "Ryan Anderson", "aliases": ["Anderson"] },
-    { "canonical": "Paul George", "aliases": ["PG", "PG13", "George"] },
-    { "canonical": "Goran Dragic", "aliases": ["Dragic"] },
-    { "canonical": "Jimmy Butler", "aliases": ["Jimmy", "Butler", "Jimmy Buckets"] },
-    { "canonical": "C.J. McCollum", "aliases": ["CJ McCollum", "McCollum"] },
-    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
-    { "canonical": "Victor Oladipo", "aliases": ["Oladipo", "Vic"] },
-    { "canonical": "Pascal Siakam", "aliases": ["Siakam", "Spicy P"] },
-    { "canonical": "Brandon Ingram", "aliases": ["Ingram", "BI"] },
-    { "canonical": "Julius Randle", "aliases": ["Randle"] },
-    { "canonical": "Ja Morant", "aliases": ["Morant", "Ja"] },
-    { "canonical": "Lauri Markkanen", "aliases": ["Markkanen", "Lauri"] },
-    { "canonical": "Tyrese Maxey", "aliases": ["Maxey"] }
-  ]
+    {
+      "canonical": "Gheorghe Muresan",
+      "aliases": [
+        "Muresan"
+      ],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Isaac Austin",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Alan Henderson",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Darrell Armstrong",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Jalen Rose",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Tracy McGrady",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Jermaine O'Neal",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Gilbert Arenas",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Zach Randolph",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Bobby Simmons",
+      "aliases": [],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Boris Diaw",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Monta Ellis",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Hedo Turkoglu",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Danny Granger",
+      "aliases": [],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Aaron Brooks",
+      "aliases": [
+        "Brooks"
+      ],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Kevin Love",
+      "aliases": [
+        "Love"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Ryan Anderson",
+      "aliases": [
+        "Anderson"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Paul George",
+      "aliases": [
+        "PG",
+        "PG13",
+        "George"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Goran Dragic",
+      "aliases": [
+        "Dragic"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Jimmy Butler",
+      "aliases": [
+        "Jimmy",
+        "Butler",
+        "Jimmy Buckets"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "C.J. McCollum",
+      "aliases": [
+        "CJ McCollum",
+        "McCollum"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Giannis Antetokounmpo",
+      "aliases": [
+        "Giannis",
+        "Greek Freak",
+        "Antetokounmpo"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Victor Oladipo",
+      "aliases": [
+        "Oladipo",
+        "Vic"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Pascal Siakam",
+      "aliases": [
+        "Siakam",
+        "Spicy P"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Brandon Ingram",
+      "aliases": [
+        "Ingram",
+        "BI"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Julius Randle",
+      "aliases": [
+        "Randle"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Ja Morant",
+      "aliases": [
+        "Morant",
+        "Ja"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Lauri Markkanen",
+      "aliases": [
+        "Markkanen",
+        "Lauri"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Tyrese Maxey",
+      "aliases": [
+        "Maxey"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Dyson Daniels",
+      "aliases": [],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

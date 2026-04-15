@@ -4,16 +4,107 @@
   "prompt": "Name every winner of the AP NFL Coach of the Year award from the 2010 season through 2023.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Bill Belichick", "aliases": ["Belichick"] },
-    { "canonical": "Jim Harbaugh", "aliases": ["J. Harbaugh"] },
-    { "canonical": "Bruce Arians", "aliases": ["Arians"] },
-    { "canonical": "Ron Rivera", "aliases": ["Rivera", "Riverboat Ron"] },
-    { "canonical": "Jason Garrett", "aliases": ["Garrett"] },
-    { "canonical": "Sean McVay", "aliases": ["McVay"] },
-    { "canonical": "Matt Nagy", "aliases": ["Nagy"] },
-    { "canonical": "John Harbaugh", "aliases": ["J. Harbaugh"] },
-    { "canonical": "Kevin Stefanski", "aliases": ["Stefanski"] },
-    { "canonical": "Mike Vrabel", "aliases": ["Vrabel"] },
-    { "canonical": "Brian Daboll", "aliases": ["Daboll"] }
-  ]
+    {
+      "canonical": "Bill Belichick",
+      "aliases": [
+        "Belichick"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Jim Harbaugh",
+      "aliases": [
+        "J. Harbaugh"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Bruce Arians",
+      "aliases": [
+        "Arians"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Ron Rivera",
+      "aliases": [
+        "Rivera",
+        "Riverboat Ron"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Jason Garrett",
+      "aliases": [
+        "Garrett"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Sean McVay",
+      "aliases": [
+        "McVay"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Matt Nagy",
+      "aliases": [
+        "Nagy"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "John Harbaugh",
+      "aliases": [
+        "J. Harbaugh"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Kevin Stefanski",
+      "aliases": [
+        "Stefanski"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Mike Vrabel",
+      "aliases": [
+        "Vrabel"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Brian Daboll",
+      "aliases": [
+        "Daboll"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

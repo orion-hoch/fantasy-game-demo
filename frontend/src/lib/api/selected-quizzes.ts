@@ -27,6 +27,8 @@ export type QuizStartResponse = {
   total_answers: number;
   deadline_ms: number;
   slots: QuizSlot[];
+  default_order_hint_key: string | null;
+  default_order_direction: 'low' | 'high';
 };
 
 export type QuizGuessResponse = {
@@ -75,11 +77,11 @@ function quizUrl(sport: Sport, path = '') {
   return `${apiBaseUrl}/selected-quizzes/${sport}${path}`;
 }
 
-export async function listQuizzes(sport: Sport) {
+export async function listQuizzes(sport: Sport): Promise<QuizListResponse> {
   return jsonFetch<QuizListResponse>(quizUrl(sport));
 }
 
-export async function startQuiz(sport: Sport, quizId: string) {
+export async function startQuiz(sport: Sport, quizId: string): Promise<QuizStartResponse> {
   return jsonFetch<QuizStartResponse>(quizUrl(sport, `/${encodeURIComponent(quizId)}/start`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -91,7 +93,7 @@ export async function guessQuiz(
   sport: Sport,
   quizId: string,
   payload: { gameId: string; guess: string }
-) {
+): Promise<QuizGuessResponse> {
   return jsonFetch<QuizGuessResponse>(quizUrl(sport, `/${encodeURIComponent(quizId)}/guess`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -99,7 +101,7 @@ export async function guessQuiz(
   });
 }
 
-export async function finishQuiz(sport: Sport, quizId: string, gameId: string) {
+export async function finishQuiz(sport: Sport, quizId: string, gameId: string): Promise<QuizFinishResponse> {
   return jsonFetch<QuizFinishResponse>(quizUrl(sport, `/${encodeURIComponent(quizId)}/finish`), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

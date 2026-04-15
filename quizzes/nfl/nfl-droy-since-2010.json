@@ -1,23 +1,263 @@
 {
   "id": "nfl-droy-since-2010",
-  "title": "NFL Defensive Rookie of the Year Since 2010",
-  "prompt": "Name every winner of the AP NFL Defensive Rookie of the Year award from the 2010 season through 2024.",
+  "title": "NFL Defensive Rookie of the Year Since 1995",
+  "prompt": "Name every winner of AP NFL Defensive Rookie of the Year from the 1995 season onward.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Ndamukong Suh", "aliases": ["Suh"] },
-    { "canonical": "Von Miller", "aliases": ["Miller"] },
-    { "canonical": "Luke Kuechly", "aliases": ["Kuechly"] },
-    { "canonical": "Sheldon Richardson", "aliases": ["Richardson"] },
-    { "canonical": "Aaron Donald", "aliases": ["Donald", "AD"] },
-    { "canonical": "Marcus Peters", "aliases": ["Peters"] },
-    { "canonical": "Joey Bosa", "aliases": ["J. Bosa"] },
-    { "canonical": "Marshon Lattimore", "aliases": ["Lattimore"] },
-    { "canonical": "Darius Leonard", "aliases": ["Shaquille Leonard", "Shaq Leonard", "Leonard"] },
-    { "canonical": "Nick Bosa", "aliases": ["N. Bosa"] },
-    { "canonical": "Chase Young", "aliases": ["Young"] },
-    { "canonical": "Micah Parsons", "aliases": ["Parsons"] },
-    { "canonical": "Sauce Gardner", "aliases": ["Ahmad Gardner", "Gardner", "Sauce"] },
-    { "canonical": "Will Anderson Jr.", "aliases": ["Will Anderson", "Anderson"] },
-    { "canonical": "Jared Verse", "aliases": ["Verse"] }
-  ]
+    {
+      "canonical": "Hugh Douglas",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Simeon Rice",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Peter Boulware",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Charles Woodson",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Jevon Kearse",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Brian Urlacher",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Kendrell Bell",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Julius Peppers",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Terrell Suggs",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Jonathan Vilma",
+      "aliases": [],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Shawne Merriman",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "DeMeco Ryans",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Patrick Willis",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Jerod Mayo",
+      "aliases": [],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Brian Cushing",
+      "aliases": [],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Ndamukong Suh",
+      "aliases": [
+        "Suh"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Von Miller",
+      "aliases": [
+        "Miller"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Luke Kuechly",
+      "aliases": [
+        "Kuechly"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Sheldon Richardson",
+      "aliases": [
+        "Richardson"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Aaron Donald",
+      "aliases": [
+        "Donald",
+        "AD"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Marcus Peters",
+      "aliases": [
+        "Peters"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Joey Bosa",
+      "aliases": [
+        "J. Bosa"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Marshon Lattimore",
+      "aliases": [
+        "Lattimore"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Darius Leonard",
+      "aliases": [
+        "Shaquille Leonard",
+        "Shaq Leonard",
+        "Leonard"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Nick Bosa",
+      "aliases": [
+        "N. Bosa"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Chase Young",
+      "aliases": [
+        "Young"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Micah Parsons",
+      "aliases": [
+        "Parsons"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Sauce Gardner",
+      "aliases": [
+        "Ahmad Gardner",
+        "Gardner",
+        "Sauce"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Will Anderson Jr.",
+      "aliases": [
+        "Will Anderson",
+        "Anderson"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Jared Verse",
+      "aliases": [
+        "Verse"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    },
+    {
+      "canonical": "Carson Schwesinger",
+      "aliases": [],
+      "hints": {
+        "year": "2025"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

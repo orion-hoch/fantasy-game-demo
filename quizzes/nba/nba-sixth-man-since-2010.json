@@ -1,19 +1,222 @@
 {
   "id": "nba-sixth-man-since-2010",
-  "title": "NBA Sixth Man of the Year Since 2010",
-  "prompt": "Name every NBA Sixth Man of the Year from the 2009-10 season through 2023-24.",
+  "title": "NBA Sixth Man of the Year Since 1995",
+  "prompt": "Name every NBA Sixth Man of the Year from the 1995 season through 2024.",
   "time_limit_seconds": 180,
   "answers": [
-    { "canonical": "Jamal Crawford", "aliases": ["Crawford", "JCrossover"] },
-    { "canonical": "Lamar Odom", "aliases": ["Odom"] },
-    { "canonical": "James Harden", "aliases": ["Harden", "The Beard"] },
-    { "canonical": "J.R. Smith", "aliases": ["JR Smith", "J R Smith"] },
-    { "canonical": "Lou Williams", "aliases": ["Lou Will", "Williams", "Sweet Lou"] },
-    { "canonical": "Eric Gordon", "aliases": ["Gordon", "EG"] },
-    { "canonical": "Montrezl Harrell", "aliases": ["Trezz", "Harrell"] },
-    { "canonical": "Jordan Clarkson", "aliases": ["Clarkson"] },
-    { "canonical": "Tyler Herro", "aliases": ["Herro"] },
-    { "canonical": "Malcolm Brogdon", "aliases": ["Brogdon"] },
-    { "canonical": "Naz Reid", "aliases": ["Reid", "Naz"] }
-  ]
+    {
+      "canonical": "Toni Kukoc",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "John Starks",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Danny Manning",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Darrell Armstrong",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Rodney Rogers",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Aaron McKie",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Corliss Williamson",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Bobby Jackson",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Antawn Jamison",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Ben Gordon",
+      "aliases": [],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Mike Miller",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Leandro Barbosa",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Manu Ginobili",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Jason Terry",
+      "aliases": [],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Jamal Crawford",
+      "aliases": [
+        "Crawford",
+        "JCrossover"
+      ],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Lamar Odom",
+      "aliases": [
+        "Odom"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "James Harden",
+      "aliases": [
+        "Harden",
+        "The Beard"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "J.R. Smith",
+      "aliases": [
+        "JR Smith",
+        "J R Smith"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Lou Williams",
+      "aliases": [
+        "Lou Will",
+        "Williams",
+        "Sweet Lou"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Eric Gordon",
+      "aliases": [
+        "Gordon",
+        "EG"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Montrezl Harrell",
+      "aliases": [
+        "Trezz",
+        "Harrell"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Jordan Clarkson",
+      "aliases": [
+        "Clarkson"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Tyler Herro",
+      "aliases": [
+        "Herro"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Malcolm Brogdon",
+      "aliases": [
+        "Brogdon"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Naz Reid",
+      "aliases": [
+        "Reid",
+        "Naz"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Payton Pritchard",
+      "aliases": [],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

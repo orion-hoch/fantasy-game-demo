@@ -1,23 +1,272 @@
 {
   "id": "nba-roy-since-2010",
-  "title": "NBA Rookie of the Year Since 2010",
-  "prompt": "Name every NBA Rookie of the Year from the 2009-10 season through 2023-24.",
+  "title": "NBA Rookie of the Year Since 1995",
+  "prompt": "Name every NBA Rookie of the Year from the 1995 season through 2024 (including co-winners).",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Tyreke Evans", "aliases": ["Evans"] },
-    { "canonical": "Blake Griffin", "aliases": ["Griffin"] },
-    { "canonical": "Kyrie Irving", "aliases": ["Kyrie", "Irving"] },
-    { "canonical": "Damian Lillard", "aliases": ["Dame", "Lillard", "Dame Time"] },
-    { "canonical": "Michael Carter-Williams", "aliases": ["MCW", "Carter-Williams", "Carter Williams"] },
-    { "canonical": "Andrew Wiggins", "aliases": ["Wiggins", "Maple Jordan"] },
-    { "canonical": "Karl-Anthony Towns", "aliases": ["KAT", "Karl Anthony Towns", "Towns"] },
-    { "canonical": "Malcolm Brogdon", "aliases": ["Brogdon", "President"] },
-    { "canonical": "Ben Simmons", "aliases": ["Simmons"] },
-    { "canonical": "Luka Doncic", "aliases": ["Luka", "Doncic"] },
-    { "canonical": "Ja Morant", "aliases": ["Morant", "Ja"] },
-    { "canonical": "LaMelo Ball", "aliases": ["LaMelo", "Melo Ball"] },
-    { "canonical": "Scottie Barnes", "aliases": ["Barnes"] },
-    { "canonical": "Paolo Banchero", "aliases": ["Paolo", "Banchero"] },
-    { "canonical": "Victor Wembanyama", "aliases": ["Wemby", "Wembanyama", "Victor"] }
-  ]
+    {
+      "canonical": "Damon Stoudamire",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Allen Iverson",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Tim Duncan",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Vince Carter",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Steve Francis",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Elton Brand",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Mike Miller",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Pau Gasol",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Amar'e Stoudemire",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "LeBron James",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Emeka Okafor",
+      "aliases": [],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Chris Paul",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Brandon Roy",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Kevin Durant",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Derrick Rose",
+      "aliases": [],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Tyreke Evans",
+      "aliases": [
+        "Evans"
+      ],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Blake Griffin",
+      "aliases": [
+        "Griffin"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Kyrie Irving",
+      "aliases": [
+        "Kyrie",
+        "Irving"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Damian Lillard",
+      "aliases": [
+        "Dame",
+        "Lillard",
+        "Dame Time"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Michael Carter-Williams",
+      "aliases": [
+        "MCW",
+        "Carter-Williams",
+        "Carter Williams"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Andrew Wiggins",
+      "aliases": [
+        "Wiggins",
+        "Maple Jordan"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Karl-Anthony Towns",
+      "aliases": [
+        "KAT",
+        "Karl Anthony Towns",
+        "Towns"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Malcolm Brogdon",
+      "aliases": [
+        "Brogdon",
+        "President"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Ben Simmons",
+      "aliases": [
+        "Simmons"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Luka Doncic",
+      "aliases": [
+        "Luka",
+        "Doncic"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Ja Morant",
+      "aliases": [
+        "Morant",
+        "Ja"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "LaMelo Ball",
+      "aliases": [
+        "LaMelo",
+        "Melo Ball"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Scottie Barnes",
+      "aliases": [
+        "Barnes"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Paolo Banchero",
+      "aliases": [
+        "Paolo",
+        "Banchero"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Victor Wembanyama",
+      "aliases": [
+        "Wemby",
+        "Wembanyama",
+        "Victor"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Stephon Castle",
+      "aliases": [],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

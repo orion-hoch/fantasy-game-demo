@@ -1,23 +1,224 @@
 {
   "id": "nfl-opoy-since-2010",
-  "title": "NFL Offensive Player of the Year Since 2010",
-  "prompt": "Name every winner of the AP NFL Offensive Player of the Year award from the 2010 season through 2024.",
+  "title": "NFL Offensive Player of the Year Since 1995",
+  "prompt": "Name every winner of AP NFL Offensive Player of the Year from the 1995 season onward.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Tom Brady", "aliases": ["Brady"] },
-    { "canonical": "Drew Brees", "aliases": ["Brees"] },
-    { "canonical": "Adrian Peterson", "aliases": ["Peterson", "AP"] },
-    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
-    { "canonical": "DeMarco Murray", "aliases": ["Murray"] },
-    { "canonical": "Cam Newton", "aliases": ["Newton"] },
-    { "canonical": "Matt Ryan", "aliases": ["Ryan", "Matty Ice"] },
-    { "canonical": "Todd Gurley", "aliases": ["Gurley"] },
-    { "canonical": "Patrick Mahomes", "aliases": ["Mahomes", "Pat Mahomes"] },
-    { "canonical": "Michael Thomas", "aliases": ["Thomas", "Mike Thomas"] },
-    { "canonical": "Derrick Henry", "aliases": ["Henry", "King Henry"] },
-    { "canonical": "Cooper Kupp", "aliases": ["Kupp"] },
-    { "canonical": "Justin Jefferson", "aliases": ["Jefferson", "JJets"] },
-    { "canonical": "Christian McCaffrey", "aliases": ["McCaffrey", "CMC"] },
-    { "canonical": "Saquon Barkley", "aliases": ["Saquon", "Barkley"] }
-  ]
+    {
+      "canonical": "Brett Favre",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Terrell Davis",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Barry Sanders",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Marshall Faulk",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Priest Holmes",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Jamal Lewis",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Peyton Manning",
+      "aliases": [
+        "Manning",
+        "P. Manning"
+      ],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Shaun Alexander",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "LaDainian Tomlinson",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Tom Brady",
+      "aliases": [
+        "Brady"
+      ],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Drew Brees",
+      "aliases": [
+        "Brees"
+      ],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Chris Johnson",
+      "aliases": [],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Adrian Peterson",
+      "aliases": [
+        "Peterson",
+        "AP"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "DeMarco Murray",
+      "aliases": [
+        "Murray"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Cam Newton",
+      "aliases": [
+        "Newton"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Matt Ryan",
+      "aliases": [
+        "Ryan",
+        "Matty Ice"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Todd Gurley",
+      "aliases": [
+        "Gurley"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Patrick Mahomes",
+      "aliases": [
+        "Mahomes",
+        "Pat Mahomes"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Michael Thomas",
+      "aliases": [
+        "Thomas",
+        "Mike Thomas"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Derrick Henry",
+      "aliases": [
+        "Henry",
+        "King Henry"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Cooper Kupp",
+      "aliases": [
+        "Kupp"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Justin Jefferson",
+      "aliases": [
+        "Jefferson",
+        "JJets"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Christian McCaffrey",
+      "aliases": [
+        "McCaffrey",
+        "CMC"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Saquon Barkley",
+      "aliases": [
+        "Saquon",
+        "Barkley"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    },
+    {
+      "canonical": "Jaxon Smith-Njigba",
+      "aliases": [],
+      "hints": {
+        "year": "2025"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

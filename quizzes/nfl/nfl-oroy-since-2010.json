@@ -1,23 +1,268 @@
 {
   "id": "nfl-oroy-since-2010",
-  "title": "NFL Offensive Rookie of the Year Since 2010",
-  "prompt": "Name every winner of the AP NFL Offensive Rookie of the Year award from the 2010 season through 2024.",
+  "title": "NFL Offensive Rookie of the Year Since 1995",
+  "prompt": "Name every winner of AP NFL Offensive Rookie of the Year from the 1995 season onward.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Sam Bradford", "aliases": ["Bradford"] },
-    { "canonical": "Cam Newton", "aliases": ["Newton"] },
-    { "canonical": "Robert Griffin III", "aliases": ["RGIII", "RG3", "Robert Griffin"] },
-    { "canonical": "Eddie Lacy", "aliases": ["Lacy"] },
-    { "canonical": "Odell Beckham Jr.", "aliases": ["Odell Beckham", "OBJ", "Beckham"] },
-    { "canonical": "Todd Gurley", "aliases": ["Gurley"] },
-    { "canonical": "Dak Prescott", "aliases": ["Dak", "Prescott"] },
-    { "canonical": "Alvin Kamara", "aliases": ["Kamara"] },
-    { "canonical": "Saquon Barkley", "aliases": ["Saquon", "Barkley"] },
-    { "canonical": "Kyler Murray", "aliases": ["Kyler", "Murray"] },
-    { "canonical": "Justin Herbert", "aliases": ["Herbert"] },
-    { "canonical": "Ja'Marr Chase", "aliases": ["JaMarr Chase", "Chase", "Jamarr Chase"] },
-    { "canonical": "Garrett Wilson", "aliases": ["G. Wilson"] },
-    { "canonical": "C.J. Stroud", "aliases": ["CJ Stroud", "Stroud"] },
-    { "canonical": "Jayden Daniels", "aliases": ["Daniels", "JD"] }
-  ]
+    {
+      "canonical": "Curtis Martin",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Eddie George",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Warrick Dunn",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Randy Moss",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Edgerrin James",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Mike Anderson",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Anthony Thomas",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Clinton Portis",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Anquan Boldin",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Ben Roethlisberger",
+      "aliases": [],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Cadillac Williams",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Vince Young",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Adrian Peterson",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Matt Ryan",
+      "aliases": [],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Percy Harvin",
+      "aliases": [],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Sam Bradford",
+      "aliases": [
+        "Bradford"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Cam Newton",
+      "aliases": [
+        "Newton"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Robert Griffin III",
+      "aliases": [
+        "RGIII",
+        "RG3",
+        "Robert Griffin"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Eddie Lacy",
+      "aliases": [
+        "Lacy"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Odell Beckham Jr.",
+      "aliases": [
+        "Odell Beckham",
+        "OBJ",
+        "Beckham"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Todd Gurley",
+      "aliases": [
+        "Gurley"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Dak Prescott",
+      "aliases": [
+        "Dak",
+        "Prescott"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Alvin Kamara",
+      "aliases": [
+        "Kamara"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Saquon Barkley",
+      "aliases": [
+        "Saquon",
+        "Barkley"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Kyler Murray",
+      "aliases": [
+        "Kyler",
+        "Murray"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Justin Herbert",
+      "aliases": [
+        "Herbert"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Ja'Marr Chase",
+      "aliases": [
+        "JaMarr Chase",
+        "Chase",
+        "Jamarr Chase"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Garrett Wilson",
+      "aliases": [
+        "G. Wilson"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "C.J. Stroud",
+      "aliases": [
+        "CJ Stroud",
+        "Stroud"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Jayden Daniels",
+      "aliases": [
+        "Daniels",
+        "JD"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    },
+    {
+      "canonical": "Tetairoa McMillan",
+      "aliases": [],
+      "hints": {
+        "year": "2025"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

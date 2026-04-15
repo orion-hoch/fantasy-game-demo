@@ -1,24 +1,188 @@
 {
   "id": "nba-finals-mvps-2000s",
-  "title": "NBA Finals MVPs Since 2000",
-  "prompt": "Name every player to win NBA Finals MVP from the 2000 Finals onward.",
+  "title": "NBA Finals MVPs Since 1995",
+  "prompt": "Name every player to win NBA Finals MVP from the 1995 Finals onward.",
   "time_limit_seconds": 180,
   "answers": [
-    { "canonical": "Shaquille O'Neal", "aliases": ["Shaq", "Shaquille ONeal", "O'Neal", "Oneal"] },
-    { "canonical": "Tim Duncan", "aliases": ["Duncan", "T. Duncan"] },
-    { "canonical": "Chauncey Billups", "aliases": ["Billups"] },
-    { "canonical": "Dwyane Wade", "aliases": ["Wade", "D. Wade", "Dwayne Wade"] },
-    { "canonical": "Tony Parker", "aliases": ["Parker"] },
-    { "canonical": "Paul Pierce", "aliases": ["Pierce", "The Truth"] },
-    { "canonical": "Kobe Bryant", "aliases": ["Kobe", "Bryant"] },
-    { "canonical": "Dirk Nowitzki", "aliases": ["Dirk", "Nowitzki"] },
-    { "canonical": "LeBron James", "aliases": ["LeBron", "King James", "Lebron"] },
-    { "canonical": "Kawhi Leonard", "aliases": ["Kawhi", "Leonard"] },
-    { "canonical": "Andre Iguodala", "aliases": ["Iguodala", "Iggy"] },
-    { "canonical": "Kevin Durant", "aliases": ["KD", "Durant"] },
-    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
-    { "canonical": "Stephen Curry", "aliases": ["Steph Curry", "Curry", "Steph"] },
-    { "canonical": "Nikola Jokic", "aliases": ["Jokic", "Joker"] },
-    { "canonical": "Jaylen Brown", "aliases": ["JB", "J. Brown"] }
-  ]
+    {
+      "canonical": "Michael Jordan",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Tim Duncan",
+      "aliases": [
+        "Duncan",
+        "T. Duncan"
+      ],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Shaquille O'Neal",
+      "aliases": [
+        "Shaq",
+        "Shaquille ONeal",
+        "O'Neal",
+        "Oneal"
+      ],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Chauncey Billups",
+      "aliases": [
+        "Billups"
+      ],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Dwyane Wade",
+      "aliases": [
+        "Wade",
+        "D. Wade",
+        "Dwayne Wade"
+      ],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Tony Parker",
+      "aliases": [
+        "Parker"
+      ],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Paul Pierce",
+      "aliases": [
+        "Pierce",
+        "The Truth"
+      ],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Kobe Bryant",
+      "aliases": [
+        "Kobe",
+        "Bryant"
+      ],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Dirk Nowitzki",
+      "aliases": [
+        "Dirk",
+        "Nowitzki"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "LeBron James",
+      "aliases": [
+        "LeBron",
+        "King James",
+        "Lebron"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Kawhi Leonard",
+      "aliases": [
+        "Kawhi",
+        "Leonard"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Andre Iguodala",
+      "aliases": [
+        "Iguodala",
+        "Iggy"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Kevin Durant",
+      "aliases": [
+        "KD",
+        "Durant"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Giannis Antetokounmpo",
+      "aliases": [
+        "Giannis",
+        "Greek Freak",
+        "Antetokounmpo"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Stephen Curry",
+      "aliases": [
+        "Steph Curry",
+        "Curry",
+        "Steph"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Nikola Jokic",
+      "aliases": [
+        "Jokic",
+        "Joker"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Jaylen Brown",
+      "aliases": [
+        "JB",
+        "J. Brown"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Shai Gilgeous-Alexander",
+      "aliases": [],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

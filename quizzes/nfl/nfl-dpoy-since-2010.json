@@ -1,19 +1,213 @@
 {
   "id": "nfl-dpoy-since-2010",
-  "title": "NFL Defensive Player of the Year Since 2010",
-  "prompt": "Name every winner of the AP NFL Defensive Player of the Year award from the 2010 season through 2024.",
+  "title": "NFL Defensive Player of the Year Since 1995",
+  "prompt": "Name every winner of AP NFL Defensive Player of the Year from the 1995 season onward.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Troy Polamalu", "aliases": ["Polamalu"] },
-    { "canonical": "Terrell Suggs", "aliases": ["Suggs", "T-Sizzle"] },
-    { "canonical": "J.J. Watt", "aliases": ["JJ Watt", "Justin Watt", "Watt"] },
-    { "canonical": "Luke Kuechly", "aliases": ["Kuechly"] },
-    { "canonical": "Khalil Mack", "aliases": ["Mack"] },
-    { "canonical": "Aaron Donald", "aliases": ["Donald", "AD"] },
-    { "canonical": "Stephon Gilmore", "aliases": ["Gilmore"] },
-    { "canonical": "T.J. Watt", "aliases": ["TJ Watt"] },
-    { "canonical": "Nick Bosa", "aliases": ["N. Bosa"] },
-    { "canonical": "Myles Garrett", "aliases": ["Garrett"] },
-    { "canonical": "Patrick Surtain II", "aliases": ["Patrick Surtain", "Surtain", "Surtain 2"] }
-  ]
+    {
+      "canonical": "Bryce Paup",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Bruce Smith",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Dana Stubblefield",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Reggie White",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Warren Sapp",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Ray Lewis",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Michael Strahan",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Derrick Brooks",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Ed Reed",
+      "aliases": [],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Brian Urlacher",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Jason Taylor",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Bob Sanders",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "James Harrison",
+      "aliases": [],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Charles Woodson",
+      "aliases": [],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Troy Polamalu",
+      "aliases": [
+        "Polamalu"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Terrell Suggs",
+      "aliases": [
+        "Suggs",
+        "T-Sizzle"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "J.J. Watt",
+      "aliases": [
+        "JJ Watt",
+        "Justin Watt",
+        "Watt"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Luke Kuechly",
+      "aliases": [
+        "Kuechly"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Khalil Mack",
+      "aliases": [
+        "Mack"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Aaron Donald",
+      "aliases": [
+        "Donald",
+        "AD"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Stephon Gilmore",
+      "aliases": [
+        "Gilmore"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "T.J. Watt",
+      "aliases": [
+        "TJ Watt"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Nick Bosa",
+      "aliases": [
+        "N. Bosa"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Myles Garrett",
+      "aliases": [
+        "Garrett"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Patrick Surtain II",
+      "aliases": [
+        "Patrick Surtain",
+        "Surtain",
+        "Surtain 2"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

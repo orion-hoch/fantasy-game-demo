@@ -1,27 +1,221 @@
 {
   "id": "nfl-super-bowl-mvps-since-2000",
-  "title": "Super Bowl MVPs Since 2000",
-  "prompt": "Name every Super Bowl MVP from Super Bowl XXXIV (Jan 2000) through Super Bowl LIX (Feb 2025).",
+  "title": "Super Bowl MVPs Since 1995",
+  "prompt": "Name every Super Bowl MVP from the 1995 season onward.",
   "time_limit_seconds": 300,
   "answers": [
-    { "canonical": "Kurt Warner", "aliases": ["Warner"] },
-    { "canonical": "Ray Lewis", "aliases": ["Lewis", "R. Lewis"] },
-    { "canonical": "Tom Brady", "aliases": ["Brady"] },
-    { "canonical": "Dexter Jackson", "aliases": ["D. Jackson"] },
-    { "canonical": "Deion Branch", "aliases": ["Branch"] },
-    { "canonical": "Hines Ward", "aliases": ["Ward"] },
-    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
-    { "canonical": "Eli Manning", "aliases": ["E. Manning", "Eli"] },
-    { "canonical": "Santonio Holmes", "aliases": ["Holmes"] },
-    { "canonical": "Drew Brees", "aliases": ["Brees"] },
-    { "canonical": "Aaron Rodgers", "aliases": ["Rodgers", "A. Rodgers"] },
-    { "canonical": "Joe Flacco", "aliases": ["Flacco"] },
-    { "canonical": "Malcolm Smith", "aliases": ["M. Smith"] },
-    { "canonical": "Von Miller", "aliases": ["Miller"] },
-    { "canonical": "Nick Foles", "aliases": ["Foles"] },
-    { "canonical": "Julian Edelman", "aliases": ["Edelman"] },
-    { "canonical": "Patrick Mahomes", "aliases": ["Mahomes", "Pat Mahomes"] },
-    { "canonical": "Cooper Kupp", "aliases": ["Kupp"] },
-    { "canonical": "Jalen Hurts", "aliases": ["Hurts"] }
-  ]
+    {
+      "canonical": "Larry Brown",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Desmond Howard",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Terrell Davis",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "John Elway",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Kurt Warner",
+      "aliases": [
+        "Warner"
+      ],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Ray Lewis",
+      "aliases": [
+        "Lewis",
+        "R. Lewis"
+      ],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Tom Brady",
+      "aliases": [
+        "Brady"
+      ],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Dexter Jackson",
+      "aliases": [
+        "D. Jackson"
+      ],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Deion Branch",
+      "aliases": [
+        "Branch"
+      ],
+      "hints": {
+        "year": "2004"
+      }
+    },
+    {
+      "canonical": "Hines Ward",
+      "aliases": [
+        "Ward"
+      ],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "Peyton Manning",
+      "aliases": [
+        "Manning",
+        "P. Manning"
+      ],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Eli Manning",
+      "aliases": [
+        "E. Manning",
+        "Eli"
+      ],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Santonio Holmes",
+      "aliases": [
+        "Holmes"
+      ],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Drew Brees",
+      "aliases": [
+        "Brees"
+      ],
+      "hints": {
+        "year": "2009"
+      }
+    },
+    {
+      "canonical": "Aaron Rodgers",
+      "aliases": [
+        "Rodgers",
+        "A. Rodgers"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Joe Flacco",
+      "aliases": [
+        "Flacco"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Malcolm Smith",
+      "aliases": [
+        "M. Smith"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Von Miller",
+      "aliases": [
+        "Miller"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Nick Foles",
+      "aliases": [
+        "Foles"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Julian Edelman",
+      "aliases": [
+        "Edelman"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Patrick Mahomes",
+      "aliases": [
+        "Mahomes",
+        "Pat Mahomes"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Cooper Kupp",
+      "aliases": [
+        "Kupp"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Jalen Hurts",
+      "aliases": [
+        "Hurts"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    },
+    {
+      "canonical": "Kenneth Walker III",
+      "aliases": [],
+      "hints": {
+        "year": "2025"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

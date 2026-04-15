@@ -1,18 +1,165 @@
 {
   "id": "nba-dpoy-since-2010",
-  "title": "NBA Defensive Player of the Year Since 2010",
-  "prompt": "Name every NBA Defensive Player of the Year from the 2009-10 season through 2023-24.",
+  "title": "NBA Defensive Player of the Year Since 1995",
+  "prompt": "Name every NBA Defensive Player of the Year from the 1995 season through 2024.",
   "time_limit_seconds": 180,
   "answers": [
-    { "canonical": "Dwight Howard", "aliases": ["Howard", "Superman"] },
-    { "canonical": "Tyson Chandler", "aliases": ["Chandler"] },
-    { "canonical": "Marc Gasol", "aliases": ["Gasol"] },
-    { "canonical": "Joakim Noah", "aliases": ["Noah"] },
-    { "canonical": "Kawhi Leonard", "aliases": ["Kawhi", "Leonard", "The Klaw"] },
-    { "canonical": "Draymond Green", "aliases": ["Draymond", "Green"] },
-    { "canonical": "Rudy Gobert", "aliases": ["Gobert", "Stifle Tower"] },
-    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
-    { "canonical": "Marcus Smart", "aliases": ["Smart"] },
-    { "canonical": "Jaren Jackson Jr.", "aliases": ["Jaren Jackson", "Triple J", "JJJ"] }
-  ]
+    {
+      "canonical": "Gary Payton",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Dikembe Mutombo",
+      "aliases": [],
+      "hints": {
+        "year": "1996"
+      }
+    },
+    {
+      "canonical": "Alonzo Mourning",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Ben Wallace",
+      "aliases": [],
+      "hints": {
+        "year": "2001"
+      }
+    },
+    {
+      "canonical": "Metta World Peace",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Marcus Camby",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Kevin Garnett",
+      "aliases": [],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Dwight Howard",
+      "aliases": [
+        "Howard",
+        "Superman"
+      ],
+      "hints": {
+        "year": "2008"
+      }
+    },
+    {
+      "canonical": "Tyson Chandler",
+      "aliases": [
+        "Chandler"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Marc Gasol",
+      "aliases": [
+        "Gasol"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Joakim Noah",
+      "aliases": [
+        "Noah"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Kawhi Leonard",
+      "aliases": [
+        "Kawhi",
+        "Leonard",
+        "The Klaw"
+      ],
+      "hints": {
+        "year": "2014"
+      }
+    },
+    {
+      "canonical": "Draymond Green",
+      "aliases": [
+        "Draymond",
+        "Green"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Rudy Gobert",
+      "aliases": [
+        "Gobert",
+        "Stifle Tower"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Giannis Antetokounmpo",
+      "aliases": [
+        "Giannis",
+        "Greek Freak",
+        "Antetokounmpo"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Marcus Smart",
+      "aliases": [
+        "Smart"
+      ],
+      "hints": {
+        "year": "2021"
+      }
+    },
+    {
+      "canonical": "Jaren Jackson Jr.",
+      "aliases": [
+        "Jaren Jackson",
+        "Triple J",
+        "JJJ"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Evan Mobley",
+      "aliases": [],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

@@ -4,17 +4,120 @@
   "prompt": "Name every NBA Coach of the Year from the 2009-10 season through 2023-24.",
   "time_limit_seconds": 240,
   "answers": [
-    { "canonical": "Scott Brooks", "aliases": ["Brooks"] },
-    { "canonical": "Tom Thibodeau", "aliases": ["Thibs", "Thibodeau"] },
-    { "canonical": "Gregg Popovich", "aliases": ["Pop", "Popovich"] },
-    { "canonical": "George Karl", "aliases": ["Karl"] },
-    { "canonical": "Mike Budenholzer", "aliases": ["Bud", "Budenholzer"] },
-    { "canonical": "Steve Kerr", "aliases": ["Kerr"] },
-    { "canonical": "Mike D'Antoni", "aliases": ["DAntoni", "D Antoni", "D'Antoni"] },
-    { "canonical": "Dwane Casey", "aliases": ["Casey"] },
-    { "canonical": "Nick Nurse", "aliases": ["Nurse"] },
-    { "canonical": "Monty Williams", "aliases": ["Monty"] },
-    { "canonical": "Mike Brown", "aliases": ["M. Brown"] },
-    { "canonical": "Mark Daigneault", "aliases": ["Daigneault"] }
-  ]
+    {
+      "canonical": "Scott Brooks",
+      "aliases": [
+        "Brooks"
+      ],
+      "hints": {
+        "year": "2010"
+      }
+    },
+    {
+      "canonical": "Tom Thibodeau",
+      "aliases": [
+        "Thibs",
+        "Thibodeau"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Gregg Popovich",
+      "aliases": [
+        "Pop",
+        "Popovich"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "George Karl",
+      "aliases": [
+        "Karl"
+      ],
+      "hints": {
+        "year": "2013"
+      }
+    },
+    {
+      "canonical": "Mike Budenholzer",
+      "aliases": [
+        "Bud",
+        "Budenholzer"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Steve Kerr",
+      "aliases": [
+        "Kerr"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Mike D'Antoni",
+      "aliases": [
+        "DAntoni",
+        "D Antoni",
+        "D'Antoni"
+      ],
+      "hints": {
+        "year": "2017"
+      }
+    },
+    {
+      "canonical": "Dwane Casey",
+      "aliases": [
+        "Casey"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Nick Nurse",
+      "aliases": [
+        "Nurse"
+      ],
+      "hints": {
+        "year": "2020"
+      }
+    },
+    {
+      "canonical": "Monty Williams",
+      "aliases": [
+        "Monty"
+      ],
+      "hints": {
+        "year": "2022"
+      }
+    },
+    {
+      "canonical": "Mike Brown",
+      "aliases": [
+        "M. Brown"
+      ],
+      "hints": {
+        "year": "2023"
+      }
+    },
+    {
+      "canonical": "Mark Daigneault",
+      "aliases": [
+        "Daigneault"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }

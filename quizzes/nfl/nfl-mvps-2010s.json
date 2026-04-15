@@ -1,17 +1,168 @@
 {
   "id": "nfl-mvps-2010s",
-  "title": "NFL MVPs Since 2010",
-  "prompt": "Name every player to win NFL MVP from the 2010 season onward.",
+  "title": "NFL MVPs Since 1995",
+  "prompt": "Name every player to win AP NFL MVP from the 1995 season onward (including co-winners).",
   "time_limit_seconds": 180,
   "answers": [
-    { "canonical": "Tom Brady", "aliases": ["Brady"] },
-    { "canonical": "Aaron Rodgers", "aliases": ["Rodgers", "A. Rodgers"] },
-    { "canonical": "Adrian Peterson", "aliases": ["Peterson", "AP"] },
-    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
-    { "canonical": "Cam Newton", "aliases": ["Newton"] },
-    { "canonical": "Matt Ryan", "aliases": ["Ryan", "Matty Ice"] },
-    { "canonical": "Patrick Mahomes", "aliases": ["Mahomes", "Pat Mahomes"] },
-    { "canonical": "Lamar Jackson", "aliases": ["Lamar", "Jackson"] },
-    { "canonical": "Josh Allen", "aliases": ["Allen", "J. Allen"] }
-  ]
+    {
+      "canonical": "Brett Favre",
+      "aliases": [],
+      "hints": {
+        "year": "1995"
+      }
+    },
+    {
+      "canonical": "Barry Sanders",
+      "aliases": [],
+      "hints": {
+        "year": "1997"
+      }
+    },
+    {
+      "canonical": "Terrell Davis",
+      "aliases": [],
+      "hints": {
+        "year": "1998"
+      }
+    },
+    {
+      "canonical": "Kurt Warner",
+      "aliases": [],
+      "hints": {
+        "year": "1999"
+      }
+    },
+    {
+      "canonical": "Marshall Faulk",
+      "aliases": [],
+      "hints": {
+        "year": "2000"
+      }
+    },
+    {
+      "canonical": "Rich Gannon",
+      "aliases": [],
+      "hints": {
+        "year": "2002"
+      }
+    },
+    {
+      "canonical": "Steve McNair",
+      "aliases": [],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Peyton Manning",
+      "aliases": [
+        "Manning",
+        "P. Manning"
+      ],
+      "hints": {
+        "year": "2003"
+      }
+    },
+    {
+      "canonical": "Shaun Alexander",
+      "aliases": [],
+      "hints": {
+        "year": "2005"
+      }
+    },
+    {
+      "canonical": "LaDainian Tomlinson",
+      "aliases": [],
+      "hints": {
+        "year": "2006"
+      }
+    },
+    {
+      "canonical": "Tom Brady",
+      "aliases": [
+        "Brady"
+      ],
+      "hints": {
+        "year": "2007"
+      }
+    },
+    {
+      "canonical": "Aaron Rodgers",
+      "aliases": [
+        "Rodgers",
+        "A. Rodgers"
+      ],
+      "hints": {
+        "year": "2011"
+      }
+    },
+    {
+      "canonical": "Adrian Peterson",
+      "aliases": [
+        "Peterson",
+        "AP"
+      ],
+      "hints": {
+        "year": "2012"
+      }
+    },
+    {
+      "canonical": "Cam Newton",
+      "aliases": [
+        "Newton"
+      ],
+      "hints": {
+        "year": "2015"
+      }
+    },
+    {
+      "canonical": "Matt Ryan",
+      "aliases": [
+        "Ryan",
+        "Matty Ice"
+      ],
+      "hints": {
+        "year": "2016"
+      }
+    },
+    {
+      "canonical": "Patrick Mahomes",
+      "aliases": [
+        "Mahomes",
+        "Pat Mahomes"
+      ],
+      "hints": {
+        "year": "2018"
+      }
+    },
+    {
+      "canonical": "Lamar Jackson",
+      "aliases": [
+        "Lamar",
+        "Jackson"
+      ],
+      "hints": {
+        "year": "2019"
+      }
+    },
+    {
+      "canonical": "Josh Allen",
+      "aliases": [
+        "Allen",
+        "J. Allen"
+      ],
+      "hints": {
+        "year": "2024"
+      }
+    },
+    {
+      "canonical": "Matthew Stafford",
+      "aliases": [],
+      "hints": {
+        "year": "2025"
+      }
+    }
+  ],
+  "default_order_hint_key": "year",
+  "default_order_direction": "low"
 }
