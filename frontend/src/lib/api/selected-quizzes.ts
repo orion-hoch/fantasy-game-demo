@@ -27,8 +27,8 @@ export type QuizStartResponse = {
   total_answers: number;
   deadline_ms: number;
   slots: QuizSlot[];
-  default_order_hint_key: string | null;
-  default_order_direction: 'low' | 'high';
+  order_hint_key: string | null;
+  order_direction: 'low' | 'high';
 };
 
 export type QuizGuessResponse = {

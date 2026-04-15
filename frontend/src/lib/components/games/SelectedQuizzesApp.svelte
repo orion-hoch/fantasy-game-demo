@@ -48,32 +48,6 @@
 
   const accentBySport = $derived(sport === 'nfl' ? 'yellow' : 'red');
   const title = $derived(sport === 'nfl' ? 'NFL Quizzes' : 'NBA Quizzes');
-  const availableOrderHintKeys = $derived.by(() => {
-    const keys = new Set<string>();
-    for (const slot of slots) {
-      const hints = slot?.hints;
-      if (!hints) continue;
-      for (const [key, value] of Object.entries(hints)) {
-        if (value) keys.add(key);
-      }
-    }
-    if (revealData) {
-      for (const ans of revealData.answers) {
-        const hints = ans?.hints;
-        if (!hints) continue;
-        for (const [key, value] of Object.entries(hints)) {
-          if (value) keys.add(key);
-        }
-      }
-    }
-    return Array.from(keys);
-  });
-
-  $effect(() => {
-    if (orderHintKey && !availableOrderHintKeys.includes(orderHintKey)) {
-      orderHintKey = '';
-    }
-  });
 
   const orderedSlotIndices = $derived.by(() => {
     const indices = Array.from({ length: slots.length }, (_, idx) => idx);
@@ -207,13 +181,6 @@
     return orderDirection === 'high' ? -diff : diff;
   }
 
-  function formatHintKeyLabel(key: string) {
-    return key
-      .split('_')
-      .map((part) => (part ? `${part[0].toUpperCase()}${part.slice(1)}` : part))
-      .join(' ');
-  }
-
   async function startSelected(quiz: QuizSummary) {
     if (starting) return;
     starting = true;
@@ -228,12 +195,8 @@
       deadlineMs = data.deadline_ms;
       slots = data.slots ?? [];
       foundBySlot = new Array(data.total_answers).fill(null);
-      const orderDefaults = data as {
-        default_order_hint_key?: string | null;
-        default_order_direction?: 'low' | 'high';
-      };
-      orderHintKey = orderDefaults.default_order_hint_key ?? '';
-      orderDirection = orderDefaults.default_order_direction ?? 'low';
+      orderHintKey = data.order_hint_key ?? '';
+      orderDirection = data.order_direction ?? 'low';
       guess = '';
       lastFlash = null;
       revealData = null;
@@ -434,38 +397,6 @@
         </div>
       {/if}
 
-      {#if availableOrderHintKeys.length}
-        <div class="quiz-order-bar">
-          <span class="quiz-order-label">Hint order</span>
-          <select class="quiz-order-select" bind:value={orderHintKey}>
-            <option value="">Quiz order</option>
-            {#each availableOrderHintKeys as hintKey}
-              <option value={hintKey}>{formatHintKeyLabel(hintKey)}</option>
-            {/each}
-          </select>
-          <div class="quiz-order-direction">
-            <button
-              type="button"
-              class="quiz-order-btn"
-              class:active={orderDirection === 'low'}
-              disabled={!orderHintKey}
-              onclick={() => (orderDirection = 'low')}
-            >
-              Low
-            </button>
-            <button
-              type="button"
-              class="quiz-order-btn"
-              class:active={orderDirection === 'high'}
-              disabled={!orderHintKey}
-              onclick={() => (orderDirection = 'high')}
-            >
-              High
-            </button>
-          </div>
-        </div>
-      {/if}
-
       <div class="quiz-found-grid">
         {#each orderedSlotIndices as slotIndex, displayIndex}
           {@const slot = slots[slotIndex]}
@@ -505,38 +436,6 @@
           <small>({formatTime(r.elapsed_seconds)} of {formatTime(r.time_limit_seconds)})</small>
         </div>
       </div>
-
-      {#if availableOrderHintKeys.length}
-        <div class="quiz-order-bar">
-          <span class="quiz-order-label">Hint order</span>
-          <select class="quiz-order-select" bind:value={orderHintKey}>
-            <option value="">Quiz order</option>
-            {#each availableOrderHintKeys as hintKey}
-              <option value={hintKey}>{formatHintKeyLabel(hintKey)}</option>
-            {/each}
-          </select>
-          <div class="quiz-order-direction">
-            <button
-              type="button"
-              class="quiz-order-btn"
-              class:active={orderDirection === 'low'}
-              disabled={!orderHintKey}
-              onclick={() => (orderDirection = 'low')}
-            >
-              Low
-            </button>
-            <button
-              type="button"
-              class="quiz-order-btn"
-              class:active={orderDirection === 'high'}
-              disabled={!orderHintKey}
-              onclick={() => (orderDirection = 'high')}
-            >
-              High
-            </button>
-          </div>
-        </div>
-      {/if}
 
       <div class="quiz-reveal-grid">
         {#each orderedRevealIndices as answerIndex, displayIndex (r.answers[answerIndex].canonical + ':' + answerIndex)}
@@ -757,59 +656,6 @@
     color: #f8c4cc;
   }
 
-  .quiz-order-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    padding: 8px 10px;
-    flex-wrap: wrap;
-  }
-  .quiz-order-label {
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-muted);
-    font-weight: 800;
-  }
-  .quiz-order-select {
-    min-width: 130px;
-    background: var(--surface-2);
-    color: var(--text);
-    border: 2px solid var(--border);
-    font-size: 0.8rem;
-    padding: 6px 8px;
-    font-weight: 700;
-  }
-  .quiz-order-select:focus {
-    outline: none;
-    border-color: var(--yellow);
-  }
-  .quiz-order-direction {
-    display: flex;
-    gap: 6px;
-  }
-  .quiz-order-btn {
-    background: var(--surface-2);
-    color: var(--text-dim);
-    border: 2px solid var(--border);
-    font-size: 0.75rem;
-    font-weight: 800;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding: 6px 10px;
-    cursor: pointer;
-  }
-  .quiz-order-btn.active {
-    background: var(--yellow);
-    color: var(--text-dark);
-  }
-  .quiz-order-btn:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
   .quiz-found-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -929,20 +775,4 @@
     font-size: 1rem;
   }
 
-  @media (max-width: 760px) {
-    .quiz-order-bar {
-      gap: 8px;
-      padding: 8px;
-    }
-    .quiz-order-select {
-      flex: 1;
-      min-width: 120px;
-    }
-    .quiz-order-direction {
-      width: 100%;
-    }
-    .quiz-order-btn {
-      flex: 1;
-    }
-  }
 </style>

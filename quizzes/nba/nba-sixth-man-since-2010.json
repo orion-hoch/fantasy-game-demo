@@ -217,6 +217,6 @@
       }
     }
   ],
-  "default_order_hint_key": "year",
-  "default_order_direction": "low"
+  "order_hint_key": "year",
+  "order_direction": "low"
 }

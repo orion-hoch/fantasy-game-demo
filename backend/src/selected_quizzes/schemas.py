@@ -35,8 +35,8 @@ class QuizStartResponse(BaseModel):
     total_answers: int
     deadline_ms: int
     slots: list[QuizSlot]
-    default_order_hint_key: str | None = None
-    default_order_direction: Literal["low", "high"] = "low"
+    order_hint_key: str | None = None
+    order_direction: Literal["low", "high"] = "low"
 
 
 class QuizGuessRequest(BaseModel):
