@@ -1,0 +1,17 @@
+{
+  "id": "nfl-mvps-2010s",
+  "title": "NFL MVPs Since 2010",
+  "prompt": "Name every player to win NFL MVP from the 2010 season onward.",
+  "time_limit_seconds": 180,
+  "answers": [
+    { "canonical": "Tom Brady", "aliases": ["Brady"] },
+    { "canonical": "Aaron Rodgers", "aliases": ["Rodgers", "A. Rodgers"] },
+    { "canonical": "Adrian Peterson", "aliases": ["Peterson", "AP"] },
+    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
+    { "canonical": "Cam Newton", "aliases": ["Newton"] },
+    { "canonical": "Matt Ryan", "aliases": ["Ryan", "Matty Ice"] },
+    { "canonical": "Patrick Mahomes", "aliases": ["Mahomes", "Pat Mahomes"] },
+    { "canonical": "Lamar Jackson", "aliases": ["Lamar", "Jackson"] },
+    { "canonical": "Josh Allen", "aliases": ["Allen", "J. Allen"] }
+  ]
+}

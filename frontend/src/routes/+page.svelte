@@ -36,7 +36,8 @@
     { name: 'Fantasy Duel', desc: 'Draw a random team each round and draft your best lineup vs a friend', href: '/games/nfl/fantasy-duel', accent: 'yellow' },
     { name: 'Dungeon Adventure', desc: 'Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 dungeon floors', href: '/games/nfl/dungeon', accent: 'red' },
     { name: 'Balatro', desc: 'Roguelike card game — draft player-season cards, build combos, beat 8 rounds to win the Super Bowl', href: '/games/nfl/balatro', accent: 'yellow' },
-    { name: 'Bullseye', desc: 'Each player names someone who fits 5 prompts, closest total to the target score wins', href: '/games/nfl/bullseye', accent: 'red' }
+    { name: 'Bullseye', desc: 'Each player names someone who fits 5 prompts, closest total to the target score wins', href: '/games/nfl/bullseye', accent: 'red' },
+    { name: 'Selected Quizzes', desc: 'Sporcle-style timed quizzes — type as many answers as you can before the clock runs out', href: '/games/nfl/selected-quizzes', accent: 'yellow' }
   ];
 
   const nbaGames: GameDef[] = [
@@ -45,7 +46,8 @@
     { name: 'Fantasy Duel', desc: 'Draw a random NBA team each round and draft your best lineup vs a friend', href: '/games/nba/fantasy-duel', accent: 'yellow' },
     { name: 'Dungeon Adventure', desc: 'Roguelike trivia — pick a class, collect relics that filter your answers, defeat 6 NBA dungeon floors', href: '/games/nba/dungeon', accent: 'red' },
     { name: 'Balatro', desc: 'Draft hands of NBA player-season cards — build combos and beat the shot clock!', href: '/games/nba/balatro', accent: 'yellow' },
-    { name: 'Bullseye', desc: 'Each player names someone who fits 5 prompts, closest total to the target score wins', href: '/games/nba/bullseye', accent: 'red' }
+    { name: 'Bullseye', desc: 'Each player names someone who fits 5 prompts, closest total to the target score wins', href: '/games/nba/bullseye', accent: 'red' },
+    { name: 'Selected Quizzes', desc: 'Sporcle-style timed quizzes — type as many answers as you can before the clock runs out', href: '/games/nba/selected-quizzes', accent: 'yellow' }
   ];
 
   type MpDef = { name: string; desc: string; links: { label: string; href: string }[] };

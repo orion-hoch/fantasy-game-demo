@@ -1,0 +1,28 @@
+{
+  "id": "nba-big-ten-career-scorers",
+  "title": "Top 20 NBA Career Scorers Who Played in the Big Ten",
+  "prompt": "Name the top 20 NBA all-time career scorers who played their college basketball at a Big Ten school. Each slot shows their college and NBA draft year as hints.",
+  "time_limit_seconds": 300,
+  "answers": [
+    { "canonical": "John Havlicek", "aliases": ["Havlicek", "Hondo"], "hints": { "college": "Ohio State", "draft_year": "1962" } },
+    { "canonical": "Isiah Thomas", "aliases": ["Zeke", "Thomas"], "hints": { "college": "Indiana", "draft_year": "1981" } },
+    { "canonical": "Glen Rice", "aliases": ["Rice"], "hints": { "college": "Michigan", "draft_year": "1989" } },
+    { "canonical": "Magic Johnson", "aliases": ["Earvin Johnson", "Magic", "Earvin Magic Johnson"], "hints": { "college": "Michigan State", "draft_year": "1979" } },
+    { "canonical": "Michael Finley", "aliases": ["Finley"], "hints": { "college": "Wisconsin", "draft_year": "1995" } },
+    { "canonical": "Kevin Willis", "aliases": ["Willis"], "hints": { "college": "Michigan State", "draft_year": "1984" } },
+    { "canonical": "Mike Conley", "aliases": ["Conley"], "hints": { "college": "Ohio State", "draft_year": "2007" } },
+    { "canonical": "Eric Gordon", "aliases": ["Gordon", "EG"], "hints": { "college": "Indiana", "draft_year": "2008" } },
+    { "canonical": "Glenn Robinson", "aliases": ["Big Dog", "Robinson"], "hints": { "college": "Purdue", "draft_year": "1994" } },
+    { "canonical": "Jerry Lucas", "aliases": ["Lucas"], "hints": { "college": "Ohio State", "draft_year": "1962" } },
+    { "canonical": "Jalen Rose", "aliases": ["J Rose"], "hints": { "college": "Michigan", "draft_year": "1994" } },
+    { "canonical": "Kendall Gill", "aliases": ["Gill"], "hints": { "college": "Illinois", "draft_year": "1990" } },
+    { "canonical": "Mychal Thompson", "aliases": ["M. Thompson"], "hints": { "college": "Minnesota", "draft_year": "1978" } },
+    { "canonical": "Steve Smith", "aliases": ["S. Smith"], "hints": { "college": "Michigan State", "draft_year": "1991" } },
+    { "canonical": "Jim Jackson", "aliases": ["Jackson", "JJ"], "hints": { "college": "Ohio State", "draft_year": "1992" } },
+    { "canonical": "Joe Barry Carroll", "aliases": ["JBC", "Carroll"], "hints": { "college": "Purdue", "draft_year": "1980" } },
+    { "canonical": "Cazzie Russell", "aliases": ["Russell"], "hints": { "college": "Michigan", "draft_year": "1966" } },
+    { "canonical": "D'Angelo Russell", "aliases": ["DAngelo Russell", "D Angelo Russell", "DLo"], "hints": { "college": "Ohio State", "draft_year": "2015" } },
+    { "canonical": "Tim Hardaway Jr.", "aliases": ["Tim Hardaway Jr", "Hardaway Jr"], "hints": { "college": "Michigan", "draft_year": "2013" } },
+    { "canonical": "Calbert Cheaney", "aliases": ["Cheaney"], "hints": { "college": "Indiana", "draft_year": "1993" } }
+  ]
+}

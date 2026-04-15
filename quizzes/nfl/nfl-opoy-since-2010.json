@@ -1,0 +1,23 @@
+{
+  "id": "nfl-opoy-since-2010",
+  "title": "NFL Offensive Player of the Year Since 2010",
+  "prompt": "Name every winner of the AP NFL Offensive Player of the Year award from the 2010 season through 2024.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Tom Brady", "aliases": ["Brady"] },
+    { "canonical": "Drew Brees", "aliases": ["Brees"] },
+    { "canonical": "Adrian Peterson", "aliases": ["Peterson", "AP"] },
+    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
+    { "canonical": "DeMarco Murray", "aliases": ["Murray"] },
+    { "canonical": "Cam Newton", "aliases": ["Newton"] },
+    { "canonical": "Matt Ryan", "aliases": ["Ryan", "Matty Ice"] },
+    { "canonical": "Todd Gurley", "aliases": ["Gurley"] },
+    { "canonical": "Patrick Mahomes", "aliases": ["Mahomes", "Pat Mahomes"] },
+    { "canonical": "Michael Thomas", "aliases": ["Thomas", "Mike Thomas"] },
+    { "canonical": "Derrick Henry", "aliases": ["Henry", "King Henry"] },
+    { "canonical": "Cooper Kupp", "aliases": ["Kupp"] },
+    { "canonical": "Justin Jefferson", "aliases": ["Jefferson", "JJets"] },
+    { "canonical": "Christian McCaffrey", "aliases": ["McCaffrey", "CMC"] },
+    { "canonical": "Saquon Barkley", "aliases": ["Saquon", "Barkley"] }
+  ]
+}

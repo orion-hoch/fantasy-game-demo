@@ -1,0 +1,21 @@
+{
+  "id": "nfl-comeback-player-since-2010",
+  "title": "NFL Comeback Player of the Year Since 2010",
+  "prompt": "Name every winner of the AP NFL Comeback Player of the Year award from the 2010 season through 2022.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Michael Vick", "aliases": ["Vick"] },
+    { "canonical": "Matthew Stafford", "aliases": ["Stafford"] },
+    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
+    { "canonical": "Philip Rivers", "aliases": ["Rivers"] },
+    { "canonical": "Rob Gronkowski", "aliases": ["Gronk", "Gronkowski"] },
+    { "canonical": "Eric Berry", "aliases": ["Berry"] },
+    { "canonical": "Jordy Nelson", "aliases": ["Nelson"] },
+    { "canonical": "Keenan Allen", "aliases": ["Allen"] },
+    { "canonical": "Andrew Luck", "aliases": ["Luck"] },
+    { "canonical": "Ryan Tannehill", "aliases": ["Tannehill"] },
+    { "canonical": "Alex Smith", "aliases": ["A. Smith"] },
+    { "canonical": "Joe Burrow", "aliases": ["Burrow", "Joe Cool", "Joey B"] },
+    { "canonical": "Geno Smith", "aliases": ["Geno"] }
+  ]
+}

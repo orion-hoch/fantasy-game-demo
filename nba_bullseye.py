@@ -16,8 +16,19 @@ _GAMES = GameStore("nba_bullseye", ttl_seconds=14400)
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 
-STAT_CATEGORIES = ["PTS", "AST", "REB", "STL", "BLK", "3PM", "FGM", "FTM", "TOV"]
+STAT_CATEGORIES = ["PTS", "AST", "REB", "STL", "BLK", "3PM", "TOV"]
 MIN_PROMPT_PLAYERS = 5
+
+# Fixed target ranges per stat (inclusive).
+_STAT_TARGET_RANGE = {
+    "PTS": (2000, 9000),
+    "AST": (1000, 4500),
+    "REB": (1500, 9000),
+    "STL": (200, 600),
+    "BLK": (200, 750),
+    "3PM": (250, 1000),
+    "TOV": (200, 800),
+}
 
 EASTERN_TEAMS = ["ATL", "BOS", "BRK", "NJN", "CHO", "CHA", "CHI", "CLE",
                  "DET", "IND", "MIA", "MIL", "NYK", "ORL", "PHI", "TOR", "WAS", "WSB"]
@@ -56,10 +67,6 @@ def _stat_expr(stat: str) -> str:
         return "CAST(blk AS INTEGER)"
     elif stat == "3PM":
         return "CAST(threepm AS INTEGER)"
-    elif stat == "FGM":
-        return "fgm"
-    elif stat == "FTM":
-        return "ftm"
     elif stat == "TOV":
         return "CAST(tov AS INTEGER)"
     return "pts"
@@ -67,7 +74,7 @@ def _stat_expr(stat: str) -> str:
 
 _STAT_MIN = {
     "PTS": 200, "AST": 100, "REB": 150, "STL": 20, "BLK": 10,
-    "3PM": 20, "FGM": 150, "FTM": 50, "TOV": 50,
+    "3PM": 20, "TOV": 50,
 }
 
 ACCOLADE_OPTIONS = [
@@ -284,22 +291,8 @@ def _generate_prompts(conn, stat: str) -> list:
 
 
 def _compute_target(conn, prompts: list, stat: str) -> int:
-    stat_expr = _stat_expr(stat)
-    row = conn.execute(
-        f"""
-        SELECT AVG({stat_expr}), MAX({stat_expr})
-        FROM nba_stats s
-        WHERE games > 20 AND {stat_expr} > 0
-        """
-    ).fetchone()
-    mean_val = float(row[0] or 0)
-    max_val = float(row[1] or 0)
-    if max_val <= 0:
-        return 500
-    lower = max(1, mean_val)
-    upper = max(lower, max_val * 2.5)
-    target = random.uniform(lower, upper)
-    return max(1, int(round(target / 10.0) * 10))
+    lo, hi = _STAT_TARGET_RANGE[stat]
+    return random.randint(lo, hi)
 
 
 # ── Turn management helpers ───────────────────────────────────────────────────

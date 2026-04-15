@@ -15,9 +15,25 @@ MIN_PROMPT_PLAYERS = 5
 
 STAT_CATEGORIES = [
     "PPR", "Pass Yds", "Rush Yds", "Rec Yds",
-    "Pass TD", "Rush TD", "Rec TD", "Receptions",
+    "Pass TD", "Rush TD", "Rec TD", "Receptions", "Targets",
     "Sacks", "Solo Tackles", "Def INT",
 ]
+
+# Fixed target ranges per stat (inclusive).
+_STAT_TARGET_RANGE = {
+    "PPR": (250, 1200),
+    "Pass Yds": (8000, 23000),
+    "Rush Yds": (2000, 9000),
+    "Rec Yds": (2000, 9000),
+    "Pass TD": (50, 200),
+    "Rush TD": (15, 60),
+    "Rec TD": (15, 60),
+    "Receptions": (200, 700),
+    "Targets": (200, 1000),
+    "Sacks": (15, 80),
+    "Solo Tackles": (200, 900),
+    "Def INT": (7, 35),
+}
 
 AFC_TEAMS = ["NWE", "MIA", "NYJ", "BUF", "BAL", "CLE", "PIT", "CIN",
              "HOU", "IND", "JAX", "TEN", "KAN", "LAC", "DEN", "LVR", "OAK", "RAI", "SDG"]
@@ -93,6 +109,12 @@ _STAT_CONFIG = {
     "Receptions": {
         "table": "season_stats",
         "expr": "rec_rec",
+        "pos_filter_in": ("WR", "TE", "RB"),
+        "min_val": 30,
+    },
+    "Targets": {
+        "table": "season_stats",
+        "expr": "rec_tgt",
         "pos_filter_in": ("WR", "TE", "RB"),
         "min_val": 30,
     },
@@ -346,25 +368,8 @@ def _generate_prompts(conn, stat: str) -> list:
 
 
 def _compute_target(conn, prompts: list, stat: str) -> int:
-    table = _stat_table(stat)
-    stat_expr = _stat_expr(stat)
-    pos_frag, pos_params = _pos_filter_clause(stat)
-    row = conn.execute(
-        f"""
-        SELECT AVG({stat_expr}), MAX({stat_expr})
-        FROM {table} s
-        WHERE games >= 4 AND {stat_expr} > 0 {pos_frag}
-        """,
-        pos_params,
-    ).fetchone()
-    mean_val = float(row[0] or 0)
-    max_val = float(row[1] or 0)
-    if max_val <= 0:
-        return 10
-    lower = max(1, mean_val)
-    upper = max(lower, max_val * 2.5)
-    target = random.uniform(lower, upper)
-    return max(1, round(target))
+    lo, hi = _STAT_TARGET_RANGE[stat]
+    return random.randint(lo, hi)
 
 
 def _turn_player_order(prompt_idx: int, n_players: int) -> list:

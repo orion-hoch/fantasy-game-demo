@@ -1,0 +1,23 @@
+{
+  "id": "nba-roy-since-2010",
+  "title": "NBA Rookie of the Year Since 2010",
+  "prompt": "Name every NBA Rookie of the Year from the 2009-10 season through 2023-24.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Tyreke Evans", "aliases": ["Evans"] },
+    { "canonical": "Blake Griffin", "aliases": ["Griffin"] },
+    { "canonical": "Kyrie Irving", "aliases": ["Kyrie", "Irving"] },
+    { "canonical": "Damian Lillard", "aliases": ["Dame", "Lillard", "Dame Time"] },
+    { "canonical": "Michael Carter-Williams", "aliases": ["MCW", "Carter-Williams", "Carter Williams"] },
+    { "canonical": "Andrew Wiggins", "aliases": ["Wiggins", "Maple Jordan"] },
+    { "canonical": "Karl-Anthony Towns", "aliases": ["KAT", "Karl Anthony Towns", "Towns"] },
+    { "canonical": "Malcolm Brogdon", "aliases": ["Brogdon", "President"] },
+    { "canonical": "Ben Simmons", "aliases": ["Simmons"] },
+    { "canonical": "Luka Doncic", "aliases": ["Luka", "Doncic"] },
+    { "canonical": "Ja Morant", "aliases": ["Morant", "Ja"] },
+    { "canonical": "LaMelo Ball", "aliases": ["LaMelo", "Melo Ball"] },
+    { "canonical": "Scottie Barnes", "aliases": ["Barnes"] },
+    { "canonical": "Paolo Banchero", "aliases": ["Paolo", "Banchero"] },
+    { "canonical": "Victor Wembanyama", "aliases": ["Wemby", "Wembanyama", "Victor"] }
+  ]
+}

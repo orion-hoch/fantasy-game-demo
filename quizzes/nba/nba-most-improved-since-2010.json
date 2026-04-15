@@ -1,0 +1,23 @@
+{
+  "id": "nba-most-improved-since-2010",
+  "title": "NBA Most Improved Player Since 2010",
+  "prompt": "Name every NBA Most Improved Player from the 2009-10 season through 2023-24.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Aaron Brooks", "aliases": ["Brooks"] },
+    { "canonical": "Kevin Love", "aliases": ["Love"] },
+    { "canonical": "Ryan Anderson", "aliases": ["Anderson"] },
+    { "canonical": "Paul George", "aliases": ["PG", "PG13", "George"] },
+    { "canonical": "Goran Dragic", "aliases": ["Dragic"] },
+    { "canonical": "Jimmy Butler", "aliases": ["Jimmy", "Butler", "Jimmy Buckets"] },
+    { "canonical": "C.J. McCollum", "aliases": ["CJ McCollum", "McCollum"] },
+    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
+    { "canonical": "Victor Oladipo", "aliases": ["Oladipo", "Vic"] },
+    { "canonical": "Pascal Siakam", "aliases": ["Siakam", "Spicy P"] },
+    { "canonical": "Brandon Ingram", "aliases": ["Ingram", "BI"] },
+    { "canonical": "Julius Randle", "aliases": ["Randle"] },
+    { "canonical": "Ja Morant", "aliases": ["Morant", "Ja"] },
+    { "canonical": "Lauri Markkanen", "aliases": ["Markkanen", "Lauri"] },
+    { "canonical": "Tyrese Maxey", "aliases": ["Maxey"] }
+  ]
+}

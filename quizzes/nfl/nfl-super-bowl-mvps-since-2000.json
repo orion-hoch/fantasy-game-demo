@@ -1,0 +1,27 @@
+{
+  "id": "nfl-super-bowl-mvps-since-2000",
+  "title": "Super Bowl MVPs Since 2000",
+  "prompt": "Name every Super Bowl MVP from Super Bowl XXXIV (Jan 2000) through Super Bowl LIX (Feb 2025).",
+  "time_limit_seconds": 300,
+  "answers": [
+    { "canonical": "Kurt Warner", "aliases": ["Warner"] },
+    { "canonical": "Ray Lewis", "aliases": ["Lewis", "R. Lewis"] },
+    { "canonical": "Tom Brady", "aliases": ["Brady"] },
+    { "canonical": "Dexter Jackson", "aliases": ["D. Jackson"] },
+    { "canonical": "Deion Branch", "aliases": ["Branch"] },
+    { "canonical": "Hines Ward", "aliases": ["Ward"] },
+    { "canonical": "Peyton Manning", "aliases": ["Manning", "P. Manning"] },
+    { "canonical": "Eli Manning", "aliases": ["E. Manning", "Eli"] },
+    { "canonical": "Santonio Holmes", "aliases": ["Holmes"] },
+    { "canonical": "Drew Brees", "aliases": ["Brees"] },
+    { "canonical": "Aaron Rodgers", "aliases": ["Rodgers", "A. Rodgers"] },
+    { "canonical": "Joe Flacco", "aliases": ["Flacco"] },
+    { "canonical": "Malcolm Smith", "aliases": ["M. Smith"] },
+    { "canonical": "Von Miller", "aliases": ["Miller"] },
+    { "canonical": "Nick Foles", "aliases": ["Foles"] },
+    { "canonical": "Julian Edelman", "aliases": ["Edelman"] },
+    { "canonical": "Patrick Mahomes", "aliases": ["Mahomes", "Pat Mahomes"] },
+    { "canonical": "Cooper Kupp", "aliases": ["Kupp"] },
+    { "canonical": "Jalen Hurts", "aliases": ["Hurts"] }
+  ]
+}

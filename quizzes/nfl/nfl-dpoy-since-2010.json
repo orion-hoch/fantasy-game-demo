@@ -1,0 +1,19 @@
+{
+  "id": "nfl-dpoy-since-2010",
+  "title": "NFL Defensive Player of the Year Since 2010",
+  "prompt": "Name every winner of the AP NFL Defensive Player of the Year award from the 2010 season through 2024.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Troy Polamalu", "aliases": ["Polamalu"] },
+    { "canonical": "Terrell Suggs", "aliases": ["Suggs", "T-Sizzle"] },
+    { "canonical": "J.J. Watt", "aliases": ["JJ Watt", "Justin Watt", "Watt"] },
+    { "canonical": "Luke Kuechly", "aliases": ["Kuechly"] },
+    { "canonical": "Khalil Mack", "aliases": ["Mack"] },
+    { "canonical": "Aaron Donald", "aliases": ["Donald", "AD"] },
+    { "canonical": "Stephon Gilmore", "aliases": ["Gilmore"] },
+    { "canonical": "T.J. Watt", "aliases": ["TJ Watt"] },
+    { "canonical": "Nick Bosa", "aliases": ["N. Bosa"] },
+    { "canonical": "Myles Garrett", "aliases": ["Garrett"] },
+    { "canonical": "Patrick Surtain II", "aliases": ["Patrick Surtain", "Surtain", "Surtain 2"] }
+  ]
+}

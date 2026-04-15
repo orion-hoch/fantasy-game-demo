@@ -1,0 +1,20 @@
+{
+  "id": "nba-coach-of-year-since-2010",
+  "title": "NBA Coach of the Year Since 2010",
+  "prompt": "Name every NBA Coach of the Year from the 2009-10 season through 2023-24.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Scott Brooks", "aliases": ["Brooks"] },
+    { "canonical": "Tom Thibodeau", "aliases": ["Thibs", "Thibodeau"] },
+    { "canonical": "Gregg Popovich", "aliases": ["Pop", "Popovich"] },
+    { "canonical": "George Karl", "aliases": ["Karl"] },
+    { "canonical": "Mike Budenholzer", "aliases": ["Bud", "Budenholzer"] },
+    { "canonical": "Steve Kerr", "aliases": ["Kerr"] },
+    { "canonical": "Mike D'Antoni", "aliases": ["DAntoni", "D Antoni", "D'Antoni"] },
+    { "canonical": "Dwane Casey", "aliases": ["Casey"] },
+    { "canonical": "Nick Nurse", "aliases": ["Nurse"] },
+    { "canonical": "Monty Williams", "aliases": ["Monty"] },
+    { "canonical": "Mike Brown", "aliases": ["M. Brown"] },
+    { "canonical": "Mark Daigneault", "aliases": ["Daigneault"] }
+  ]
+}

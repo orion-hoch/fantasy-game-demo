@@ -1,0 +1,15 @@
+{
+  "id": "nfl-300yd-3int-game-2023",
+  "title": "NFL Players: 300+ Career Receiving Yards & 3+ Career INTs",
+  "prompt": "Name any NFL player with both 300+ career receiving yards AND 3+ career defensive interceptions. (Two-way contributors / WR-CB swing players. Edit JSON to refine answers.)",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Deion Sanders", "aliases": ["Prime Time", "Primetime", "Prime", "Sanders"] },
+    { "canonical": "Roy Green", "aliases": ["Green"] },
+    { "canonical": "Troy Brown", "aliases": ["T. Brown"] },
+    { "canonical": "Charles Woodson", "aliases": ["Woodson"] },
+    { "canonical": "Mel Renfro", "aliases": ["Renfro"] },
+    { "canonical": "Bill Dudley", "aliases": ["Bullet Bill", "Dudley"] },
+    { "canonical": "Sammy Baugh", "aliases": ["Slingin Sammy", "Baugh"] }
+  ]
+}

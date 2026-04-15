@@ -1,0 +1,24 @@
+{
+  "id": "nba-finals-mvps-2000s",
+  "title": "NBA Finals MVPs Since 2000",
+  "prompt": "Name every player to win NBA Finals MVP from the 2000 Finals onward.",
+  "time_limit_seconds": 180,
+  "answers": [
+    { "canonical": "Shaquille O'Neal", "aliases": ["Shaq", "Shaquille ONeal", "O'Neal", "Oneal"] },
+    { "canonical": "Tim Duncan", "aliases": ["Duncan", "T. Duncan"] },
+    { "canonical": "Chauncey Billups", "aliases": ["Billups"] },
+    { "canonical": "Dwyane Wade", "aliases": ["Wade", "D. Wade", "Dwayne Wade"] },
+    { "canonical": "Tony Parker", "aliases": ["Parker"] },
+    { "canonical": "Paul Pierce", "aliases": ["Pierce", "The Truth"] },
+    { "canonical": "Kobe Bryant", "aliases": ["Kobe", "Bryant"] },
+    { "canonical": "Dirk Nowitzki", "aliases": ["Dirk", "Nowitzki"] },
+    { "canonical": "LeBron James", "aliases": ["LeBron", "King James", "Lebron"] },
+    { "canonical": "Kawhi Leonard", "aliases": ["Kawhi", "Leonard"] },
+    { "canonical": "Andre Iguodala", "aliases": ["Iguodala", "Iggy"] },
+    { "canonical": "Kevin Durant", "aliases": ["KD", "Durant"] },
+    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
+    { "canonical": "Stephen Curry", "aliases": ["Steph Curry", "Curry", "Steph"] },
+    { "canonical": "Nikola Jokic", "aliases": ["Jokic", "Joker"] },
+    { "canonical": "Jaylen Brown", "aliases": ["JB", "J. Brown"] }
+  ]
+}

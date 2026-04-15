@@ -1,0 +1,17 @@
+{
+  "id": "nba-mvp-since-2010",
+  "title": "NBA MVPs Since 2010",
+  "prompt": "Name every NBA Most Valuable Player from the 2009-10 season through 2023-24.",
+  "time_limit_seconds": 180,
+  "answers": [
+    { "canonical": "LeBron James", "aliases": ["LeBron", "Lebron", "King James"] },
+    { "canonical": "Derrick Rose", "aliases": ["Rose", "D Rose"] },
+    { "canonical": "Kevin Durant", "aliases": ["KD", "Durant"] },
+    { "canonical": "Stephen Curry", "aliases": ["Steph Curry", "Curry", "Steph"] },
+    { "canonical": "Russell Westbrook", "aliases": ["Westbrook", "Russ"] },
+    { "canonical": "James Harden", "aliases": ["Harden", "The Beard"] },
+    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
+    { "canonical": "Nikola Jokic", "aliases": ["Jokic", "Joker"] },
+    { "canonical": "Joel Embiid", "aliases": ["Embiid", "JoJo"] }
+  ]
+}

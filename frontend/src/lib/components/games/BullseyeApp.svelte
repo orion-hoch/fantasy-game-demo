@@ -97,9 +97,10 @@
   function statLabel(stat: string) {
     const labels: Record<string, string> = {
       PTS: 'Points', AST: 'Assists', REB: 'Rebounds', STL: 'Steals', BLK: 'Blocks',
-      '3PM': '3-Pointers Made', FGM: 'Field Goals Made', FTM: 'Free Throws Made', TOV: 'Turnovers',
+      '3PM': '3-Pointers Made', TOV: 'Turnovers',
       PPR: 'PPR Fantasy Pts', 'Pass Yds': 'Passing Yards', 'Rush Yds': 'Rushing Yards', 'Rec Yds': 'Receiving Yards',
-      'Pass TD': 'Passing TDs', 'Rush TD': 'Rushing TDs', 'Rec TD': 'Receiving TDs', Receptions: 'Receptions',
+      'Pass TD': 'Passing TDs', 'Rush TD': 'Rushing TDs', 'Rec TD': 'Receiving TDs',
+      Receptions: 'Receptions', Targets: 'Targets',
       Sacks: 'Sacks', 'Solo Tackles': 'Solo Tackles', 'Def INT': 'Defensive INTs'
     };
     return labels[stat] || stat;

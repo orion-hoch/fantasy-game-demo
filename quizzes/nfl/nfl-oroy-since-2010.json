@@ -1,0 +1,23 @@
+{
+  "id": "nfl-oroy-since-2010",
+  "title": "NFL Offensive Rookie of the Year Since 2010",
+  "prompt": "Name every winner of the AP NFL Offensive Rookie of the Year award from the 2010 season through 2024.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Sam Bradford", "aliases": ["Bradford"] },
+    { "canonical": "Cam Newton", "aliases": ["Newton"] },
+    { "canonical": "Robert Griffin III", "aliases": ["RGIII", "RG3", "Robert Griffin"] },
+    { "canonical": "Eddie Lacy", "aliases": ["Lacy"] },
+    { "canonical": "Odell Beckham Jr.", "aliases": ["Odell Beckham", "OBJ", "Beckham"] },
+    { "canonical": "Todd Gurley", "aliases": ["Gurley"] },
+    { "canonical": "Dak Prescott", "aliases": ["Dak", "Prescott"] },
+    { "canonical": "Alvin Kamara", "aliases": ["Kamara"] },
+    { "canonical": "Saquon Barkley", "aliases": ["Saquon", "Barkley"] },
+    { "canonical": "Kyler Murray", "aliases": ["Kyler", "Murray"] },
+    { "canonical": "Justin Herbert", "aliases": ["Herbert"] },
+    { "canonical": "Ja'Marr Chase", "aliases": ["JaMarr Chase", "Chase", "Jamarr Chase"] },
+    { "canonical": "Garrett Wilson", "aliases": ["G. Wilson"] },
+    { "canonical": "C.J. Stroud", "aliases": ["CJ Stroud", "Stroud"] },
+    { "canonical": "Jayden Daniels", "aliases": ["Daniels", "JD"] }
+  ]
+}

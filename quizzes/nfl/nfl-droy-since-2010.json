@@ -1,0 +1,23 @@
+{
+  "id": "nfl-droy-since-2010",
+  "title": "NFL Defensive Rookie of the Year Since 2010",
+  "prompt": "Name every winner of the AP NFL Defensive Rookie of the Year award from the 2010 season through 2024.",
+  "time_limit_seconds": 240,
+  "answers": [
+    { "canonical": "Ndamukong Suh", "aliases": ["Suh"] },
+    { "canonical": "Von Miller", "aliases": ["Miller"] },
+    { "canonical": "Luke Kuechly", "aliases": ["Kuechly"] },
+    { "canonical": "Sheldon Richardson", "aliases": ["Richardson"] },
+    { "canonical": "Aaron Donald", "aliases": ["Donald", "AD"] },
+    { "canonical": "Marcus Peters", "aliases": ["Peters"] },
+    { "canonical": "Joey Bosa", "aliases": ["J. Bosa"] },
+    { "canonical": "Marshon Lattimore", "aliases": ["Lattimore"] },
+    { "canonical": "Darius Leonard", "aliases": ["Shaquille Leonard", "Shaq Leonard", "Leonard"] },
+    { "canonical": "Nick Bosa", "aliases": ["N. Bosa"] },
+    { "canonical": "Chase Young", "aliases": ["Young"] },
+    { "canonical": "Micah Parsons", "aliases": ["Parsons"] },
+    { "canonical": "Sauce Gardner", "aliases": ["Ahmad Gardner", "Gardner", "Sauce"] },
+    { "canonical": "Will Anderson Jr.", "aliases": ["Will Anderson", "Anderson"] },
+    { "canonical": "Jared Verse", "aliases": ["Verse"] }
+  ]
+}

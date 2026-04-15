@@ -18,6 +18,7 @@ from src.dungeon.router import router as dungeon_router
 from src.fantasy_duel.router import router as fantasy_duel_router
 from src.lobbies.router import router as lobbies_router
 from src.migration.router import router as migration_router
+from src.selected_quizzes.router import router as selected_quizzes_router
 from src.ttb.router import router as ttb_router
 
 
@@ -46,6 +47,7 @@ app.include_router(chain_router, prefix=settings.api_prefix)
 app.include_router(codewords_router, prefix=settings.api_prefix)
 app.include_router(ttb_router, prefix=settings.api_prefix)
 app.include_router(dungeon_router, prefix=settings.api_prefix)
+app.include_router(selected_quizzes_router, prefix=settings.api_prefix)
 
 
 @app.get("/")

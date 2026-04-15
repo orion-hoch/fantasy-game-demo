@@ -1,0 +1,19 @@
+{
+  "id": "nba-sixth-man-since-2010",
+  "title": "NBA Sixth Man of the Year Since 2010",
+  "prompt": "Name every NBA Sixth Man of the Year from the 2009-10 season through 2023-24.",
+  "time_limit_seconds": 180,
+  "answers": [
+    { "canonical": "Jamal Crawford", "aliases": ["Crawford", "JCrossover"] },
+    { "canonical": "Lamar Odom", "aliases": ["Odom"] },
+    { "canonical": "James Harden", "aliases": ["Harden", "The Beard"] },
+    { "canonical": "J.R. Smith", "aliases": ["JR Smith", "J R Smith"] },
+    { "canonical": "Lou Williams", "aliases": ["Lou Will", "Williams", "Sweet Lou"] },
+    { "canonical": "Eric Gordon", "aliases": ["Gordon", "EG"] },
+    { "canonical": "Montrezl Harrell", "aliases": ["Trezz", "Harrell"] },
+    { "canonical": "Jordan Clarkson", "aliases": ["Clarkson"] },
+    { "canonical": "Tyler Herro", "aliases": ["Herro"] },
+    { "canonical": "Malcolm Brogdon", "aliases": ["Brogdon"] },
+    { "canonical": "Naz Reid", "aliases": ["Reid", "Naz"] }
+  ]
+}

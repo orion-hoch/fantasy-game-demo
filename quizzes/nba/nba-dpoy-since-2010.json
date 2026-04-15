@@ -1,0 +1,18 @@
+{
+  "id": "nba-dpoy-since-2010",
+  "title": "NBA Defensive Player of the Year Since 2010",
+  "prompt": "Name every NBA Defensive Player of the Year from the 2009-10 season through 2023-24.",
+  "time_limit_seconds": 180,
+  "answers": [
+    { "canonical": "Dwight Howard", "aliases": ["Howard", "Superman"] },
+    { "canonical": "Tyson Chandler", "aliases": ["Chandler"] },
+    { "canonical": "Marc Gasol", "aliases": ["Gasol"] },
+    { "canonical": "Joakim Noah", "aliases": ["Noah"] },
+    { "canonical": "Kawhi Leonard", "aliases": ["Kawhi", "Leonard", "The Klaw"] },
+    { "canonical": "Draymond Green", "aliases": ["Draymond", "Green"] },
+    { "canonical": "Rudy Gobert", "aliases": ["Gobert", "Stifle Tower"] },
+    { "canonical": "Giannis Antetokounmpo", "aliases": ["Giannis", "Greek Freak", "Antetokounmpo"] },
+    { "canonical": "Marcus Smart", "aliases": ["Smart"] },
+    { "canonical": "Jaren Jackson Jr.", "aliases": ["Jaren Jackson", "Triple J", "JJJ"] }
+  ]
+}
