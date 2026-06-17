@@ -22,7 +22,7 @@ import nfl_bullseye as nfl_bull
 import starting6_game as starting6_game_mod
 
 
-DB_PATH = REPO_ROOT / "fantasy.db"
+DB_PATH = REPO_ROOT / "data" / "fantasy.db"
 MIGRATED_GAME_REDIRECTS = {
     "nfl_bullseye": "/games/nfl/bullseye",
     "nba_bullseye": "/games/nba/bullseye",

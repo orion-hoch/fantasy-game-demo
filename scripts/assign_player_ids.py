@@ -29,7 +29,7 @@ import re
 import sqlite3
 import unicodedata
 
-DB = "fantasy.db"
+DB = "data/fantasy.db"
 
 
 # ─── Name utilities ────────────────────────────────────────────────────────

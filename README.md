@@ -175,26 +175,32 @@ The primary UI now lives in `frontend/`, while Flask remains as a compatibility 
 ## Project Structure
 
 ```text
-app.py                      Flask compatibility redirects + legacy API surface
-load_data.py                Data cleanup and import helpers
-session_store.py            Session storage abstraction for local/dev + Vercel KV
-
-chain_categories.py         NFL chain category logic
-nba_chain_categories.py     NBA chain category logic
-ttb.py                      NFL Ticking Time Bomb logic
-nba_ttb.py                  NBA Ticking Time Bomb logic
-dungeon_adventure.py        NFL dungeon run logic
-nba_dungeon_adventure.py    NBA dungeon run logic
-nfl_balatro.py              NFL Balatro run logic
-nba_balatro.py              NBA Balatro run logic
-
 frontend/                   Primary SvelteKit frontend
-backend/                    Primary FastAPI backend
-templates/                  Compatibility-only legacy HTML still used by Balatro bridge
-static/                     Shared assets plus compatibility-only legacy CSS/JS
-api/index.py                Vercel Python entrypoint for compatibility layer
-vercel.json                 Current Vercel compatibility deployment config
-fantasy.db                  Consolidated runtime database
+backend/                    Primary FastAPI backend (imports legacy engines via src/legacy/bridge.py)
+
+legacy/                     Legacy game-engine modules, imported by the backend at runtime
+  session_store.py          Session storage abstraction for local/dev + KV
+  lobby_store.py            Multiplayer lobby state
+  chain_categories.py       NFL chain category logic
+  nba_chain_categories.py   NBA chain category logic
+  ttb.py / nba_ttb.py       NFL / NBA Ticking Time Bomb logic
+  dungeon_adventure.py      NFL / NBA dungeon run logic
+  nfl_balatro.py            NFL Balatro run logic
+  nba_balatro.py            NBA Balatro run logic
+  ...                       (one module per game/sport)
+
+scripts/                    One-off data-prep / DB-build tooling (not run at serve time)
+  load_data.py              Data cleanup and import helpers (builds data/fantasy.db)
+  assign_player_ids.py      Player-ID assignment
+  combine_xlsx.py           Spreadsheet combiner
+
+data/                       Tracked data artifacts
+  fantasy.db                Consolidated runtime database
+  NBA_Player_IDs.csv        Player-ID source data
+  NBA_AllStars.csv          NBA All-Star source data
+
+quizzes/                    NFL/NBA quiz definitions served by the backend
+MIGRATION_TRACKER.md        Per-surface strangler rollout status
 ```
 
 ---
@@ -208,19 +214,18 @@ fantasy.db                  Consolidated runtime database
 
 ### Install and Run
 
-```bash
-pip install -r requirements.txt
-python app.py
-```
-
-The legacy Flask compatibility layer starts locally at `http://127.0.0.1:5000`.
-
-For the cutover stack, run the migrated apps instead:
+Run the migrated stack — FastAPI backend plus SvelteKit frontend:
 
 ```bash
-cd backend && python -m uvicorn src.main:app --reload --port 8000
-cd frontend && npm run dev
+# Backend (serves the API and loads the legacy engines from legacy/)
+cd backend && pip install . && python -m uvicorn src.main:app --reload --port 8000
+
+# Frontend (in a second terminal)
+cd frontend && npm install && npm run dev
 ```
+
+The backend reads the database from `data/fantasy.db`; rebuild it with the
+tooling in `scripts/` (e.g. `python scripts/load_data.py`) if needed.
 
 The Svelte frontend runs at `http://127.0.0.1:5173` and the FastAPI backend runs at `http://127.0.0.1:8000`.
 

@@ -71,7 +71,7 @@ def _clean_text_columns(df, columns):
     return df
 
 
-def repair_db_text(db_path="fantasy.db"):
+def repair_db_text(db_path="data/fantasy.db"):
     import pandas as pd  # heavy import — only needed for this offline repair step
 
     conn = sqlite3.connect(db_path)
@@ -183,7 +183,7 @@ def load_folder(folder):
     return df
 
 
-def load_total_stats(base_dir, db_path="fantasy.db"):
+def load_total_stats(base_dir, db_path="data/fantasy.db"):
     """Load season_stats.xlsx and Draft_stats/combined.xlsx into the database."""
     _ensure_pd()
     conn = sqlite3.connect(db_path)
@@ -369,7 +369,7 @@ def _load_def_folder(folder, col_map):
     return combined[keep].copy()
 
 
-def load_defensive_stats(base_dir, db_path="fantasy.db"):
+def load_defensive_stats(base_dir, db_path="data/fantasy.db"):
     """Load INTs, Sacks, and Tackles into the def_stats table."""
     _ensure_pd()
     conn = sqlite3.connect(db_path)
@@ -480,7 +480,7 @@ NBA_POS_NORM = {
 }
 
 
-def load_nba_stats(base_dir, db_path="fantasy.db"):
+def load_nba_stats(base_dir, db_path="data/fantasy.db"):
     """Load NBA single-season stats and draft stats into the database."""
     _ensure_pd()
     import glob as _glob
@@ -727,7 +727,7 @@ def _seed_missing_nba_players(conn):
     conn.close()
 
 
-def load_nba_allstars(db_path="fantasy.db", csv_path="NBA_AllStars.csv"):
+def load_nba_allstars(db_path="data/fantasy.db", csv_path="data/NBA_AllStars.csv"):
     """Parse NBA_AllStars.csv and load into the nba_allstars table."""
     _ensure_pd()
     import re
@@ -847,7 +847,7 @@ def _parse_tied_players(raw):
     return [_strip_pos_suffix(p) for p in parts if _strip_pos_suffix(p)]
 
 
-def load_new_nba_data(new_data_dir="new_data", db_path="fantasy.db"):
+def load_new_nba_data(new_data_dir="new_data", db_path="data/fantasy.db"):
     _ensure_pd()
     """Load all supplemental NBA data from new_data/ into the database.
 
@@ -1223,7 +1223,7 @@ _CHAMP_BOTH_RE = r"^(.+?)\s+\((\w+),[\d-]+\),\s+(.+?)\s+\((\w+),[\d-]+\)$"
 _CHAMP_ONE_RE  = r"^(.+?)\s+\((\w+),[\d-]+\)$"
 
 
-def load_new_nfl_data(new_data_dir="new_data_nfl", db_path="fantasy.db"):
+def load_new_nfl_data(new_data_dir="new_data_nfl", db_path="data/fantasy.db"):
     _ensure_pd()
     """Load supplemental NFL data from new_data_nfl/ into the database.
 
@@ -1463,7 +1463,7 @@ def load_new_nfl_data(new_data_dir="new_data_nfl", db_path="fantasy.db"):
     conn.close()
 
 
-def build_db(folders, db_path="fantasy.db"):
+def build_db(folders, db_path="data/fantasy.db"):
     _ensure_pd()
     conn = sqlite3.connect(db_path)
     all_dfs = []

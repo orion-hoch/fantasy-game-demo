@@ -15,7 +15,7 @@ import nba_starting5_game as nba_game
 import starting6_game as nfl_game
 
 
-DB_PATH = REPO_ROOT / "fantasy.db"
+DB_PATH = REPO_ROOT / "data" / "fantasy.db"
 
 
 def _sync_db() -> sqlite3.Connection:

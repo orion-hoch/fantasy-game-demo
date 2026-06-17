@@ -16,7 +16,7 @@ import chain_game as chain_game_mod
 import nba_chain_categories as nba_cc
 
 
-DB_PATH = REPO_ROOT / "fantasy.db"
+DB_PATH = REPO_ROOT / "data" / "fantasy.db"
 
 
 def _sync_db() -> sqlite3.Connection:

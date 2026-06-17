@@ -15,7 +15,7 @@ import nba_bullseye as nba_bull
 import nfl_bullseye as nfl_bull
 
 
-DB_PATH = REPO_ROOT / "fantasy.db"
+DB_PATH = REPO_ROOT / "data" / "fantasy.db"
 
 
 def _sync_db() -> sqlite3.Connection:

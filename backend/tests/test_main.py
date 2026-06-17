@@ -131,7 +131,7 @@ async def test_bullseye_search_seasons_and_pick(client: AsyncClient):
     prompt = state["prompts"][0]
     where, params = nba_bullseye._build_prompt_where(prompt, state["stat"])
     stat_expr = nba_bullseye._stat_expr(state["stat"])
-    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
     try:
         row = conn.execute(
             f"""
@@ -185,7 +185,7 @@ async def test_bullseye_prompts_include_accolades_and_min_player_pool(client: As
     assert any(prompt.get("accolade") for prompt in nfl_state["prompts"])
     assert any(prompt.get("accolade") for prompt in nba_state["prompts"])
 
-    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
     try:
         nfl_table = nfl_bullseye._stat_table(nfl_state["stat"])
         for prompt in nfl_state["prompts"]:
@@ -207,7 +207,7 @@ def _bullseye_outside_player(module, sport: str, state: dict) -> tuple[int, str]
     """Find a (prompt_idx, player) where the player is in the full sport pool
     but NOT among the prompt's "correct answers". Used to assert search/season
     pickers never pre-filter to the answer set."""
-    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
     try:
         stat = state["stat"]
         if sport == "nfl":
@@ -297,7 +297,7 @@ async def test_bullseye_search_and_seasons_never_leak_answers(client: AsyncClien
         # Direct call into the legacy engine's search — guards the still-live
         # Flask compatibility routes (/api/nba_bullseye/search etc.) which call
         # module.search_players directly without going through the FastAPI service.
-        conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+        conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
         try:
             engine_results = module.search_players(conn, query, chosen_prompt_idx, game_id)
         finally:
@@ -353,7 +353,7 @@ async def test_fantasy_duel_start_and_pick(client: AsyncClient):
     state = starting6_game.get_game(game_id)
     current_team = state["currentTeam"]
 
-    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
     try:
         row = conn.execute(
             "SELECT player, season FROM stats WHERE team = ? AND pos IN ('QB','WR','RB','TE') AND fantasy_ppr IS NOT NULL LIMIT 1",
@@ -514,7 +514,7 @@ async def test_chain_lobby_requires_player_one_start_button_flow(client: AsyncCl
 
 @pytest.mark.asyncio
 async def test_codewords_state_and_clue(client: AsyncClient):
-    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
     try:
         game_id, _ = codewords_game.start_game(
             conn,
@@ -659,7 +659,7 @@ async def test_balatro_start(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_all_game_search_endpoints_use_full_sport_player_pool(client: AsyncClient):
-    conn = sqlite3.connect("/Users/orionhoch/fantasy_game_demo/fantasy.db")
+    conn = sqlite3.connect("/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db")
     try:
         samples = {
             "nfl": next((name for name in all_sport_players(conn, "nfl") if len(name) >= 4), None),
@@ -786,7 +786,7 @@ async def test_balatro_api_shop_buy_and_pack_flow(client: AsyncClient):
 
 
 def test_balatro_shop_buy_and_pack_remove_entries():
-    db_path = "/Users/orionhoch/fantasy_game_demo/fantasy.db"
+    db_path = "/Users/orionhoch/Desktop/fantasy_game_demo/data/fantasy.db"
     module_specs = [
         ("nfl", nfl_balatro, "QB"),
         ("nba", nba_balatro, "G"),

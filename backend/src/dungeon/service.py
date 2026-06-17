@@ -13,7 +13,7 @@ from src.dungeon.schemas import Sport
 from src.legacy.bridge import REPO_ROOT
 
 
-DB_PATH = REPO_ROOT / "fantasy.db"
+DB_PATH = REPO_ROOT / "data" / "fantasy.db"
 
 
 def _sync_db() -> sqlite3.Connection:
