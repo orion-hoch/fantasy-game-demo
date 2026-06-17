@@ -1,4 +1,4 @@
-# Sports Trivia and Games by Orion Hoch
+# Sports Trivia Games using SQL database from Sports Reference
 
 Live at **[oriontrivia.org](https://oriontrivia.org)**.
 
